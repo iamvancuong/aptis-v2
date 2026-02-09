@@ -5,60 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Admin - APTIS')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100" x-data="{ 
+    isMobileOpen: false,
+    isDesktopCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
+    toggleDesktop() {
+        this.isDesktopCollapsed = !this.isDesktopCollapsed;
+        localStorage.setItem('sidebarCollapsed', this.isDesktopCollapsed);
+    }
+}">
     <!-- Mobile Overlay -->
-    <div id="sidebar-overlay" class="fixed inset-0 z-40 hidden md:hidden" style="background-color: rgba(0, 0, 0, 0.5);"></div>
+    <div x-show="isMobileOpen" 
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="isMobileOpen = false"
+         class="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+         x-cloak>
+    </div>
 
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
-        <aside id="admin-sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
-            <div class="flex items-center justify-between p-4 border-b">
-                <h2 class="text-xl font-bold text-blue-600">Admin Panel</h2>
+        <aside :class="isDesktopCollapsed ? 'w-20' : 'w-64'"
+               class="fixed md:static inset-y-0 left-0 z-50 bg-white shadow-lg transition-all duration-300 ease-in-out flex flex-col"
+               :class="{'translate-x-0': isMobileOpen, '-translate-x-full': !isMobileOpen, 'md:translate-x-0': true}"
+               x-cloak>
+            
+            <!-- Sidebar Header -->
+            <div class="flex items-center justify-between h-16 px-4 border-b">
+                <h2 class="text-xl font-bold text-blue-600 overflow-hidden whitespace-nowrap transition-all duration-300"
+                    :class="{'w-0 opacity-0': isDesktopCollapsed, 'w-auto opacity-100': !isDesktopCollapsed}">
+                    Admin Panel
+                </h2>
                 <!-- Desktop collapse button -->
-                <button id="sidebar-toggle" class="hidden md:block p-2 rounded hover:bg-gray-100">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                <button @click="toggleDesktop()" class="hidden md:block p-2 rounded hover:bg-gray-100 focus:outline-none">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" x-show="isDesktopCollapsed"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" x-show="!isDesktopCollapsed"></path>
+                    </svg>
+                </button>
+                <!-- Mobile close button -->
+                <button @click="isMobileOpen = false" class="md:hidden p-2 rounded hover:bg-gray-100 focus:outline-none">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <nav class="mt-4 px-2 space-y-1">
-                <x-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')">
-                    <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+                <x-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')" class="flex items-center" x-bind:class="{'justify-center px-0': isDesktopCollapsed}">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
-                    <span class="sidebar-text ml-2">Dashboard</span>
+                    <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
+                          :class="{'opacity-0 hidden': isDesktopCollapsed, 'opacity-100 block': !isDesktopCollapsed}">
+                        Dashboard
+                    </span>
                 </x-nav-link>
-                <x-nav-link href="{{ route('admin.quizzes.index') }}" :active="request()->routeIs('admin.quizzes.*')">
-                    <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <x-nav-link href="{{ route('admin.quizzes.index') }}" :active="request()->routeIs('admin.quizzes.*')" class="flex items-center" x-bind:class="{'justify-center px-0': isDesktopCollapsed}">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span class="sidebar-text ml-2">Quizzes</span>
+                    <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
+                          :class="{'opacity-0 hidden': isDesktopCollapsed, 'opacity-100 block': !isDesktopCollapsed}">
+                        Quizzes
+                    </span>
                 </x-nav-link>
-                <x-nav-link href="{{ route('admin.sets.index') }}" :active="request()->routeIs('admin.sets.*')">
-                    <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <x-nav-link href="{{ route('admin.sets.index') }}" :active="request()->routeIs('admin.sets.*')" class="flex items-center" x-bind:class="{'justify-center px-0': isDesktopCollapsed}">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    <span class="sidebar-text ml-2">Sets</span>
+                    <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
+                          :class="{'opacity-0 hidden': isDesktopCollapsed, 'opacity-100 block': !isDesktopCollapsed}">
+                        Sets
+                    </span>
                 </x-nav-link>
-                <x-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')">
-                    <svg class="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <x-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')" class="flex items-center" x-bind:class="{'justify-center px-0': isDesktopCollapsed}">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                     </svg>
-                    <span class="sidebar-text ml-2">Users</span>
+                    <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
+                          :class="{'opacity-0 hidden': isDesktopCollapsed, 'opacity-100 block': !isDesktopCollapsed}">
+                        Users
+                    </span>
+                </x-nav-link>
+
+                <x-nav-link href="{{ route('admin.questions.index') }}" :active="request()->routeIs('admin.questions.*')" class="flex items-center" x-bind:class="{'justify-center px-0': isDesktopCollapsed}">
+                    <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
+                          :class="{'opacity-0 hidden': isDesktopCollapsed, 'opacity-100 block': !isDesktopCollapsed}">
+                        Questions
+                    </span>
                 </x-nav-link>
             </nav>
         </aside>
-
+ 
         <!-- Main Content -->
-        <div id="main-content" class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
             <header class="bg-white shadow-sm z-30">
                 <div class="flex justify-between items-center px-4 md:px-8 py-4">
                     <div class="flex items-center space-x-4">
                         <!-- Mobile hamburger menu -->
-                        <button id="mobile-menu-toggle" class="md:hidden p-2 rounded hover:bg-gray-100">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button @click="isMobileOpen = !isMobileOpen" class="md:hidden p-2 rounded hover:bg-gray-100 focus:outline-none">
+                            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                             </svg>
                         </button>
@@ -73,7 +136,7 @@
                     </div>
                 </div>
             </header>
-
+ 
             <main class="flex-1 overflow-y-auto p-4 md:p-8">
                 @if(session('success'))
                     <x-alert type="success" class="mb-4">{{ session('success') }}</x-alert>
@@ -82,83 +145,10 @@
                 @if(session('error'))
                     <x-alert type="error" class="mb-4">{{ session('error') }}</x-alert>
                 @endif
-
+ 
                 @yield('content')
             </main>
         </div>
     </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('admin-sidebar');
-            const mainContent = document.getElementById('main-content');
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-            const overlay = document.getElementById('sidebar-overlay');
-            
-            // Load saved sidebar state from localStorage (desktop only)
-            const sidebarState = localStorage.getItem('sidebarCollapsed');
-            if (sidebarState === 'true' && window.innerWidth >= 768) {
-                sidebar.classList.add('collapsed');
-                mainContent.classList.add('expanded');
-            }
-            
-            // Desktop sidebar toggle
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('collapsed');
-                    mainContent.classList.toggle('expanded');
-                    
-                    // Save state to localStorage
-                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-                });
-            }
-            
-            // Mobile menu toggle
-            if (mobileMenuToggle) {
-                mobileMenuToggle.addEventListener('click', function() {
-                    // Toggle Tailwind's translate class instead of custom class
-                    sidebar.classList.toggle('-translate-x-full');
-                    overlay.classList.toggle('hidden');
-                });
-            }
-            
-            // Close sidebar when clicking overlay
-            if (overlay) {
-                overlay.addEventListener('click', function() {
-                    sidebar.classList.add('-translate-x-full');
-                    overlay.classList.add('hidden');
-                });
-            }
-        });
-    </script>
-    
-    <style>
-        /* Sidebar collapsed state (desktop) */
-        #admin-sidebar.collapsed {
-            width: 4rem;
-        }
-        
-        /* Hide text when collapsed, show only icons */
-        #admin-sidebar.collapsed h2,
-        #admin-sidebar.collapsed .sidebar-text {
-            display: none;
-        }
-        
-        /* Center icons when collapsed */
-        #admin-sidebar.collapsed nav a {
-            justify-content: center;
-        }
-        
-        /* Main content expanded when sidebar collapsed */
-        #main-content.expanded {
-            margin-left: 0;
-        }
-        
-        /* Smooth transitions */
-        #admin-sidebar {
-            transition: all 0.3s ease-in-out;
-        }
-    </style>
 </body>
 </html>

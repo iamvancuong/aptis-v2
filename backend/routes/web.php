@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\SetController as AdminSetController;
 use App\Http\Controllers\Admin\UserController;
