@@ -181,8 +181,32 @@
                     </div>
                </template>
 
+               <!-- PART 3: READING (Opinion Matching) -->
+               <template x-if="isReadingPart3">
+                    <div x-data="readingPart3(questionMetadata)">
+                        <x-card title="Part 3: Opinion Matching (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
+                            @include('admin.questions.partials.reading.part3-form')
+                            <div class="mt-8 border-t border-gray-100 pt-6">
+                                @include('admin.questions.partials.reading.part3-preview')
+                            </div>
+                        </x-card>
+                    </div>
+               </template>
+
+               <!-- PART 4: READING (Heading Matching) -->
+               <template x-if="isReadingPart4">
+                    <div x-data="readingPart4(questionMetadata)">
+                        <x-card title="Part 4: Heading Matching (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
+                            @include('admin.questions.partials.reading.part4-form')
+                            <div class="mt-8 border-t border-gray-100 pt-6">
+                                @include('admin.questions.partials.reading.part4-preview')
+                            </div>
+                        </x-card>
+                    </div>
+               </template>
+
                <!-- Fallback -->
-               <div x-show="selectedQuizId && !isReadingPart1 && !isReadingPart2" class="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+               <div x-show="selectedQuizId && !isReadingPart1 && !isReadingPart2 && !isReadingPart3 && !isReadingPart4" class="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                     <h3 class="mt-2 text-sm font-medium text-gray-900">Form Not Available</h3>
                     <p class="mt-1 text-sm text-gray-500">The edit form for <span class="font-bold" x-text="quizMetadata.skill + ' Part ' + quizMetadata.part"></span> is not ready yet.</p>
                </div>
@@ -195,6 +219,8 @@
     <!-- Alpine.js Logic -->
     <script src="{{ asset('admin/js/questions/reading-part1.js') }}"></script>
     <script src="{{ asset('admin/js/questions/reading-part2.js') }}"></script>
+    <script src="{{ asset('admin/js/questions/reading-part3.js') }}"></script>
+    <script src="{{ asset('admin/js/questions/reading-part4.js') }}"></script>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('questionForm', (question) => ({
@@ -208,8 +234,6 @@
                 init() {
                     this.$nextTick(() => {
                         this.updateQuizMetadata();
-                        console.log(question.sets);
-                        // Force data type consistency (ensure ID is compatible with select option values)
                         if (question.sets && question.sets.length > 0) {
                             let setId = question.sets[0].id;
                             this.selectedSetId = setId;
@@ -274,15 +298,27 @@
                     return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 2;
                 },
 
+                get isReadingPart3() {
+                    return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 3;
+                },
+
+                get isReadingPart4() {
+                    return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 4;
+                },
+
                 get questionType() {
                     if (this.isReadingPart1) return 'fill_in_blanks_mc';
                     if (this.isReadingPart2) return 'sentence_ordering';
+                    if (this.isReadingPart3) return 'text_question_match';
+                    if (this.isReadingPart4) return 'matching_headings';
                     return 'unknown';
                 },
 
                 get questionDescription() {
                     if (this.isReadingPart1) return 'Fill in the blanks (Multiple Choice)';
                     if (this.isReadingPart2) return 'Reorder the sentenes to form a paragraph';
+                    if (this.isReadingPart3) return 'Match questions to the correct opinion/text';
+                    if (this.isReadingPart4) return 'Match each paragraph to the correct heading';
                     return '';
                 }
             }));

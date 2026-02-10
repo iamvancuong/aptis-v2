@@ -175,8 +175,32 @@
                     </div>
                </template>
 
+               <!-- PART 3: READING (Opinion Matching) -->
+               <template x-if="isReadingPart3">
+                    <div x-data="readingPart3">
+                        <x-card title="Part 3: Opinion Matching" class="bg-white shadow-sm ring-1 ring-black/5">
+                            @include('admin.questions.partials.reading.part3-form')
+                            <div class="mt-8 border-t border-gray-100 pt-6">
+                                @include('admin.questions.partials.reading.part3-preview')
+                            </div>
+                        </x-card>
+                    </div>
+               </template>
+
+               <!-- PART 4: READING (Heading Matching) -->
+               <template x-if="isReadingPart4">
+                    <div x-data="readingPart4">
+                        <x-card title="Part 4: Heading Matching" class="bg-white shadow-sm ring-1 ring-black/5">
+                            @include('admin.questions.partials.reading.part4-form')
+                            <div class="mt-8 border-t border-gray-100 pt-6">
+                                @include('admin.questions.partials.reading.part4-preview')
+                            </div>
+                        </x-card>
+                    </div>
+               </template>
+
                <!-- Fallback -->
-               <div x-show="selectedQuizId && !isReadingPart1 && !isReadingPart2" class="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+               <div x-show="selectedQuizId && !isReadingPart1 && !isReadingPart2 && !isReadingPart3 && !isReadingPart4" class="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
@@ -203,6 +227,8 @@
     <!-- Alpine.js Logic -->
     <script src="{{ asset('admin/js/questions/reading-part1.js') }}"></script>
     <script src="{{ asset('admin/js/questions/reading-part2.js') }}"></script>
+    <script src="{{ asset('admin/js/questions/reading-part3.js') }}"></script>
+    <script src="{{ asset('admin/js/questions/reading-part4.js') }}"></script>
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('questionForm', () => ({
@@ -265,15 +291,27 @@
                     return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 2;
                 },
 
+                get isReadingPart3() {
+                    return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 3;
+                },
+
+                get isReadingPart4() {
+                    return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 4;
+                },
+
                 get questionType() {
                     if (this.isReadingPart1) return 'fill_in_blanks_mc';
                     if (this.isReadingPart2) return 'sentence_ordering';
+                    if (this.isReadingPart3) return 'text_question_match';
+                    if (this.isReadingPart4) return 'matching_headings';
                     return 'unknown';
                 },
 
                 get questionDescription() {
                     if (this.isReadingPart1) return 'Fill in the blanks (Multiple Choice)';
                     if (this.isReadingPart2) return 'Reorder the sentenes to form a paragraph';
+                    if (this.isReadingPart3) return 'Match questions to the correct opinion/text';
+                    if (this.isReadingPart4) return 'Match each paragraph to the correct heading';
                     return '';
                 }
             }));

@@ -26,15 +26,13 @@
                     rows="2"
                     class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     :placeholder="index === 0 ? 'Enter the first sentence...' : 'Enter sentence...'"
+                    required
                 ></textarea>
             </div>
             
-            <!-- Drag Handle Icon (Visual only for now, drag logic in preview or reorder buttons if needed) -->
-            <!-- For simple input, we might just let them type. Drag reordering inputs is also possible -->
         </div>
     </template>
     
-    <!-- Hidden input to store metadata for form submission -->
     <template x-for="(sentence, index) in sentences" :key="index">
         <input type="hidden" :name="`metadata[sentences][${index}]`" :value="sentence.text">
     </template>

@@ -15,6 +15,8 @@ class PartHandlerFactory
         return match ($key) {
             'reading-1' => app(ReadingPart1Handler::class),
             'reading-2' => app(\App\Services\PartHandlers\Reading\ReadingPart2Handler::class),
+            'reading-3' => app(\App\Services\PartHandlers\Reading\ReadingPart3Handler::class),
+            'reading-4' => app(\App\Services\PartHandlers\Reading\ReadingPart4Handler::class),
             default => throw new Exception("Handler not found for skill: {$skill}, part: {$part}"),
         };
     }

@@ -101,6 +101,13 @@ class QuestionController extends Controller
     {
         $this->questionService->deleteQuestion($question);
 
+        if (request()->wantsJson()) {
+            return response()->json([
+                'message' => 'Question deleted successfully.',
+                'id' => $question->id
+            ]);
+        }
+
         return redirect()->route('admin.questions.index')
             ->with('success', 'Question deleted successfully.');
     }
