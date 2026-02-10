@@ -63,6 +63,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::post('users/{user}/extend-expiration', [UserController::class, 'extendExpiration'])->name('users.extend-expiration');
     Route::resource('users', UserController::class);
 
-    // Question Management (Phase 3 - placeholder)
+    // Question Management (Phase 3)
+    Route::get('quizzes/{quiz}/sets', [QuestionController::class, 'getSetsByQuiz'])->name('quizzes.sets');
     Route::resource('questions', QuestionController::class);
 });

@@ -16,81 +16,51 @@ class StoreQuestionRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $baseRules = [
+        $rules = [
             'quiz_id' => 'required|exists:quizzes,id',
-            'skill' => 'required|in:reading,listening,writing',
-            'part' => 'required|integer|min:1|max:4',
+            'set_id' => 'required|exists:sets,id',
+            'skill' => 'required|string|in:reading,listening,gramvar,writing,speaking',
+            'part' => 'required|integer|min:1|max:5',
             'type' => 'required|string',
             'stem' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
-            'point' => 'required|integer|min:1',
-            'order' => 'required|integer|min:0',
-            'explanation' => 'nullable|string',
+            'point' => 'required|integer|min:0',
+            'order' => 'nullable|integer|min:0',
+            'metadata' => 'array',
         ];
 
-        // Add metadata validation based on type
-        $metadataRules = $this->getMetadataRules();
-        
-        return array_merge($baseRules, $metadataRules);
-    }
+        // Specific validation based on question type / part
+        // We use the PartHandlerFactory to get rules if a handler exists
+        try {
+            $skill = $this->input('skill');
+            $part = $this->input('part');
+            
+            if ($skill && $part) {
+                // Manually instantiate factory since we can't easily inject into rules()
+                // Or better, use usage of App service container
+                $factory = app(\App\Services\PartHandlerFactory::class);
+                $handler = $factory->getHandler($skill, (int)$part);
+                $rules = array_merge($rules, $handler->getValidationRules());
+            }
+        } catch (\Exception $e) {
+            // Handler not found, fallback or ignore
+        }
 
-    /**
-     * Get metadata validation rules based on question type.
-     */
-    protected function getMetadataRules(): array
-    {
-        $type = $this->input('type');
-
-        return match($type) {
-            'fill_in_blanks_mc' => [
-                'metadata' => 'required|array',
-                'metadata.paragraphs' => 'required|array|size:5',
-                'metadata.paragraphs.*' => 'required|string',
-                'metadata.blank_keys' => 'required|array|size:5',
-                'metadata.choices' => 'required|array|size:5',
-                'metadata.choices.*' => 'required|array|size:3',
-                'metadata.correct_answers' => 'required|array|size:5',
-            ],
-            'sentence_ordering' => [
-                'metadata' => 'required|array',
-                'metadata.sentences' => 'required|array|size:5',
-                'metadata.sentences.*' => 'required|string',
-                'metadata.correct_order' => 'required|array|size:5',
-            ],
-            'text_question_match' => [
-                'metadata' => 'required|array',
-                'metadata.items' => 'required|array|size:4',
-                'metadata.items.*.text' => 'required|string',
-                'metadata.items.*.label' => 'required|string|in:A,B,C,D',
-                'metadata.options' => 'required|array|size:7',
-                'metadata.answers' => 'required|array',
-            ],
-            'paragraph_heading_match' => [
-                'metadata' => 'required|array',
-                'metadata.paragraphs' => 'required|array|size:7',
-                'metadata.paragraphs.*' => 'required|string',
-                'metadata.options' => 'required|array|size:7',
-                'metadata.correct' => 'required|array|size:7',
-            ],
-            default => [
-                'metadata' => 'required|array',
-            ],
-        };
+        return $rules;
     }
 
     /**
      * Prepare the data for validation.
      */
-    protected function prepareForValidation(): void
+    protected function prepareForValidation()
     {
-        // Encode metadata if it's an array
-        if ($this->has('metadata') && is_array($this->metadata)) {
-            $this->merge([
-                'metadata' => $this->metadata
-            ]);
-        }
+        $this->merge([
+            'metadata' => $this->input('metadata', []), // Default to empty array if not present
+        ]);
     }
 }

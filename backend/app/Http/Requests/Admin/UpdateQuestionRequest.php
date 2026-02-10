@@ -21,13 +21,14 @@ class UpdateQuestionRequest extends FormRequest
     {
         $baseRules = [
             'quiz_id' => 'required|exists:quizzes,id',
+            'set_id' => 'nullable|exists:sets,id', // Make nullable if not strictly enforcing for legacy data, but ideally required
             'skill' => 'required|in:reading,listening,writing',
             'part' => 'required|integer|min:1|max:4',
             'type' => 'required|string',
             'stem' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'point' => 'required|integer|min:1',
-            'order' => 'required|integer|min:0',
+            'order' => 'nullable|integer|min:0',
             'explanation' => 'nullable|string',
         ];
 
@@ -40,45 +41,29 @@ class UpdateQuestionRequest extends FormRequest
     /**
      * Get metadata validation rules based on question type.
      */
+    /**
+     * Get metadata validation rules based on question type.
+     */
     protected function getMetadataRules(): array
     {
-        $type = $this->input('type');
+        // Use the PartHandlerFactory to get rules if a handler exists
+        try {
+            // We need to determine skill and part. 
+            // In update, these might come from input OR from the existing model if not changing.
+            // However, the form sends them as hidden inputs or select values.
+            $skill = $this->input('skill');
+            $part = $this->input('part');
+            
+            if ($skill && $part) {
+                $factory = app(\App\Services\PartHandlerFactory::class);
+                $handler = $factory->getHandler($skill, (int)$part);
+                return $handler->getValidationRules();
+            }
+        } catch (\Exception $e) {
+            // Handler not found, fallback to basic array check
+        }
 
-        return match($type) {
-            'fill_in_blanks_mc' => [
-                'metadata' => 'required|array',
-                'metadata.paragraphs' => 'required|array|size:5',
-                'metadata.paragraphs.*' => 'required|string',
-                'metadata.blank_keys' => 'required|array|size:5',
-                'metadata.choices' => 'required|array|size:5',
-                'metadata.choices.*' => 'required|array|size:3',
-                'metadata.correct_answers' => 'required|array|size:5',
-            ],
-            'sentence_ordering' => [
-                'metadata' => 'required|array',
-                'metadata.sentences' => 'required|array|size:5',
-                'metadata.sentences.*' => 'required|string',
-                'metadata.correct_order' => 'required|array|size:5',
-            ],
-            'text_question_match' => [
-                'metadata' => 'required|array',
-                'metadata.items' => 'required|array|size:4',
-                'metadata.items.*.text' => 'required|string',
-                'metadata.items.*.label' => 'required|string|in:A,B,C,D',
-                'metadata.options' => 'required|array|size:7',
-                'metadata.answers' => 'required|array',
-            ],
-            'paragraph_heading_match' => [
-                'metadata' => 'required|array',
-                'metadata.paragraphs' => 'required|array|size:7',
-                'metadata.paragraphs.*' => 'required|string',
-                'metadata.options' => 'required|array|size:7',
-                'metadata.correct' => 'required|array|size:7',
-            ],
-            default => [
-                'metadata' => 'required|array',
-            ],
-        };
+        return ['metadata' => 'nullable|array'];
     }
 
     /**

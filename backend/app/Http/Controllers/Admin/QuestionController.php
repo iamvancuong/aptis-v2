@@ -7,41 +7,25 @@ use App\Http\Requests\Admin\StoreQuestionRequest;
 use App\Http\Requests\Admin\UpdateQuestionRequest;
 use App\Models\Question;
 use App\Models\Quiz;
+use App\Services\QuestionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class QuestionController extends Controller
 {
+    protected QuestionService $questionService;
+
+    public function __construct(QuestionService $questionService)
+    {
+        $this->questionService = $questionService;
+    }
+
     /**
      * Display a listing of questions grouped by Quiz/Part.
      */
     public function index(Request $request)
     {
-        $query = Question::with('quiz');
-
-        // Filter by quiz
-        if ($request->filled('quiz_id')) {
-            $query->where('quiz_id', $request->quiz_id);
-        }
-
-        // Filter by skill
-        if ($request->filled('skill')) {
-            $query->where('skill', $request->skill);
-        }
-
-        // Filter by part
-        if ($request->filled('part')) {
-            $query->where('part', $request->part);
-        }
-
-        // Order by quiz, part, order
-        $questions = $query->orderBy('quiz_id')
-            ->orderBy('part')
-            ->orderBy('order')
-            ->paginate($request->get('per_page', 20))
-            ->withQueryString();
-
-        // Get quizzes for filter dropdown
+        $questions = $this->questionService->getQuestions($request->all());
         $quizzes = Quiz::orderBy('name')->get();
 
         return view('admin.questions.index', compact('questions', 'quizzes'));
@@ -62,15 +46,11 @@ class QuestionController extends Controller
      */
     public function store(StoreQuestionRequest $request)
     {
-        $data = $request->validated();
-
-        // Handle image upload if present
-        if ($request->hasFile('image')) {
-            $data['image_path'] = $request->file('image')->store('questions', 'public');
-        }
-
-        // Create question
-        $question = Question::create($data);
+        $this->questionService->createQuestion(
+            $request->validated(),
+            $request->file('image'),
+            $request->input('set_id')
+        );
 
         return redirect()->route('admin.questions.index')
             ->with('success', 'Question created successfully.');
@@ -81,7 +61,7 @@ class QuestionController extends Controller
      */
     public function show(Question $question)
     {
-        $question->load('quiz');
+        $question->load(['quiz', 'sets']);
 
         return view('admin.questions.show', compact('question'));
     }
@@ -91,9 +71,12 @@ class QuestionController extends Controller
      */
     public function edit(Question $question)
     {
+        $question->load('sets'); // Eager load sets for JSON serialization in view
         $quizzes = Quiz::orderBy('name')->get();
+        // Load sets for the selected quiz to populate the dropdown
+        $sets = $this->questionService->getSetsByQuiz($question->quiz_id);
 
-        return view('admin.questions.edit', compact('question', 'quizzes'));
+        return view('admin.questions.edit', compact('question', 'quizzes', 'sets'));
     }
 
     /**
@@ -101,19 +84,11 @@ class QuestionController extends Controller
      */
     public function update(UpdateQuestionRequest $request, Question $question)
     {
-        $data = $request->validated();
-
-        // Handle new image upload
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($question->image_path) {
-                Storage::disk('public')->delete($question->image_path);
-            }
-            $data['image_path'] = $request->file('image')->store('questions', 'public');
-        }
-
-        // Update question
-        $question->update($data);
+        $this->questionService->updateQuestion(
+            $question,
+            $request->validated(),
+            $request->file('image')
+        );
 
         return redirect()->route('admin.questions.index')
             ->with('success', 'Question updated successfully.');
@@ -124,14 +99,26 @@ class QuestionController extends Controller
      */
     public function destroy(Question $question)
     {
-        // Delete associated image
-        if ($question->image_path) {
-            Storage::disk('public')->delete($question->image_path);
-        }
-
-        $question->delete();
+        $this->questionService->deleteQuestion($question);
 
         return redirect()->route('admin.questions.index')
             ->with('success', 'Question deleted successfully.');
+    }
+
+    /**
+     * Get sets for a specific quiz (API).
+     */
+    public function getSetsByQuiz($quizId)
+    {
+        $sets = $this->questionService->getSetsByQuiz($quizId);
+        $quiz = $this->questionService->getQuizDetails($quizId);
+
+        return response()->json([
+            'sets' => $sets,
+            'quiz' => [
+                'skill' => $quiz->skill,
+                'part' => $quiz->part,
+            ]
+        ]);
     }
 }

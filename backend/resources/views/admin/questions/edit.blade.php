@@ -1,249 +1,291 @@
 @extends('layouts.admin')
 
-@section('title', 'Create Reading Question - Part 1')
-
 @section('content')
-<div class="space-y-6" x-data="questionForm()">
-    <!-- Header -->
-    <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-gray-900">Create Reading Question (Part 1)</h1>
-        <a href="{{ route('admin.questions.index') }}" class="text-gray-600 hover:text-gray-900">
-            Back to List
-        </a>
-    </div>
-
-    <!-- Main Card -->
-    <x-card>
-        <!-- Tabs -->
-        <div class="border-b border-gray-200 mb-6">
-            <nav class="-mb-px flex space-x-8">
-                <button 
-                    @click="tab = 'edit'"
-                    :class="{'border-indigo-500 text-indigo-600': tab === 'edit', 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700': tab !== 'edit'}"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                >
-                    Edit Content
-                </button>
-                <button 
-                    @click="updatePreview(); tab = 'preview'"
-                    :class="{'border-indigo-500 text-indigo-600': tab === 'preview', 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700': tab !== 'preview'}"
-                    class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                >
-                    Preview Mode
-                </button>
-            </nav>
+    <div class="min-h-screen" x-data="questionForm({{ json_encode($question) }})">
+        <!-- Header -->
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Edit Question</h1>
+                <p class="text-sm text-gray-500 mt-1">Update question details and content</p>
+            </div>
+            <a href="{{ route('admin.questions.index') }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                Back to List
+            </a>
         </div>
 
-        <form action="{{ route('admin.questions.store') }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            
-            <!-- Hidden Fields for Fixed Values -->
-            <input type="hidden" name="skill" value="reading">
-            <input type="hidden" name="part" value="1">
-            <input type="hidden" name="type" value="fill_in_blanks_mc">
-            <input type="hidden" name="point" value="5">
-
-            <!-- EDIT TAB -->
-            <div x-show="tab === 'edit'" class="space-y-6">
-                
-                <!-- Basic Info -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Quiz</label>
-                        <select name="quiz_id" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white" required>
-                            @foreach($quizzes as $quiz)
-                                <option value="{{ $quiz->id }}">{{ $quiz->name }}</option>
-                            @endforeach
-                        </select>
+        @if ($errors->any())
+            <div class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Order</label>
-                        <input type="number" name="order" value="0" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200" required>
-                    </div>
-                </div>
-
-                <div class="border-t border-gray-200 pt-6"></div>
-
-                <!-- Part 1 Specific Content -->
-                <div class="space-y-8">
-                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm text-blue-700">
-                                    Enter 5 short paragraphs. Use <strong>[BLANK1]</strong> to <strong>[BLANK5]</strong> to indicate where the missing words should be.<br>
-                                    Then provide 3 choices for each blank and select the correct answer.
-                                </p>
-                            </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">There were {{ $errors->count() }} errors with your submission</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                     </div>
+                </div>
+            </div>
+        @endif
 
-                    <!-- 5 Questions Loop -->
-                    <template x-for="(item, index) in items" :key="index">
-                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 relative transition-all duration-200 hover:shadow-md">
-                            <div class="absolute top-2 right-2 text-xs font-bold text-gray-400" x-text="'#' + (index + 1)"></div>
-                            
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-1" x-text="'Paragraph ' + (index + 1)"></label>
-                                <textarea 
-                                    :name="'metadata[paragraphs][' + index + ']'" 
-                                    x-model="item.paragraph"
-                                    rows="2" 
-                                    class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 font-mono"
-                                    :placeholder="'Example: When you are at the train [BLANK' + (index + 1) + '] go to the main gate.'"
+        <form action="{{ route('admin.questions.update', $question) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            @csrf
+            @method('PUT')
+
+            <!-- Left Column: Settings -->
+            <div class="lg:col-span-1 border-r border-gray-200 pr-8">
+                <div class="sticky top-8 space-y-6">
+                    <!-- Basic Info Card -->
+                    <x-card class="bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div class="space-y-5">
+                            <h3 class="text-lg font-semibold text-gray-800 border-b border-gray-100 pb-2">Configuration</h3>
+
+                            <!-- Quiz Selection (Read-only for Edit to prevent logic break or complexity) -->
+                            <!-- Or allow change if careful. Let's allow change but warn it might reset metadata -->
+                            <div>
+                                <label for="quiz_id" class="block text-sm font-medium text-gray-700 mb-1">Quiz</label>
+                                <select 
+                                    name="quiz_id" 
+                                    id="quiz_id" 
+                                    class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white" 
                                     required
-                                ></textarea>
-                                <!-- Hidden blank key -->
-                                <input type="hidden" :name="'metadata[blank_keys][' + index + ']'" :value="'BLANK' + (index + 1)">
+                                    x-model="selectedQuizId"
+                                >
+                                    <option value="">Select Quiz</option>
+                                    @foreach($quizzes as $quiz)
+                                        <option value="{{ $quiz->id }}" data-skill="{{ $quiz->skill }}" data-part="{{ $quiz->part }}">
+                                            {{ $quiz->title }} ({{ ucfirst($quiz->skill) }} - Part {{ $quiz->part }})
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
 
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Choices (Select the correct answer)</label>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <!-- Choices -->
-                                <template x-for="(choice, cIndex) in item.choices" :key="cIndex">
-                                    <div class="relative">
-                                        <div class="flex items-center">
-                                            <input 
-                                                type="text" 
-                                                :name="'metadata[choices][' + index + '][' + cIndex + ']'"
-                                                x-model="item.choices[cIndex]"
-                                                class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                                                :class="{'bg-green-50 border-green-500 focus:border-green-500 focus:ring-green-500': item.correctIndex === cIndex && item.choices[cIndex] !== ''}"
-                                                placeholder="Choice text"
-                                                required
-                                            >
-                                            <div class="flex items-center h-full border-t border-r border-b border-gray-300 rounded-r-lg bg-gray-50 px-2">
-                                                <input 
-                                                    type="radio" 
-                                                    :name="'correct_index_' + index"
-                                                    :value="cIndex"
-                                                    x-model.number="item.correctIndex"
-                                                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 cursor-pointer"
-                                                    title="Mark as correct answer"
-                                                    required
-                                                >
-                                            </div>
+                            <!-- Set Selection -->
+                            <div>
+                                <label for="set_id" class="block text-sm font-medium text-gray-700 mb-1">Set</label>
+                                <select 
+                                    name="set_id" 
+                                    id="set_id" 
+                                    class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white disabled:bg-gray-100 disabled:text-gray-400" 
+                                    required
+                                    x-model="selectedSetId"
+                                    :disabled="!selectedQuizId || isLoadingSets"
+                                >
+                                    <option value="">Select Set</option>
+                                    <template x-for="set in sets" :key="set.id">
+                                        <option :value="set.id" x-text="set.title" :selected="set.id == selectedSetId"></option>
+                                    </template>
+                                </select>
+                                <div x-show="isLoadingSets" class="text-xs text-indigo-500 mt-1 flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Loading sets...
+                                </div>
+                            </div>
+
+                             <!-- Hidden Fields -->
+                            <input type="hidden" name="skill" :value="quizMetadata.skill">
+                            <input type="hidden" name="part" :value="quizMetadata.part">
+                            <input type="hidden" name="type" :value="questionType"> 
+
+                            <!-- Metadata Info -->
+                            <div x-show="selectedQuizId" class="p-3 bg-indigo-50 rounded-lg text-xs text-indigo-700 border border-indigo-100">
+                                <p><strong>Skill:</strong> <span x-text="quizMetadata.skill"></span></p>
+                                <p><strong>Part:</strong> <span x-text="quizMetadata.part"></span></p>
+                                <p class="mt-1 italic" x-text="questionDescription"></p>
+                            </div>
+                            
+                            <!-- Image Upload -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Image (Optional)</label>
+                                @if($question->image_path)
+                                    <div class="mb-2">
+                                        <img src="{{ Storage::url($question->image_path) }}" alt="Current Image" class="h-20 rounded border border-gray-200">
+                                    </div>
+                                @endif
+                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors duration-200">
+                                    <div class="space-y-1 text-center">
+                                        <div class="flex text-sm text-gray-600 justify-center">
+                                            <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
+                                                <span>Upload a new file</span>
+                                                <input id="image" name="image" type="file" class="sr-only">
+                                            </label>
                                         </div>
                                     </div>
-                                </template>
+                                </div>
                             </div>
-                            <!-- Hidden field to send correct answer VALUE to backend -->
-                            <input type="hidden" :name="'metadata[correct_answers][' + index + ']'" :value="item.correctIndex !== null ? item.choices[item.correctIndex] : ''">
-                            <div x-show="!item.paragraph.includes('[BLANK' + (index + 1) + ']')" class="mt-2 text-xs text-amber-600 flex items-center">
-                                <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                Warning: Paragraph is missing the <strong>[BLANK<span x-text="index + 1"></span>]</strong> placeholder.
+                            
+                            <!-- Points -->
+                            <!-- Points -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Points</label>
+                                <input type="number" name="point" value="{{ $question->point }}" min="0" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200" required>
                             </div>
                         </div>
-                    </template>
+                    </x-card>
 
-                </div>
-
-                <!-- Submit Button -->
-                <div class="flex justify-end pt-6">
-                    <x-button>
-                        Create Question
-                    </x-button>
+                    <!-- Actions -->
+                    <div class="flex gap-3 pt-4">
+                        <x-button type="submit" class="flex-1 justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
+                            Update Question
+                        </x-button>
+                        <a href="{{ route('admin.questions.index') }}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                            Cancel
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- PREVIEW TAB -->
-            <div x-show="tab === 'preview'" class="space-y-8 max-w-3xl mx-auto">
-                <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
-                    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                        <h3 class="text-xl font-bold text-gray-800">Reading Part 1 Preview</h3>
-                        <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">Student View</span>
-                    </div>
-                    
-                    <div class="space-y-8">
-                        <template x-for="(item, index) in items" :key="index">
-                            <div class="p-5 bg-white rounded-lg border border-gray-100 shadow-sm transition-all hover:shadow-md">
-                                <!-- Paragraph with Highlighted Blank -->
-                                <div class="mb-4 text-gray-800 text-lg leading-relaxed font-serif">
-                                    <span class="font-bold text-blue-500 mr-2 select-none" x-text="(index + 1) + '.'"></span>
-                                    <span x-html="renderParagraph(item.paragraph, index)"></span>
-                                </div>
+            <!-- Right Column: Question Content -->
+            <div class="lg:col-span-2 space-y-8">
+               
+               <!-- Loading State -->
+               <div x-show="isLoadingSets" class="text-center py-12">
+                    <svg class="animate-spin h-8 w-8 text-indigo-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-500">Fetching quiz context...</p>
+               </div>
 
-                                <!-- Choices -->
-                                <div class="ml-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <template x-for="(choice, cIndex) in item.choices" :key="cIndex">
-                                        <div 
-                                            class="flex items-center space-x-2 p-2 rounded border transition-colors duration-200"
-                                            :class="isCorrect(item, cIndex) ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-transparent'"
-                                        >
-                                            <div 
-                                                class="w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0"
-                                                :class="isCorrect(item, cIndex) ? 'border-green-500 bg-white' : 'border-gray-300 bg-white'"
-                                            >
-                                                <div x-show="isCorrect(item, cIndex)" class="w-3 h-3 rounded-full bg-green-500"></div>
-                                            </div>
-                                            <span 
-                                                class="text-sm font-medium truncate"
-                                                :class="isCorrect(item, cIndex) ? 'text-green-800' : 'text-gray-600'"
-                                                x-text="choice || '(Empty)'"
-                                                :title="choice"
-                                            ></span>
-                                        </div>
-                                    </template>
-                                </div>
-                                <div x-show="item.correctIndex === null" class="mt-2 ml-8 text-xs text-red-500 italic">
-                                    * No correct answer selected
-                                </div>
+               <!-- PART 1: READING (Fill in Blanks) -->
+               <template x-if="isReadingPart1">
+                    <div x-data="readingPart1(questionMetadata)">
+                        <x-card title="Part 1: Sentence Completion (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
+                            @include('admin.questions.partials.reading.part1-form')
+                            <div class="mt-8 border-t border-gray-100 pt-6">
+                                @include('admin.questions.partials.reading.part1-preview')
                             </div>
-                        </template>
+                        </x-card>
                     </div>
+               </template>
 
-                    <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end">
-                        <button type="button" @click="tab = 'edit'" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
-                            Back to Edit
-                        </button>
+               <!-- PART 2: READING (Sentence Ordering) -->
+               <template x-if="isReadingPart2">
+                    <div x-data="readingPart2(questionMetadata)">
+                        <x-card title="Part 2: Sentence Ordering (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
+                            @include('admin.questions.partials.reading.part2-form')
+                            <div class="mt-8 border-t border-gray-100 pt-6">
+                                @include('admin.questions.partials.reading.part2-preview')
+                            </div>
+                        </x-card>
                     </div>
-                </div>
+               </template>
+
+               <!-- Fallback -->
+               <div x-show="selectedQuizId && !isReadingPart1 && !isReadingPart2" class="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Form Not Available</h3>
+                    <p class="mt-1 text-sm text-gray-500">The edit form for <span class="font-bold" x-text="quizMetadata.skill + ' Part ' + quizMetadata.part"></span> is not ready yet.</p>
+               </div>
             </div>
-
         </form>
-    </x-card>
-</div>
+    </div>
 
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('questionForm', () => ({
-        tab: 'edit',
-        items: [
-            { paragraph: '', choices: ['', '', ''], correctIndex: null },
-            { paragraph: '', choices: ['', '', ''], correctIndex: null },
-            { paragraph: '', choices: ['', '', ''], correctIndex: null },
-            { paragraph: '', choices: ['', '', ''], correctIndex: null },
-            { paragraph: '', choices: ['', '', ''], correctIndex: null }
-        ],
+    <!-- SortableJS (Removed as per user request) -->
+    
+    <!-- Alpine.js Logic -->
+    <script src="{{ asset('admin/js/questions/reading-part1.js') }}"></script>
+    <script src="{{ asset('admin/js/questions/reading-part2.js') }}"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('questionForm', (question) => ({
+                selectedQuizId: question.quiz_id,
+                selectedSetId: question.sets && question.sets.length > 0 ? question.sets[0].id : '',
+                isLoadingSets: false,
+                sets: @json($sets), 
+                quizMetadata: { skill: question.skill, part: question.part },
+                questionMetadata: question.metadata || null,
 
-        updatePreview() {
-            // Logic handled by reactivity
-        },
+                init() {
+                    this.$nextTick(() => {
+                        this.updateQuizMetadata();
+                        console.log(question.sets);
+                        // Force data type consistency (ensure ID is compatible with select option values)
+                        if (question.sets && question.sets.length > 0) {
+                            let setId = question.sets[0].id;
+                            this.selectedSetId = setId;
+                        } else {
+                            console.warn('No sets found in question data');
+                        }
+                    });
 
-        renderParagraph(text, index) {
-            if (!text) return '<span class="text-gray-400 italic">Start typing paragraph...</span>';
-            const blankKey = '[BLANK' + (index + 1) + ']';
-            
-            if (text.includes(blankKey)) {
-                return text.replace(
-                    blankKey, 
-                    `<span class="inline-flex items-center justify-center min-w-[60px] h-8 px-3 mx-1 text-sm font-bold text-blue-600 bg-blue-50 border-b-2 border-blue-400 rounded-t whitespace-nowrap select-none ring-2 ring-transparent transition-all">
-                        ${blankKey}
-                    </span>`
-                );
-            }
-            return text;
-        },
+                    this.$watch('selectedQuizId', (value) => {
+                        if (value && value != question.quiz_id) {
+                            this.fetchSets(value);
+                            this.updateQuizMetadata();
+                            this.questionMetadata = null; 
+                        } else if (value == question.quiz_id) {
+                             this.questionMetadata = question.metadata;
+                             if (question.sets && question.sets.length > 0) {
+                                this.selectedSetId = question.sets[0].id;
+                                this.sets = @json($sets);
+                             }
+                        }
+                    });
+                },
 
-        isCorrect(item, choiceIndex) {
-            return item.correctIndex === choiceIndex && item.choices[choiceIndex] !== '';
-        }
-    }));
-});
-</script>
+                updateQuizMetadata() {
+                    const select = document.getElementById('quiz_id');
+                    if (select && select.selectedIndex >= 0) {
+                        const option = select.options[select.selectedIndex];
+                        if (option.dataset.skill) {
+                            this.quizMetadata.skill = option.dataset.skill;
+                            this.quizMetadata.part = parseInt(option.dataset.part);
+                        }
+                    }
+                },
+
+                fetchSets(quizId) {
+                    this.isLoadingSets = true;
+                    this.sets = []; 
+                    this.selectedSetId = ''; 
+
+                    fetch(`/admin/quizzes/${quizId}/sets`)
+                        .then(response => response.json())
+                        .then(data => {
+                            this.sets = data.sets;
+                            if (data.quiz) {
+                                this.quizMetadata.skill = data.quiz.skill;
+                                this.quizMetadata.part = parseInt(data.quiz.part);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching sets:', error);
+                        })
+                        .finally(() => {
+                            this.isLoadingSets = false;
+                        });
+                },
+
+                get isReadingPart1() {
+                    return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 1;
+                },
+
+                get isReadingPart2() {
+                    return this.quizMetadata.skill === 'reading' && this.quizMetadata.part === 2;
+                },
+
+                get questionType() {
+                    if (this.isReadingPart1) return 'fill_in_blanks_mc';
+                    if (this.isReadingPart2) return 'sentence_ordering';
+                    return 'unknown';
+                },
+
+                get questionDescription() {
+                    if (this.isReadingPart1) return 'Fill in the blanks (Multiple Choice)';
+                    if (this.isReadingPart2) return 'Reorder the sentenes to form a paragraph';
+                    return '';
+                }
+            }));
+        });
+    </script>
 @endsection

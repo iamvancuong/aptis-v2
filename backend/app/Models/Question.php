@@ -34,7 +34,7 @@ class Question extends Model
 
     public function sets(): BelongsToMany
     {
-        return $this->belongsToMany(Set::class);
+        return $this->belongsToMany(Set::class, 'set_question');
     }
 
     public function attemptAnswers(): HasMany
