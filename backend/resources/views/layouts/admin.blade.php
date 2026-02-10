@@ -40,7 +40,7 @@
                x-cloak>
             
             <!-- Sidebar Header -->
-            <div class="flex items-center justify-between h-16 px-4 border-b">
+            <div class="flex items-center justify-between h-17 px-4 shadow-[0_1px_0_rgba(0,0,0,0.08)]">
                 <h2 class="text-xl font-bold text-blue-600 overflow-hidden whitespace-nowrap transition-all duration-300"
                     :class="{'w-0 opacity-0': isDesktopCollapsed, 'w-auto opacity-100': !isDesktopCollapsed}">
                     Admin Panel
