@@ -49,7 +49,10 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
 
 // Admin routes
 Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', fn () => view('admin.dashboard'))->name('dashboard');
+    Route::get('/', function () {
+        return redirect()->route('admin.dashboard');
+    });
+    Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
     Route::resource('quizzes', QuizController::class);
     Route::resource('sets', AdminSetController::class);
 

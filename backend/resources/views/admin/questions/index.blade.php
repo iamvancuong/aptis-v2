@@ -21,7 +21,7 @@
             <!-- Quiz Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Quiz</label>
-                <select name="quiz_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <select name="quiz_id" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white">
                     <option value="">All Quizzes</option>
                     @foreach($quizzes as $quiz)
                         <option value="{{ $quiz->id }}" {{ request('quiz_id') == $quiz->id ? 'selected' : '' }}>
@@ -34,7 +34,7 @@
             <!-- Skill Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Skill</label>
-                <select name="skill" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <select name="skill" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white">
                     <option value="">All Skills</option>
                     <option value="reading" {{ request('skill') == 'reading' ? 'selected' : '' }}>Reading</option>
                     <option value="listening" {{ request('skill') == 'listening' ? 'selected' : '' }}>Listening</option>
@@ -45,7 +45,7 @@
             <!-- Part Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Part</label>
-                <select name="part" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <select name="part" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white">
                     <option value="">All Parts</option>
                     <option value="1" {{ request('part') == '1' ? 'selected' : '' }}>Part 1</option>
                     <option value="2" {{ request('part') == '2' ? 'selected' : '' }}>Part 2</option>
@@ -64,31 +64,45 @@
     </x-card>
 
     <!-- Questions Table -->
-    <x-card>
-        <x-datatable 
-            :data="$questions"
-            :perPageOptions="[10, 20, 50]"
-        >
-            <x-slot name="header">
-                <x-datatable.header>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skill</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Part</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content Preview</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </x-datatable.header>
-            </x-slot>
+    <!-- Questions Table -->
+    <x-datatable 
+        :data="$questions"
+        :perPageOptions="[10, 20, 50]"
+    >
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Set</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skill</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Part</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
 
+        <tbody class="bg-white divide-y divide-gray-200">
             @forelse($questions as $question)
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {{ ($questions->currentPage() - 1) * $questions->perPage() + $loop->iteration }}
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-900">
-                        {{ $question->quiz->name }}
+                        {{ $question->quiz->title }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        @if($question->sets->isNotEmpty())
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($question->sets as $set)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                        {{ $set->title }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @else
+                            <span class="text-gray-400 italic">No Set</span>
+                        @endif
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         <span class="px-2 py-1 text-xs font-semibold rounded-full
@@ -105,32 +119,10 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {{ str_replace('_', ' ', ucfirst($question->type)) }}
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">
-                        @if($question->type === 'fill_in_blanks_mc')
-                            {{ Str::limit($question->metadata['paragraphs'][0] ?? 'N/A', 50) }}
-                        @elseif($question->type === 'sentence_ordering')
-                            {{ Str::limit($question->metadata['sentences'][0] ?? 'N/A', 50) }}
-                        @elseif($question->type === 'text_question_match')
-                            {{ count($question->metadata['items'] ?? []) }} texts, {{ count($question->metadata['options'] ?? []) }} questions
-                        @elseif($question->type === 'paragraph_heading_match')
-                            {{ count($question->metadata['paragraphs'] ?? []) }} paragraphs
-                        @else
-                            {{ Str::limit($question->stem ?? 'N/A', 50) }}
-                        @endif
-                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
                         {{ $question->point }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <!-- Preview Button -->
-                        <button 
-                            onclick="openPreview({{ $question->id }})"
-                            class="inline-flex items-center px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 transition"
-                            title="Preview"
-                        >
-                            👁️
-                        </button>
-
                         <!-- Edit Button -->
                         <a 
                             href="{{ route('admin.questions.edit', $question) }}" 
@@ -160,36 +152,7 @@
                     </td>
                 </tr>
             @endforelse
-        </x-datatable>
-    </x-card>
+        </tbody>
+    </x-datatable>
 </div>
-
-<!-- Preview Modal (Placeholder for now) -->
-<div id="previewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-    <div class="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Question Preview</h2>
-            <button onclick="closePreview()" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-        <div id="previewContent">
-            Loading...
-        </div>
-    </div>
-</div>
-
-<script>
-function openPreview(questionId) {
-    // TODO: Implement preview via AJAX
-    document.getElementById('previewModal').classList.remove('hidden');
-    document.getElementById('previewContent').innerHTML = 'Preview for question ' + questionId + ' (Coming soon)';
-}
-
-function closePreview() {
-    document.getElementById('previewModal').classList.add('hidden');
-}
-</script>
 @endsection

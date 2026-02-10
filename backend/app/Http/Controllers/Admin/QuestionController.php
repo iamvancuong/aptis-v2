@@ -26,6 +26,13 @@ class QuestionController extends Controller
     public function index(Request $request)
     {
         $questions = $this->questionService->getQuestions($request->all());
+        // Load sets for display in index
+        if ($questions instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+             $questions->getCollection()->each(function ($question) {
+                 $question->load('sets');
+             });
+        }
+
         $quizzes = Quiz::orderBy('name')->get();
 
         return view('admin.questions.index', compact('questions', 'quizzes'));
