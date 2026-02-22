@@ -48,7 +48,7 @@ class QuestionService
     /**
      * Create a question and handle attachments.
      */
-    public function createQuestion(array $data, ?UploadedFile $image = null, ?int $setId = null): Question
+    public function createQuestion(array $data, ?UploadedFile $audio = null, ?array $speakerAudio = null, ?int $setId = null): Question
     {
         // Resolve Part Handler
         $quiz = Quiz::findOrFail($data['quiz_id']); // Ensure we have the quiz to get skill/part if needed, or use input data
@@ -74,9 +74,23 @@ class QuestionService
             $data['order'] = $maxOrder !== null ? $maxOrder + 1 : 0;
         }
 
-        // Handle image upload
-        if ($image) {
-            $data['image_path'] = $image->store('questions', 'public');
+        // Handle audio upload (single file for Parts 1, 3, 4)
+        if ($audio) {
+            $data['audio_path'] = $audio->store('questions/audio', 'public');
+        }
+
+        // Handle speaker audio (Part 2: 4 separate files)
+        if ($speakerAudio && is_array($speakerAudio)) {
+            $audioPaths = [];
+            foreach ($speakerAudio as $index => $file) {
+                if ($file) {
+                    $audioPaths[$index] = $file->store('questions/audio/speakers', 'public');
+                }
+            }
+            // Store audio paths in metadata
+            if (!empty($audioPaths)) {
+                $data['metadata']['audio_files'] = $audioPaths;
+            }
         }
 
         // Create question
@@ -93,7 +107,7 @@ class QuestionService
     /**
      * Update a question and handle attachments.
      */
-    public function updateQuestion(Question $question, array $data, ?UploadedFile $image = null): bool
+    public function updateQuestion(Question $question, array $data, ?UploadedFile $audio = null, ?array $speakerAudio = null): bool
     {
         // Resolve Part Handler to format metadata
         try {
@@ -107,13 +121,41 @@ class QuestionService
             // Log warning or ignore if no handler found
         }
 
-        // Handle image upload
-        if ($image) {
-            // Delete old image
-            if ($question->image_path) {
-                Storage::disk('public')->delete($question->image_path);
+        // Handle audio upload
+        if ($audio) {
+            // Delete old audio
+            if ($question->audio_path) {
+                Storage::disk('public')->delete($question->audio_path);
             }
-            $data['image_path'] = $image->store('questions', 'public');
+            $data['audio_path'] = $audio->store('questions/audio', 'public');
+        }
+
+        // Handle speaker audio (Part 2: 4 separate files)
+        if ($speakerAudio && is_array($speakerAudio)) {
+            // Get existing audio files from metadata
+            $existingAudioFiles = $question->metadata['audio_files'] ?? [];
+            
+            $audioPaths = [];
+            foreach ($speakerAudio as $index => $file) {
+                if ($file) {
+                    // Delete old file if exists
+                    if (isset($existingAudioFiles[$index])) {
+                        Storage::disk('public')->delete($existingAudioFiles[$index]);
+                    }
+                    // Store new file
+                    $audioPaths[$index] = $file->store('questions/audio/speakers', 'public');
+                } else {
+                    // Keep existing file if no new upload
+                    if (isset($existingAudioFiles[$index])) {
+                        $audioPaths[$index] = $existingAudioFiles[$index];
+                    }
+                }
+            }
+            
+            // Update metadata with new audio paths
+            if (!empty($audioPaths)) {
+                $data['metadata']['audio_files'] = $audioPaths;
+            }
         }
 
         $updated = $this->questionRepository->update($question, $data);
@@ -134,6 +176,11 @@ class QuestionService
         // Delete image
         if ($question->image_path) {
             Storage::disk('public')->delete($question->image_path);
+        }
+
+        // Delete audio
+        if ($question->audio_path) {
+            Storage::disk('public')->delete($question->audio_path);
         }
 
         return $this->questionRepository->delete($question);

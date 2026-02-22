@@ -21,12 +21,25 @@ class SetController extends Controller
             ->where('is_published', true)
             ->firstOrFail();
 
-        // Get all sets for this quiz
+        // Get all sets for this quiz with question counts
         $sets = $quiz->sets()
             ->where('is_public', true)
+            ->withCount('questions')
             ->orderBy('order')
             ->get();
 
         return view('sets.index', compact('skill', 'part', 'quiz', 'sets'));
+    }
+
+    /**
+     * Display set details with questions.
+     */
+    public function show(Set $set)
+    {
+        $set->load(['quiz', 'questions' => function ($query) {
+            $query->orderBy('order');
+        }]);
+
+        return view('sets.show', compact('set'));
     }
 }

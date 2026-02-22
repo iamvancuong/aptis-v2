@@ -15,6 +15,7 @@ class AttemptAnswer extends Model
         'is_correct',
         'score',
         'feedback',
+        'grading_status',
     ];
 
     protected $casts = [

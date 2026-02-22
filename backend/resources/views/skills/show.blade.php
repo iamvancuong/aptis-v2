@@ -19,7 +19,7 @@
                 <h3 class="text-lg font-semibold">Thi thử {{ ucfirst($skill) }}</h3>
                 <p class="text-gray-600 text-sm mt-1">Thi thử toàn bộ kỹ năng với timer và chấm điểm</p>
             </div>
-            <x-button href="{{ route('mock-test.start', $skill) }}" variant="primary">
+            <x-button href="{{ route('mock-test.create', $skill) }}" variant="primary">
                 Bắt đầu thi thử
             </x-button>
         </div>

@@ -13,6 +13,7 @@ class Attempt extends Model
         'skill',
         'mode',
         'set_id',
+        'mock_test_id',
         'started_at',
         'finished_at',
         'duration_seconds',
@@ -33,6 +34,11 @@ class Attempt extends Model
     public function set(): BelongsTo
     {
         return $this->belongsTo(Set::class);
+    }
+
+    public function mockTest(): BelongsTo
+    {
+        return $this->belongsTo(MockTest::class);
     }
 
     public function attemptAnswers(): HasMany

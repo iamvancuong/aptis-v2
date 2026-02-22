@@ -55,7 +55,8 @@ class QuestionController extends Controller
     {
         $this->questionService->createQuestion(
             $request->validated(),
-            $request->file('image'),
+            $request->file('audio'),
+            $request->file('speaker_audio'),
             $request->input('set_id')
         );
 
@@ -94,7 +95,8 @@ class QuestionController extends Controller
         $this->questionService->updateQuestion(
             $question,
             $request->validated(),
-            $request->file('image')
+            $request->file('audio'),
+            $request->file('speaker_audio')
         );
 
         return redirect()->route('admin.questions.index')

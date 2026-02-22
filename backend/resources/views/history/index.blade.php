@@ -35,8 +35,8 @@
                             <span class="capitalize">{{ $attempt->skill }}</span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <x-badge :variant="$attempt->mode === 'mock' ? 'warning' : 'default'">
-                                {{ $attempt->mode === 'mock' ? 'Thi thử' : 'Luyện tập' }}
+                            <x-badge :variant="$attempt->mode === 'mock_test' ? 'warning' : 'default'">
+                                {{ $attempt->mode === 'mock_test' ? 'Thi thử' : 'Luyện tập' }}
                             </x-badge>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -57,9 +57,15 @@
                             {{ $attempt->created_at->format('d/m/Y H:i') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
-                            <a href="{{ route('history.show', $attempt->id) }}" class="text-blue-600 hover:text-blue-700">
-                                Xem chi tiết
-                            </a>
+                            @if($attempt->mock_test_id)
+                                <a href="{{ route('mock-test.result', $attempt->mock_test_id) }}" class="text-blue-600 hover:text-blue-700">
+                                    Xem kết quả
+                                </a>
+                            @else
+                                <a href="{{ route('history.show', $attempt->id) }}" class="text-blue-600 hover:text-blue-700">
+                                    Xem chi tiết
+                                </a>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

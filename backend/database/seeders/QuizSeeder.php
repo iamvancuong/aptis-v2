@@ -30,13 +30,14 @@ class QuizSeeder extends Seeder
         ];
 
         foreach ($quizzes as $quiz) {
-            Quiz::create([
-                'title' => $quiz['title'],
-                'skill' => $quiz['skill'],
-                'part' => $quiz['part'],
-                'duration_minutes' => $quiz['duration_minutes'],
-                'is_published' => true,
-            ]);
+            Quiz::firstOrCreate(
+                ['skill' => $quiz['skill'], 'part' => $quiz['part']],
+                [
+                    'title' => $quiz['title'],
+                    'duration_minutes' => $quiz['duration_minutes'],
+                    'is_published' => true,
+                ]
+            );
         }
     }
 }

@@ -50,9 +50,6 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <x-card title="Quick Actions">
         <div class="space-y-2">
-            <x-button href="{{ route('admin.quizzes.create') }}" class="w-full">
-                + Create Quiz
-            </x-button>
             <x-button href="{{ route('admin.sets.create') }}" variant="secondary" class="w-full">
                 + Create Set
             </x-button>
@@ -64,9 +61,6 @@
 
     <x-card title="Management">
         <div class="space-y-2">
-            <x-button href="{{ route('admin.quizzes.index') }}" variant="secondary" class="w-full">
-                Manage Quizzes
-            </x-button>
             <x-button href="{{ route('admin.sets.index') }}" variant="secondary" class="w-full">
                 Manage Sets
             </x-button>

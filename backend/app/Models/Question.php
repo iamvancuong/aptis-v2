@@ -14,6 +14,7 @@ class Question extends Model
         'skill',
         'part',
         'type',
+        'title',
         'stem',
         'audio_path',
         'image_path',

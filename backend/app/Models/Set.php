@@ -13,12 +13,15 @@ class Set extends Model
         'title',
         'order',
         'is_public',
+        'deadline',
+        'max_attempts',
         'metadata',
     ];
 
     protected $casts = [
         'is_public' => 'boolean',
         'metadata' => 'array',
+        'deadline' => 'datetime',
     ];
 
     public function quiz(): BelongsTo

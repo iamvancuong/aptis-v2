@@ -29,16 +29,22 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
 
     // Sets
     Route::get('/skills/{skill}/part/{part}/sets', [SetController::class, 'index'])->name('sets.index');
+    Route::get('/sets/{set}', [SetController::class, 'show'])->name('sets.show');
 
-    // Practice (placeholder for now)
-    Route::get('/practice/{set}', function () {
-        return 'Practice page - coming soon';
-    })->name('practice.show');
+    // Practice
+    Route::get('/practice/{set}', [App\Http\Controllers\PracticeController::class, 'show'])->name('practice.show');
+    Route::post('/practice/{set}/attempt', [App\Http\Controllers\PracticeController::class, 'store'])->name('practice.store');
+    
+    // History
+    Route::get('/attempts', [App\Http\Controllers\AttemptController::class, 'index'])->name('attempts.index');
+    Route::get('/attempts/{attempt}', [App\Http\Controllers\AttemptController::class, 'show'])->name('attempts.show');
 
-    // Mock Test (placeholder for now)
-    Route::get('/mock-test/{skill}', function () {
-        return 'Mock Test page - coming soon';
-    })->name('mock-test.start');
+    // Mock Test
+    Route::get('/mock-test/{skill}', [App\Http\Controllers\MockTestController::class, 'create'])->name('mock-test.create');
+    Route::post('/mock-test', [App\Http\Controllers\MockTestController::class, 'start'])->name('mock-test.start');
+    Route::get('/mock-test/{mockTest}/exam', [App\Http\Controllers\MockTestController::class, 'show'])->name('mock-test.show');
+    Route::post('/mock-test/{mockTest}/submit', [App\Http\Controllers\MockTestController::class, 'submit'])->name('mock-test.submit');
+    Route::get('/mock-test/{mockTest}/result', [App\Http\Controllers\MockTestController::class, 'result'])->name('mock-test.result');
 
     // History
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
@@ -53,7 +59,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
         return redirect()->route('admin.dashboard');
     });
     Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
-    Route::resource('quizzes', QuizController::class);
+    // Route::resource('quizzes', QuizController::class); // Removed as Quizzes are seeded
     Route::resource('sets', AdminSetController::class);
 
     // User Management
@@ -69,4 +75,9 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     // Question Management (Phase 3)
     Route::get('quizzes/{quiz}/sets', [QuestionController::class, 'getSetsByQuiz'])->name('quizzes.sets');
     Route::resource('questions', QuestionController::class);
+
+    // Writing Reviews
+    Route::get('writing-reviews', [\App\Http\Controllers\Admin\WritingReviewController::class, 'index'])->name('writing-reviews.index');
+    Route::get('writing-reviews/{attempt}', [\App\Http\Controllers\Admin\WritingReviewController::class, 'show'])->name('writing-reviews.show');
+    Route::post('writing-reviews/{attemptAnswer}/grade', [\App\Http\Controllers\Admin\WritingReviewController::class, 'grade'])->name('writing-reviews.grade');
 });
