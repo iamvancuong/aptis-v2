@@ -138,11 +138,28 @@
             writingPart1Answers: [],
             writingPart2Answer: '',
             writingPart3Answers: [],
-            writingPart4Answer: '',
+            writingPart4Answers: [],
+
+            // State
+            attemptId: null,
+
+            // AI State
+            aiFeedback: {},
+            isAiLoading: {},
+            isSaving: false,
+            aiError: {},
+            aiUsageStatus: {},
+            answerIds: {},
+
+            getCsrfToken() {
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                return meta ? meta.getAttribute('content') : '';
+            },
 
             // --- Lifecycle ---
             init() {
                 this.loadQuestionState();
+                this.loadAiUsageStatus();
                 this.$watch('currentIndex', () => this.loadQuestionState());
             },
 
@@ -179,7 +196,7 @@
                     if (q.part === 1) this.writingPart1Answers = new Array(q.metadata.fields?.length || 0).fill('');
                     if (q.part === 2) this.writingPart2Answer = '';
                     if (q.part === 3) this.writingPart3Answers = new Array(q.metadata.questions?.length || 0).fill('');
-                    if (q.part === 4) this.writingPart4Answer = '';
+                    if (q.part === 4) this.writingPart4Answers = new Array(2).fill('');
                 }
             },
 
@@ -459,8 +476,8 @@
 
             submitWritingPart4() {
                 const qId = this.currentQuestion.id;
-                if (!this.writingPart4Answer.trim()) { alert('Vui lòng viết bài luận trước khi nộp.'); return; }
-                this.answers = { ...this.answers, [qId]: this.writingPart4Answer };
+                if (this.writingPart4Answers.every(a => !(a || '').trim())) { alert('Vui lòng hoàn thành cả hai nhiệm vụ.'); return; }
+                this.answers = { ...this.answers, [qId]: [...this.writingPart4Answers] };
                 this.feedback = { ...this.feedback, [qId]: { correct: null, pending: true } };
             },
 
@@ -479,7 +496,7 @@
             },
 
             // --- Unified Footer Action ---
-            handleFooterAction() {
+            async handleFooterAction() {
                 const q = this.currentQuestion;
                 const qId = q.id;
 
@@ -506,7 +523,10 @@
                             case 3: this.submitWritingPart3(); break;
                             case 4: this.submitWritingPart4(); break;
                         }
+                        // For Writing: auto-save immediately to enable AI feedback
+                        await this.submitAttempt();
                     }
+
                     return; // Stop here — show feedback first
                 }
 
@@ -552,27 +572,82 @@
             },
 
             async submitAttempt() {
+                this.isSaving = true;
                 try {
                     const response = await fetch(`{{ route('practice.store', $set->id) }}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            'X-CSRF-TOKEN': this.getCsrfToken()
                         },
                         body: JSON.stringify({
                             answers: this.answers,
-                            duration: 0
+                            duration: 0,
+                            attempt_id: this.attemptId
                         })
                     });
                     if (!response.ok) throw new Error('Failed to save attempt');
+                    const result = await response.json();
+                    this.attemptId = result.attempt_id;
+                    this.answerIds = result.answer_ids || {};
+                } finally {
+                    this.isSaving = false;
+                }
+            },
+
+            async loadAiUsageStatus() {
+                try {
+                    const response = await fetch(`{{ route('ai.usage-status') }}`);
+                    if (response.ok) {
+                        this.aiUsageStatus = await response.json();
+                    }
                 } catch (error) {
-                    console.error('Error saving attempt:', error);
+                    console.error('Error loading AI usage status:', error);
+                }
+            },
+
+            async getAiFeedback() {
+                const qId = this.currentQuestion.id;
+                const ansId = this.answerIds[qId];
+
+                if (!ansId) {
+                    alert('Bạn cần nộp bài trước khi nhận xét bằng AI.');
+                    return;
+                }
+
+                this.isAiLoading[qId] = true;
+                this.aiError[qId] = null;
+
+                try {
+                    const response = await fetch(`/ai/grade-writing/${ansId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': this.getCsrfToken()
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        this.aiError[qId] = result.message || 'Lỗi khi gọi AI';
+                        return;
+                    }
+
+                    this.aiFeedback[qId] = result.review;
+                    await this.loadAiUsageStatus();
+                } catch (error) {
+                    console.error('Error fetching AI feedback:', error);
+                    this.aiError[qId] = 'Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại sau.';
+                } finally {
+                    this.isAiLoading[qId] = false;
                 }
             },
 
             resetPractice() {
                 this.answers = {};
                 this.feedback = {};
+                this.attemptId = null;
                 // Reading
                 this.part1Answers = {};
                 this.part2Slots = [];
@@ -588,7 +663,7 @@
                 this.writingPart1Answers = [];
                 this.writingPart2Answer = '';
                 this.writingPart3Answers = [];
-                this.writingPart4Answer = '';
+                this.writingPart4Answers = [];
                 this.currentIndex = 0;
                 this.step = 'practice';
                 this.loadQuestionState();

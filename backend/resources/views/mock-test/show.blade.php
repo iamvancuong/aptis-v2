@@ -191,6 +191,7 @@ function mockTestExam() {
     return {
         // Core state
         sections: sectionsData,
+        isFullTest: true,
         currentSectionIndex: 0,
         timeRemaining: {{ $mockTest->duration_minutes }} * 60,
         timerInterval: null,
@@ -226,7 +227,7 @@ function mockTestExam() {
         writingPart1Answers: [],
         writingPart2Answer: '',
         writingPart3Answers: [],
-        writingPart4Answer: '',
+        writingPart4Answers: [],
 
         init() {
             // Start timer
@@ -336,7 +337,7 @@ function mockTestExam() {
                         if (this.writingPart3Answers.some(a => (a || '').trim())) this.answers[q.id] = [...this.writingPart3Answers];
                         break;
                     case 4:
-                        if ((this.writingPart4Answer || '').trim()) this.answers[q.id] = this.writingPart4Answer;
+                        if (this.writingPart4Answers.some(a => (a || '').trim())) this.answers[q.id] = [...this.writingPart4Answers];
                         break;
                 }
             }
@@ -434,7 +435,8 @@ function mockTestExam() {
                 if (q.part === 2) this.writingPart2Answer = (saved && typeof saved === 'string') ? saved : '';
                 if (q.part === 3) this.writingPart3Answers = saved && Array.isArray(saved)
                     ? [...saved] : new Array(q.metadata.questions?.length || 0).fill('');
-                if (q.part === 4) this.writingPart4Answer = (saved && typeof saved === 'string') ? saved : '';
+                if (q.part === 4) this.writingPart4Answers = saved && Array.isArray(saved)
+                    ? [...saved] : new Array(2).fill('');
             }
         },
 
@@ -570,7 +572,7 @@ function mockTestExam() {
         },
         submitWritingPart4() {
             const qId = this.currentQuestion.id;
-            this.answers = { ...this.answers, [qId]: this.writingPart4Answer };
+            this.answers = { ...this.answers, [qId]: [...this.writingPart4Answers] };
             this.feedback = { ...this.feedback, [qId]: { correct: null, pending: true } };
         },
 

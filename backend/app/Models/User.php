@@ -26,6 +26,7 @@ class User extends Authenticatable
         'max_devices',
         'violation_count',
         'expires_at',
+        'ai_reset_version',
     ];
 
     /**
@@ -65,6 +66,11 @@ class User extends Authenticatable
     public function writingReviews()
     {
         return $this->hasMany(WritingReview::class, 'reviewer_id');
+    }
+
+    public function writingAiUsages()
+    {
+        return $this->hasMany(WritingAiUsage::class);
     }
 
     public function isAdmin(): bool

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Set;
 use App\Services\GradingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PracticeController extends Controller
 {
@@ -58,18 +59,42 @@ class PracticeController extends Controller
         $totalPossiblePoints = $result['total_possible'];
         $finalScore = $result['percentage'];
 
-        $attempt = \App\Models\Attempt::create([
-            'user_id' => $user->id,
-            'skill' => $set->quiz->skill ?? 'reading',
-            'mode' => 'practice',
-            'set_id' => $set->id,
-            'started_at' => now()->subSeconds($request->input('duration', 0)),
-            'finished_at' => now(),
-            'duration_seconds' => $request->input('duration', 0),
-            'score' => $finalScore,
-        ]);
+        // Create or Update Attempt
+        $attempt = DB::transaction(function () use ($user, $set, $finalScore, $request, $result) {
+            $attemptId = $request->input('attempt_id');
+            $attempt = null;
 
-        $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+            if ($attemptId) {
+                $attempt = \App\Models\Attempt::where('id', $attemptId)
+                    ->where('user_id', $user->id)
+                    ->first();
+            }
+
+            if ($attempt) {
+                $attempt->update([
+                    'duration_seconds' => $request->input('duration', 0),
+                    'score' => $finalScore,
+                    'finished_at' => now(),
+                ]);
+                // Refresh answers
+                $attempt->attemptAnswers()->delete();
+            } else {
+                $attempt = \App\Models\Attempt::create([
+                    'user_id' => $user->id,
+                    'skill' => $set->quiz->skill ?? 'reading',
+                    'mode' => 'practice',
+                    'set_id' => $set->id,
+                    'started_at' => now()->subSeconds($request->input('duration', 0)),
+                    'finished_at' => now(),
+                    'duration_seconds' => $request->input('duration', 0),
+                    'score' => $finalScore,
+                ]);
+            }
+
+            $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+            
+            return $attempt;
+        });
 
         // Message Logic
         $message = 'Hoàn thành!';
@@ -86,7 +111,9 @@ class PracticeController extends Controller
             'success' => true,
             'redirect' => $redirectUrl,
             'score' => $finalScore,
-            'message' => $message
+            'message' => $message,
+            'attempt_id' => $attempt->id,
+            'answer_ids' => $attempt->refresh()->attemptAnswers->pluck('id', 'question_id')->toArray()
         ]);
     }
 }

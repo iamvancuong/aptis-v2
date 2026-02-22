@@ -478,10 +478,22 @@ class SetSeeder extends Seeder
     private function createWritingPart4(Set $set, Quiz $quiz, $overridePart = null)
     {
         $metadata = [
-            'topic' => "The importance of regular exercise",
-            'instructions' => "Write an essay for the club newsletter about why regular exercise is important for health and well-being. Include your personal experience.",
-            'word_limit' => ['min' => 200, 'max' => 250],
-            'sample_answer' => "Regular exercise plays a vital role in maintaining both physical and mental health. In today's sedentary lifestyle, finding time to move is more important than ever.\n\nFirstly, exercise helps prevent chronic diseases such as heart disease, diabetes, and obesity. By keeping our bodies active, we strengthen our immune system and improve cardiovascular health. For example, since I started swimming three times a week, I have felt much more energetic and rarely get sick.\n\nSecondly, exercise is a powerful mood booster. It releases endorphins, which are natural stress relievers. Many people find that a short run or a gym session helps them clear their mind after a stressful day at work. Personally, I find that playing tennis helps me forget my worries and focus on the game.\n\nIn conclusion, regular physical activity is essential for a healthy and happy life. It not only keeps us fit but also improves our mental well-being. Everyone should improved it their daily routine."
+            'context' => "You are a member of a local environmental group. You received this email from the secretary of the group.",
+            'email' => [
+                'greeting' => "Dear Member,",
+                'body' => "I am writing to inform you that we are planning to organize a 'Green Week' in our neighborhood next month. We would like to have some activities that involve everyone in the community. What activities do you think we should include, and how can we get more people to join us? Please let me know your thoughts.",
+                'sign_off' => "Best regards,\nThe Secretary"
+            ],
+            'task1' => [
+                'instruction' => "Write an email to a friend who is also a member of the group. Tell your friend about the email you received and suggest some activities. Write about 50 words. You have 10 minutes.",
+                'word_limit' => ['min' => 40, 'max' => 50],
+                'sample_answer' => "Hi Sam! Did you see the secretary's email about 'Green Week'? I'm thinking we could suggest a community garden project and a plastic recycling workshop. It would be a great way to involve everyone and improve our neighborhood. Let me know what you think!"
+            ],
+            'task2' => [
+                'instruction' => "Write an email to the secretary. Explain your suggestions for 'Green Week' and how to attract more participants. Write 120-150 words. You have 20 minutes.",
+                'word_limit' => ['min' => 120, 'max' => 150],
+                'sample_answer' => "Dear Secretary,\n\nThank you for the email regarding the upcoming 'Green Week'. I think this is a fantastic initiative for our community.\n\nI would like to suggest two main activities. First, a community garden project where residents can plant local flowers and vegetables. This would provide a shared space for people to gather and learn about sustainability. Second, a series of workshops on plastic recycling and composting might be very beneficial.\n\nTo attract more participants, I suggest we promote the event through social media and local school newsletters. We could also offer small incentives, like 'green' certificates or eco-friendly prizes, for those who participate in multiple activities. Additionally, creating a fun, family-oriented atmosphere with music and refreshments would likely encourage more families to join.\n\nI hope these suggestions are helpful. I look forward to hearing more about the plans.\n\nBest regards,\n[Your Name]"
+            ]
         ];
 
         $part = $overridePart ?? $quiz->part;
@@ -491,9 +503,9 @@ class SetSeeder extends Seeder
             'skill' => $quiz->skill,
             'part' => $part,
             'type' => 'writing-part-4',
-            'title' => "Writing Part 4 - Essay",
-            'stem' => "Write an essay on the topic below.",
-            'point' => 10,
+            'title' => "Writing Part 4 - Email Chain",
+            'stem' => "Read the email and complete the two tasks.",
+            'point' => 20, // Sum of points for Part 4 & 5
             'order' => 4,
             'metadata' => $metadata,
         ]);

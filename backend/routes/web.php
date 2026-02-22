@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\SetController as AdminSetController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AiGradingController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\SetController;
 use App\Http\Controllers\SkillController;
@@ -49,6 +50,10 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     // History
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
     Route::get('/history/{attempt}', [HistoryController::class, 'show'])->name('history.show');
+
+    // AI Grading
+    Route::post('/ai/grade-writing/{attemptAnswer}', [AiGradingController::class, 'grade'])->name('ai.grade-writing');
+    Route::get('/ai/usage-status', [AiGradingController::class, 'getUsageStatus'])->name('ai.usage-status');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

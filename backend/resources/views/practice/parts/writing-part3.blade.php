@@ -88,6 +88,10 @@
                         </div>
                     </div>
                 </template>
+                {{-- AI Feedback --}}
+                <template x-if="!isFullTest">
+                    @include('practice.parts._ai_feedback')
+                </template>
             </div>
         </template>
     </div>

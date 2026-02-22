@@ -16,12 +16,14 @@ class AttemptAnswer extends Model
         'score',
         'feedback',
         'grading_status',
+        'ai_metadata',
     ];
 
     protected $casts = [
         'answer' => 'array',
         'is_correct' => 'boolean',
         'score' => 'decimal:2',
+        'ai_metadata' => 'array',
     ];
 
     public function attempt(): BelongsTo
