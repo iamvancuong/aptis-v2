@@ -41,7 +41,8 @@ class AiService
                         ['role' => 'user', 'content' => $userPrompt],
                     ],
                     'response_format' => ['type' => 'json_object'],
-                    'temperature' => 0.7,
+                    'temperature' => 0.3,
+                    'max_tokens' => 800,
                 ]);
 
             if ($response->failed()) {
@@ -73,23 +74,57 @@ class AiService
     protected function getSystemPrompt(): string
     {
         return <<<PROMPT
-You are a certified APTIS Writing examiner.
+You are an official APTIS Writing examiner.
 
-Evaluate student responses strictly according to APTIS criteria:
-1. Grammar accuracy
-2. Vocabulary range and appropriacy
-3. Coherence and organization (especially for Part 4)
-4. Task achievement (answering all sub-questions)
+You MUST return a valid JSON object.
+Return JSON only.
+Do NOT use markdown.
+Do NOT include explanations outside JSON.
 
-Rules:
-- Be constructive and concise.
-- Only point out significant grammar mistakes.
-- Provide clear, actionable explanations.
-- Do not repeat the full student text.
-- If the student provided multiple answers (Part 1 or 3), provide a summary feedback that covers all of them.
-- Limit improved sample to maximum 150 words.
+All scores must be integers from 0 to 5.
 
-Return ONLY valid JSON.
+CRITICAL INSTRUCTION:
+Depending on the Part, the "part_responses" array MUST contain exactly the number of objects corresponding to the number of questions/inputs:
+- Part 1: Exactly 5 objects.
+- Part 2: Exactly 1 object.
+- Part 3: Exactly 3 objects.
+- Part 4: Exactly 2 objects (Informal Email, then Formal Email).
+
+Follow exactly this structure:
+
+{
+  "schema_version": 3,
+  "part": number,
+  "scores": {
+    "grammar": integer,
+    "vocabulary": integer,
+    "coherence": integer,
+    "task_fulfillment": integer
+  },
+  "overall_score": integer,
+  "feedback": {
+    "grammar": string,
+    "vocabulary": string,
+    "coherence": string,
+    "task_fulfillment": string
+  },
+  "part_responses": [
+    {
+      "input_index": 0,
+       "label": "string (e.g., 'Câu 1', 'Informal Email')",
+       "improved_sample": "string",
+       "detailed_corrections": [
+         {
+           "original": "string",
+           "corrected": "string",
+           "explanation": "string"
+         }
+       ]
+    }
+  ],
+  "key_mistakes": ["string"],
+  "suggestions": ["string"]
+}
 PROMPT;
     }
 
@@ -120,7 +155,12 @@ PROMPT;
             $wordLimit = ($wordLimit['min'] ?? 0) . ' - ' . ($wordLimit['max'] ?? 'N/A') . ' words';
         }
         $question = $data['question_stem'];
-        $studentText = is_array($data['student_answer']) ? json_encode($data['student_answer'], JSON_UNESCAPED_UNICODE) : $data['student_answer'];
+        
+        $studentText = is_array($data['student_answer']) ? json_encode($data['student_answer'], JSON_UNESCAPED_UNICODE) : (string) $data['student_answer'];
+        if (mb_strlen($studentText) > 1000) {
+            $studentText = mb_substr($studentText, 0, 1000) . '... [truncated]';
+        }
+        
         $partRequirements = $this->getPartRequirements($part);
 
         return <<<PROMPT
@@ -136,68 +176,92 @@ Task (Question):
 
 Student Response:
 {$studentText}
-
-Return response strictly in this JSON format:
-{
-  "overall_score_estimate": "Band estimate (e.g., A1, A2, B1, B2, C). Base this on the average of all sub-answers if applicable.",
-  "grammar_feedback": [
-    {
-      "original": "segment with error",
-      "correction": "corrected segment",
-      "explanation": "why it was wrong"
-    }
-  ],
-  "vocabulary_feedback": "Evaluate the range and level of vocabulary. (max 80 words)",
-  "coherence_feedback": "Evaluate the logical flow and structure. For Part 4, specifically mention tone/register. (max 80 words)",
-  "task_fulfillment_feedback": "Did the student answer all questions and follow the word count? (max 80 words)",
-  "improved_sample_paragraph": "Provide ONE high-quality version of the response. For Part 4, only provide an improved version of the Formal Email (second task)."
-}
 PROMPT;
     }
 
     protected function getMockResponse(int $part = 1): array
     {
-        $feedbackByPart = [
-            1 => [
-                'overall_score_estimate' => 'A1 (Mock)',
-                'grammar_feedback' => [['original' => 'i is happy', 'correction' => 'I am happy', 'explanation' => 'Subject-verb agreement.']],
-                'vocabulary_feedback' => 'Basic vocabulary used correctly for personal questions.',
-                'coherence_feedback' => 'Answers are short and direct as required.',
-                'task_fulfillment_feedback' => 'All 5 questions answered briefly.',
-                'improved_sample_paragraph' => 'I am a student. I live in Hanoi. I like playing football with my friends on weekends.'
+        $mockFeedback = [
+            "schema_version" => 3,
+            "part" => $part,
+            "scores" => [
+                "grammar" => 3,
+                "vocabulary" => 4,
+                "coherence" => 3,
+                "task_fulfillment" => 4
             ],
-            2 => [
-                'overall_score_estimate' => 'A2 (Mock)',
-                'grammar_feedback' => [['original' => 'I join club because I like sing.', 'correction' => 'I joined the club because I like singing.', 'explanation' => 'Punctuation and gerund usage.']],
-                'vocabulary_feedback' => 'Good attempt at describing interests.',
-                'coherence_feedback' => 'Single paragraph is structured logically.',
-                'task_fulfillment_feedback' => 'Met the 20-30 words requirement.',
-                'improved_sample_paragraph' => 'I decided to join this social club because I am very interested in photography. I hope to meet new people and improve my skills during the weekends.'
+            "overall_score" => 14,
+            "feedback" => [
+                "grammar" => "Some minor tense issues.",
+                "vocabulary" => "Good word range.",
+                "coherence" => "Logical flow.",
+                "task_fulfillment" => "All task requirements covered."
             ],
-            3 => [
-                'overall_score_estimate' => 'B1 (Mock)',
-                'grammar_feedback' => [['original' => 'The event was great, i enjoy it.', 'correction' => 'The event was great; I enjoyed it.', 'explanation' => 'Past tense consistency.']],
-                'vocabulary_feedback' => 'Appropriate conversational vocabulary.',
-                'coherence_feedback' => 'Good use of linking words between the three responses.',
-                'task_fulfillment_feedback' => 'All 3 social network segments are well-addressed.',
-                'improved_sample_paragraph' => "1. That sounds interesting! 2. I'm looking forward to it. 3. I hope we can all go together next time."
-            ],
-            4 => [
-                'overall_score_estimate' => 'B2 (Mock)',
-                'grammar_feedback' => [['original' => 'I write to complain...', 'correction' => 'I am writing to complain...', 'explanation' => 'Present continuous for formal correspondence.']],
-                'vocabulary_feedback' => 'Clear distinction between casual words (thanks) and formal words (appreciate).',
-                'coherence_feedback' => 'Strong transition between the informal email and the formal letter structure.',
-                'task_fulfillment_feedback' => 'Both email tasks completed with appropriate word counts and tones.',
-                'improved_sample_paragraph' => "Dear Sir/Madam, I am writing to formally express my dissatisfaction regarding the recent cancellation of the club meeting. This event was highly anticipated by all members..."
-            ]
+            "key_mistakes" => ["Verb tense inconsistency"],
+            "suggestions" => ["Review past tense usage"]
         ];
 
+        if ($part === 1) {
+            $mockFeedback['part_responses'] = [];
+            for ($i = 0; $i < 5; $i++) {
+                $mockFeedback['part_responses'][] = [
+                    'input_index' => $i,
+                    'label' => "Câu " . ($i + 1),
+                    'improved_sample' => "This is a much better sample answer for question " . ($i + 1) . ".",
+                    'detailed_corrections' => $i === 0 ? [
+                        [ "original" => "i am student", "corrected" => "I am a student.", "explanation" => "Missing article and capitalization." ],
+                    ] : []
+                ];
+            }
+            $mockFeedback['feedback']['task_fulfillment'] = "Answered all 5 questions briefly and directly.";
+        } else if ($part === 3) {
+            $mockFeedback['part_responses'] = [];
+            for ($i = 0; $i < 3; $i++) {
+                $mockFeedback['part_responses'][] = [
+                    'input_index' => $i,
+                    'label' => "Response " . ($i + 1),
+                    'improved_sample' => "That sounds interesting! I'm looking forward to it.",
+                    'detailed_corrections' => []
+                ];
+            }
+        } else if ($part === 4) {
+             $mockFeedback['part_responses'] = [
+                [
+                    'input_index' => 0,
+                    'label' => "Informal Email",
+                    'improved_sample' => "Hey! Just wanted to let you know the meeting is canceled. Bummer, right?",
+                    'detailed_corrections' => []
+                ],
+                [
+                    'input_index' => 1,
+                    'label' => "Formal Email",
+                    'improved_sample' => "Dear Sir/Madam, I am writing to formally express my dissatisfaction regarding the recent cancellation.",
+                    'detailed_corrections' => [
+                        [
+                            "original" => "I write to complain...",
+                            "corrected" => "I am writing to complain...",
+                            "explanation" => "Present continuous is better for formal correspondence."
+                        ]
+                    ]
+                ]
+            ];
+        } else {
+             $mockFeedback['part_responses'] = [
+                [
+                    'input_index' => 0,
+                    'label' => "Câu trả lời",
+                    'improved_sample' => "I decided to join this social club because I am very interested in photography.",
+                    'detailed_corrections' => []
+                ]
+            ];
+        }
+
         return [
-            'feedback' => $feedbackByPart[$part] ?? $feedbackByPart[1],
+            'feedback' => $mockFeedback,
             'usage' => [
-                'input_tokens' => 0,
-                'output_tokens' => 0,
-                'total_tokens' => 0,
+                'input_tokens' => 150,
+                'output_tokens' => 200,
+                'total_tokens' => 350,
                 'model' => 'mock-mode'
             ]
         ];

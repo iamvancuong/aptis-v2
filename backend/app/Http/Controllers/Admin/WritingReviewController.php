@@ -18,20 +18,23 @@ class WritingReviewController extends Controller
     {
         $filter = $request->get('filter', 'all');
 
-        $query = AttemptAnswer::whereHas('question', function ($q) {
-            $q->where('skill', 'writing');
-        })
-        ->with(['attempt.user', 'attempt.set.quiz', 'question', 'writingReview.reviewer']);
+        $query = Attempt::where('skill', 'writing')
+            ->where('mode', 'mock_test')
+            ->with(['user', 'set.quiz', 'attemptAnswers.writingReview', 'attemptAnswers.question']);
 
         if ($filter === 'pending') {
-            $query->where('grading_status', 'pending');
+            $query->whereHas('attemptAnswers', function ($q) {
+                $q->whereIn('grading_status', ['pending', 'ai_graded']);
+            });
         } elseif ($filter === 'graded') {
-            $query->where('grading_status', 'graded');
+            $query->whereDoesntHave('attemptAnswers', function ($q) {
+                $q->whereIn('grading_status', ['pending', 'ai_graded']);
+            });
         }
 
-        $submissions = $query->latest('created_at')->paginate(20);
+        $attempts = $query->latest('created_at')->paginate(20);
 
-        return view('admin.writing-reviews.index', compact('submissions', 'filter'));
+        return view('admin.writing-reviews.index', compact('attempts', 'filter'));
     }
 
     /**
@@ -55,48 +58,47 @@ class WritingReviewController extends Controller
     }
 
     /**
-     * Grade a single attempt answer (one writing part).
+     * Grade all writing answers for a given attempt.
      */
-    public function grade(Request $request, AttemptAnswer $attemptAnswer)
+    public function grade(Request $request, Attempt $attempt)
     {
         $data = $request->validate([
-            'total_score' => 'required|numeric|min:0|max:10',
-            'comment' => 'nullable|string|max:5000',
+            'scores' => 'required|array',
+            'scores.*' => 'required|numeric|min:0|max:10',
+            'comments' => 'nullable|array',
+            'comments.*' => 'nullable|string|max:5000',
         ]);
 
-        // Create or update the writing review
-        WritingReview::updateOrCreate(
-            ['attempt_answer_id' => $attemptAnswer->id],
-            [
-                'reviewer_id' => auth()->id(),
-                'total_score' => $data['total_score'],
-                'comment' => $data['comment'] ?? null,
-            ]
-        );
-
-        // Mark this answer as graded
-        $attemptAnswer->update([
-            'grading_status' => 'graded',
-            'score' => $data['total_score'],
-        ]);
-
-        // Check if ALL writing answers in this attempt are graded
-        $attempt = $attemptAnswer->attempt;
         $writingAnswers = $attempt->attemptAnswers()
             ->whereHas('question', fn($q) => $q->where('skill', 'writing'))
             ->get();
 
-        $allGraded = $writingAnswers->every(fn($a) => $a->grading_status === 'graded');
+        foreach ($writingAnswers as $answer) {
+            $score = $data['scores'][$answer->id] ?? 0;
+            $comment = $data['comments'][$answer->id] ?? null;
 
-        if ($allGraded) {
-            // Calculate total score for the attempt
-            $totalEarned = $writingAnswers->sum('score');
-            $totalPossible = $writingAnswers->sum(fn($a) => $a->question->point ?? 10);
-            $finalScore = $totalPossible > 0 ? ($totalEarned / $totalPossible) * 100 : 0;
+            WritingReview::updateOrCreate(
+                ['attempt_answer_id' => $answer->id],
+                [
+                    'reviewer_id' => auth()->id(),
+                    'total_score' => $score,
+                    'comment' => $comment,
+                ]
+            );
 
-            $attempt->update(['score' => $finalScore]);
+            $answer->update([
+                'grading_status' => 'graded',
+                'score' => $score,
+            ]);
         }
 
-        return redirect()->back()->with('success', 'Đã lưu đánh giá thành công!');
+        // Calculate total score for the attempt
+        $totalEarned = $writingAnswers->sum('score');
+        $totalPossible = $writingAnswers->sum(fn($a) => $a->question->point ?? 10);
+        $finalScore = $totalPossible > 0 ? ($totalEarned / $totalPossible) * 100 : 0;
+
+        $attempt->update(['score' => $finalScore]);
+
+        return redirect()->route('admin.writing-reviews.index')->with('success', 'Đã chấm bài Writing thành công!');
     }
 }

@@ -57,11 +57,11 @@
 
         <!-- Expiration Date -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Expiration Date</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Ngày thi (Exam Date)</label>
             <input type="date" name="expires_at" id="expires_at" value="{{ old('expires_at') }}"
-                min="{{ now()->addDay()->format('Y-m-d') }}"
+                min="{{ now()->format('Y-m-d') }}"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <p class="mt-1 text-sm text-gray-500">Leave blank for no expiration</p>
+            <p class="mt-1 text-sm text-gray-500">Để trống nếu không giới hạn. Tài khoản sẽ hết hạn vào 23:59 của ngày này.</p>
             @error('expires_at')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror

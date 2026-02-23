@@ -13,7 +13,8 @@ class QuestionRepository
      */
     public function getAll(array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        $query = Question::with('quiz');
+        $query = Question::with('quiz')
+                         ->where('skill', '!=', 'writing'); // Managed by WritingSetController
 
         if (!empty($filters['quiz_id'])) {
             $query->where('quiz_id', $filters['quiz_id']);
@@ -25,6 +26,10 @@ class QuestionRepository
 
         if (!empty($filters['part'])) {
             $query->where('part', $filters['part']);
+        }
+
+        if (!empty($filters['search'])) {
+            $query->where('title', 'like', '%' . $filters['search'] . '%');
         }
 
         return $query->orderBy('quiz_id')

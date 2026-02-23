@@ -27,6 +27,7 @@ class StoreQuestionRequest extends FormRequest
             'skill' => 'required|string|in:reading,listening,gramvar,writing,speaking',
             'part' => 'required|integer|min:1|max:5',
             'type' => 'required|string',
+            'title' => 'nullable|string|max:255',
             'stem' => 'nullable|string',
             'audio' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
             'speaker_audio' => 'nullable|array|max:4',

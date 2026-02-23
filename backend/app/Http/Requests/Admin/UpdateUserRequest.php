@@ -15,6 +15,19 @@ class UpdateUserRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Convert expires_at to end of day if present
+        if ($this->filled('expires_at')) {
+            $this->merge([
+                'expires_at' => \Carbon\Carbon::parse($this->expires_at)->endOfDay()->format('Y-m-d H:i:s'),
+            ]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
@@ -27,7 +40,7 @@ class UpdateUserRequest extends FormRequest
             'password' => 'nullable|string|min:8',
             'role' => 'required|in:user,admin',
             'status' => 'required|in:active,blocked',
-            'expires_at' => 'nullable|date|after:today',
+            'expires_at' => 'nullable|date',
         ];
     }
 }

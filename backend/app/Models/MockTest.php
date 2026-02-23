@@ -45,18 +45,51 @@ class MockTest extends Model
     public function getSectionsWithSets()
     {
         $sections = $this->sections;
-        $setIds = collect($sections)->pluck('set_id')->unique()->values();
+        $allSetIds = [];
+        foreach ($sections as $section) {
+            if (isset($section['set_ids'])) {
+                $allSetIds = array_merge($allSetIds, $section['set_ids']);
+            } elseif (isset($section['set_id'])) {
+                $allSetIds[] = $section['set_id'];
+            }
+        }
+        $setIds = collect($allSetIds)->unique()->values();
 
         $sets = Set::with(['questions' => function ($q) {
             $q->orderBy('order');
         }, 'quiz'])->whereIn('id', $setIds)->get()->keyBy('id');
 
         return collect($sections)->map(function ($section, $index) use ($sets) {
+            $virtSet = null;
+            if (isset($section['set_ids'])) {
+                $combinedQuestions = collect();
+                foreach ($section['set_ids'] as $sid) {
+                    if ($s = $sets->get($sid)) {
+                        $combinedQuestions = $combinedQuestions->concat($s->questions);
+                    }
+                }
+                
+                // Clone the first set's object as a template for the virtual set
+                $firstSet = $sets->get($section['set_ids'][0]);
+                if ($firstSet) {
+                    $virtSet = clone $firstSet;
+                    $virtSet->setRelation('questions', $combinedQuestions);
+                }
+            } else {
+                $virtSet = $sets->get($section['set_id']);
+            }
+
+            // Apply global part-specific question limit if exists (e.g. Listening Part 1 = 13 total)
+            $limit = config("aptis.exam_part_counts.{$this->skill}.{$section['part']}");
+            if ($virtSet && $limit && $virtSet->questions->count() > $limit) {
+                $virtSet->setRelation('questions', $virtSet->questions->take($limit));
+            }
+
             return [
                 'index' => $index,
                 'part' => $section['part'],
-                'set_id' => $section['set_id'],
-                'set' => $sets->get($section['set_id']),
+                'set_id' => $section['set_id'] ?? ($section['set_ids'][0] ?? null),
+                'set' => $virtSet,
             ];
         });
     }

@@ -59,8 +59,25 @@ class PracticeController extends Controller
         $totalPossiblePoints = $result['total_possible'];
         $finalScore = $result['percentage'];
 
+        // Compute part-specific statistics for charting (correct vs total per part)
+        $partStats = [];
+        if ($set->quiz->skill !== 'writing') {
+            foreach ($questions as $question) {
+                if (!isset($partStats[$question->part])) {
+                    $partStats[$question->part] = ['correct' => 0, 'total' => 0];
+                }
+                $partStats[$question->part]['total']++;
+            }
+            foreach ($result['attempt_answers'] as $ans) {
+                $q = $questions->firstWhere('id', $ans['question_id']);
+                if ($q && $ans['is_correct']) {
+                    $partStats[$q->part]['correct']++;
+                }
+            }
+        }
+
         // Create or Update Attempt
-        $attempt = DB::transaction(function () use ($user, $set, $finalScore, $request, $result) {
+        $attempt = DB::transaction(function () use ($user, $set, $finalScore, $request, $result, $partStats) {
             $attemptId = $request->input('attempt_id');
             $attempt = null;
 
@@ -75,6 +92,7 @@ class PracticeController extends Controller
                     'duration_seconds' => $request->input('duration', 0),
                     'score' => $finalScore,
                     'finished_at' => now(),
+                    'metadata' => ['part_stats' => $partStats],
                 ]);
                 // Refresh answers
                 $attempt->attemptAnswers()->delete();
@@ -88,10 +106,13 @@ class PracticeController extends Controller
                     'finished_at' => now(),
                     'duration_seconds' => $request->input('duration', 0),
                     'score' => $finalScore,
+                    'metadata' => ['part_stats' => $partStats],
                 ]);
             }
 
-            $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+            if ($set->quiz->skill === 'writing') {
+                $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+            }
             
             return $attempt;
         });
@@ -104,7 +125,8 @@ class PracticeController extends Controller
             $message = 'Hoàn thành! Hãy kiểm tra đáp án gợi ý.';
             $redirectUrl = null;
         } else {
-            $redirectUrl = route('attempts.show', $attempt->id);
+            // Objective skill in practice mode -> no detailed view
+            $redirectUrl = route('dashboard');
         }
 
         return response()->json([
@@ -113,7 +135,7 @@ class PracticeController extends Controller
             'score' => $finalScore,
             'message' => $message,
             'attempt_id' => $attempt->id,
-            'answer_ids' => $attempt->refresh()->attemptAnswers->pluck('id', 'question_id')->toArray()
+            'answer_ids' => $set->quiz->skill === 'writing' ? clone $attempt->refresh()->attemptAnswers->pluck('id', 'question_id')->toArray() : []
         ]);
     }
 }

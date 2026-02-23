@@ -65,61 +65,103 @@
                     <span>Phân tích từ AI</span>
                 </div>
                 <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
-                    Dự đoán: <span x-text="aiFeedback[currentQuestion.id]?.scores?.score_estimate"></span>
+                    Điểm: <span x-text="aiFeedback[currentQuestion.id]?.scores?.overall_score"></span>
                 </div>
             </div>
 
             <div class="p-6 space-y-8">
-                {{-- Grammar Feedback --}}
-                <div class="space-y-4">
-                    <h4 class="flex items-center gap-2 font-bold text-gray-800">
-                        <span class="w-1.5 h-6 bg-amber-400 rounded-full"></span>
-                        Phân tích Ngữ pháp
-                    </h4>
-                    <div class="grid gap-4">
-                        <template x-for="(err, i) in aiFeedback[currentQuestion.id]?.scores?.grammar" :key="i">
-                            <div class="bg-amber-50 rounded-xl p-4 border border-amber-100 space-y-2">
-                                <div class="flex items-start gap-2">
-                                    <span class="text-red-500 mt-0.5"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg></span>
-                                    <div class="text-sm">
-                                        <span class="text-gray-500 line-through" x-text="err.original"></span>
-                                        <span class="mx-2 text-indigo-400">→</span>
-                                        <span class="font-bold text-green-600" x-text="err.correction"></span>
-                                    </div>
-                                </div>
-                                <div class="text-xs text-amber-800 bg-white/50 p-2 rounded-lg italic" x-text="err.explanation"></div>
-                            </div>
-                        </template>
-                        <template x-if="!aiFeedback[currentQuestion.id]?.scores?.grammar?.length">
-                            <div class="text-sm text-green-600 bg-green-50 p-4 rounded-xl border border-green-100">
-                                Tuyệt vời! AI không phát hiện lỗi ngữ pháp nghiêm trọng nào.
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
                 <div class="grid md:grid-cols-2 gap-6">
-                    {{-- Vocabulary --}}
+                    <template x-for="criteria in ['grammar', 'vocabulary', 'coherence', 'task_fulfillment']" :key="criteria">
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+                            <h4 class="font-bold text-gray-800 capitalize flex items-center justify-between">
+                                <span class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span x-text="criteria.replace('_', ' ')"></span>
+                                </span>
+                                <span class="px-2 py-1 bg-white text-indigo-700 font-bold rounded-lg text-sm shadow-sm border border-indigo-100" x-text="(aiFeedback[currentQuestion.id]?.scores?.scores[criteria] ?? 0) + '/5'"></span>
+                            </h4>
+                            <p class="text-sm text-gray-700 leading-relaxed" x-text="aiFeedback[currentQuestion.id]?.scores?.feedback[criteria]"></p>
+                        </div>
+                    </template>
+                </div>
+                
+                {{-- Key Mistakes & Suggestions --}}
+                <div class="grid md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
                     <div class="space-y-3">
-                        <h4 class="font-bold text-gray-800 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.168.477-4.5 1.253" /></svg>
-                            Từ vựng
+                        <h4 class="font-bold text-red-700 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            Lỗi phổ biến
                         </h4>
-                        <div class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100" x-text="aiFeedback[currentQuestion.id]?.scores?.vocabulary"></div>
+                        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            <template x-for="mistake in aiFeedback[currentQuestion.id]?.scores?.key_mistakes || []" :key="mistake">
+                                <li x-text="mistake"></li>
+                            </template>
+                        </ul>
                     </div>
-
-                    {{-- Task Fulfillment --}}
+                    
                     <div class="space-y-3">
-                        <h4 class="font-bold text-gray-800 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                            Hoàn thành nhiệm vụ
+                        <h4 class="font-bold text-green-700 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            Gợi ý cải thiện
                         </h4>
-                        <div class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100" x-text="aiFeedback[currentQuestion.id]?.scores?.task_fulfillment"></div>
+                        <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            <template x-for="suggestion in aiFeedback[currentQuestion.id]?.scores?.suggestions || []" :key="suggestion">
+                                <li x-text="suggestion"></li>
+                            </template>
+                        </ul>
                     </div>
                 </div>
 
-                {{-- Improved Sample --}}
-                <div class="pt-6 border-t border-gray-100 space-y-4">
+                {{-- Schema v3: Part-Specific Responses --}}
+                <div x-show="aiFeedback[currentQuestion.id]?.scores?.schema_version >= 3 && aiFeedback[currentQuestion.id]?.scores?.part_responses" class="pt-6 border-t border-gray-100 space-y-6">
+                    <h4 class="font-bold text-indigo-700 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        Phân tích & Bài mẫu chi tiết từng phần
+                    </h4>
+                    
+                    <div class="space-y-6">
+                        <template x-for="(response, idx) in aiFeedback[currentQuestion.id]?.scores?.part_responses" :key="idx">
+                            <div class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                                
+                                {{-- Target Label --}}
+                                <div class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs" x-text="idx + 1"></span>
+                                    <span x-text="response.label || ('Phần ' + (idx + 1))"></span>
+                                </div>
+                                
+                                {{-- Detailed Corrections for this part --}}
+                                <template x-if="response.detailed_corrections?.length > 0">
+                                    <div class="mb-5 space-y-3">
+                                        <div class="text-xs font-bold text-amber-600 uppercase tracking-wider">Sửa lỗi chuyên sâu</div>
+                                        <template x-for="correction in response.detailed_corrections" :key="correction.original">
+                                            <div class="bg-amber-50 rounded-lg p-3 border border-amber-100 text-sm">
+                                                <div class="flex items-start gap-2 mb-2">
+                                                    <span class="text-red-500 mt-0.5"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></span>
+                                                    <div>
+                                                        <span class="text-gray-500 line-through" x-text="correction.original"></span>
+                                                        <span class="mx-2 text-indigo-400">→</span>
+                                                        <span class="font-bold text-green-600" x-text="correction.corrected"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs text-amber-800 bg-white/60 p-2 rounded italic" x-text="correction.explanation"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                {{-- The Improved Sample --}}
+                                <div>
+                                    <div class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Mẫu tối ưu</div>
+                                    <div class="bg-indigo-50/50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-indigo-100" x-text="response.improved_sample"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- Fallback for Schema v1/v2 (Legacy Improved Sample) --}}
+                <div x-show="!aiFeedback[currentQuestion.id]?.scores?.schema_version || aiFeedback[currentQuestion.id]?.scores?.schema_version < 3" class="pt-6 border-t border-gray-100 space-y-4">
                     <h4 class="font-bold text-indigo-700 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         Bài viết mẫu tối ưu (Nhấn để xem)
@@ -129,7 +171,7 @@
                         @click="expanded = !expanded"
                         class="cursor-pointer group relative bg-indigo-50/30 rounded-2xl p-6 border border-indigo-100 transition-all hover:bg-indigo-50"
                     >
-                        <div class="text-gray-700 leading-relaxed" :class="expanded ? '' : 'line-clamp-3'" x-text="aiFeedback[currentQuestion.id]?.comment"></div>
+                        <div class="text-gray-700 leading-relaxed whitespace-pre-wrap" :class="expanded ? '' : 'line-clamp-3'" x-text="aiFeedback[currentQuestion.id]?.scores?.improved_sample"></div>
                         <div x-show="!expanded" class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white/80 to-transparent flex items-end justify-center pb-2">
                             <span class="text-indigo-500 font-bold text-xs uppercase tracking-wider group-hover:translate-y-[-2px] transition-transform">Xem thêm</span>
                         </div>

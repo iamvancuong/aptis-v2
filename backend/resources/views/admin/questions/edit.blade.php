@@ -8,7 +8,7 @@
                 <h1 class="text-2xl font-bold text-gray-900">Edit Question</h1>
                 <p class="text-sm text-gray-500 mt-1">Update question details and content</p>
             </div>
-            <a href="{{ route('admin.questions.index') }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <a href="{{ route('admin.questions.' . ($question->quiz->skill ?? 'reading')) }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                 Back to List
             </a>
         </div>
@@ -56,7 +56,7 @@
                                 <select name="quiz_id" required disabled
                                         class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700 pointer-events-none">
                                     <option value="{{ $question->quiz_id }}" selected>
-                                        {{ $question->quiz->name }} ({{ ucfirst($question->quiz->skill) }} - Part {{ $question->quiz->part }})
+                                        {{ $question->quiz->title }} ({{ ucfirst($question->quiz->skill) }} - Part {{ $question->quiz->part }})
                                     </option>
                                 </select>
                                 <input type="hidden" name="quiz_id" value="{{ $question->quiz_id }}">
@@ -163,7 +163,7 @@
                         <x-button type="submit" class="flex-1 justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
                             Update Question
                         </x-button>
-                        <a href="{{ route('admin.questions.index') }}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                        <a href="{{ route('admin.questions.' . ($question->quiz->skill ?? 'reading')) }}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
                             Cancel
                         </a>
                     </div>
@@ -278,53 +278,7 @@
                     </div>
                </template>
 
-               <!-- WRITING PART 1: Form Filling -->
-               <template x-if="isWritingPart1">
-                    <div x-data="writingPart1(questionMetadata)">
-                        <x-card title="Writing Part 1: Form Filling (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part1-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part1-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
 
-               <!-- WRITING PART 2: Email -->
-               <template x-if="isWritingPart2">
-                    <div x-data="writingPart2(questionMetadata)">
-                        <x-card title="Writing Part 2: Email Writing (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part2-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part2-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
-
-               <!-- WRITING PART 3: Social Responses -->
-               <template x-if="isWritingPart3">
-                    <div x-data="writingPart3(questionMetadata)">
-                        <x-card title="Writing Part 3: Social Responses (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part3-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part3-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
-
-               <!-- WRITING PART 4: Email Writing (Task 1 + Task 2) -->
-               <template x-if="isWritingPart4">
-                    <div x-data="writingPart4(questionMetadata)">
-                        <x-card title="Writing Part 4 & 5: Email Writing (Edit)" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part4-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part4-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
 
                <!-- Fallback -->
                <div x-show="selectedQuizId && !isReadingPart1 && !isReadingPart2 && !isReadingPart3 && !isReadingPart4 && !isListeningPart1 && !isListeningPart2 && !isListeningPart3 && !isListeningPart4 && !isWritingPart1 && !isWritingPart2 && !isWritingPart3 && !isWritingPart4" class="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
@@ -346,10 +300,7 @@
     <script src="{{ asset('admin/js/questions/listening-part2.js') }}"></script>
     <script src="{{ asset('admin/js/questions/listening-part3.js') }}"></script>
     <script src="{{ asset('admin/js/questions/listening-part4.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part1.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part2.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part3.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part4.js') }}"></script>
+
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('questionForm', (question) => ({

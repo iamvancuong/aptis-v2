@@ -26,31 +26,39 @@
     </x-card>
 </div>
 
-<!-- Parts List -->
-<h2 class="text-2xl font-semibold mb-4">Danh sách Part</h2>
+@if($skill !== 'writing')
+    <!-- Parts List -->
+    <h2 class="text-2xl font-semibold mb-4">Danh sách Part</h2>
 
-@if($quizzes->isEmpty())
-    <x-alert type="info">
-        Chưa có Part nào được công bố cho kỹ năng này.
-    </x-alert>
-@else
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        @foreach($quizzes as $quiz)
-            <x-card>
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold">Part {{ $quiz->part }}</h3>
-                        <p class="text-gray-600 text-sm">{{ $quiz->title }}</p>
-                        @if($quiz->duration_minutes)
-                            <p class="text-gray-500 text-xs mt-1">⏱ {{ $quiz->duration_minutes }} phút</p>
-                        @endif
+    @if($quizzes->isEmpty())
+        <x-alert type="info">
+            Chưa có Part nào được công bố cho kỹ năng này.
+        </x-alert>
+    @else
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @foreach($quizzes as $quiz)
+                <x-card>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold">Part {{ $quiz->part }}</h3>
+                            <p class="text-gray-600 text-sm">{{ $quiz->title }}</p>
+                            @if($quiz->duration_minutes)
+                                <p class="text-gray-500 text-xs mt-1">⏱ {{ $quiz->duration_minutes }} phút</p>
+                            @endif
+                        </div>
+                        <x-button href="{{ route('sets.index', [$skill, $quiz->part]) }}">
+                            Luyện tập
+                        </x-button>
                     </div>
-                    <x-button href="{{ route('sets.index', [$skill, $quiz->part]) }}">
-                        Luyện tập
-                    </x-button>
-                </div>
-            </x-card>
-        @endforeach
+                </x-card>
+            @endforeach
+        </div>
+    @endif
+@else
+    <div class="mt-8">
+        <x-alert type="info">
+            Kỹ năng Writing đòi hỏi sự liên kết ngữ cảnh chặt chẽ giữa các Phần (Part 1 đến Part 4). Vì vậy, bạn chỉ có thể luyện tập Writing dưới dạng <strong>Thi thử toàn bộ kỹ năng</strong>.
+        </x-alert>
     </div>
 @endif
 @endsection

@@ -25,6 +25,13 @@ class StoreUserRequest extends FormRequest
                 'password' => '12345678',
             ]);
         }
+
+        // Convert expires_at to end of day if present
+        if ($this->filled('expires_at')) {
+            $this->merge([
+                'expires_at' => \Carbon\Carbon::parse($this->expires_at)->endOfDay()->format('Y-m-d H:i:s'),
+            ]);
+        }
     }
 
     /**
@@ -39,7 +46,7 @@ class StoreUserRequest extends FormRequest
             'email' => 'required|email|unique:users,email',
             'role' => 'required|in:user,admin',
             'status' => 'nullable|in:active,blocked',
-            'expires_at' => 'nullable|date|after:today',
+            'expires_at' => 'nullable|date|after_or_equal:today',
         ];
 
         // Admin users must provide custom password, user role will have default set

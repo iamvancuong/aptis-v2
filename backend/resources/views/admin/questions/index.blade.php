@@ -6,8 +6,8 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-gray-900">Questions Management</h1>
-        <a href="{{ route('admin.questions.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+        <h1 class="text-2xl font-bold text-gray-900">{{ ucfirst($currentSkill) }} Questions Management</h1>
+        <a href="{{ route('admin.questions.create', ['skill' => $currentSkill]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -17,7 +17,13 @@
 
     <!-- Filters -->
     <x-card>
-        <form method="GET" action="{{ route('admin.questions.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form method="GET" action="{{ route(request()->route()->getName()) }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Search Title Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search by Title</label>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search titles..." class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white">
+            </div>
+
             <!-- Quiz Filter -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Quiz</label>
@@ -25,20 +31,9 @@
                     <option value="">All Quizzes</option>
                     @foreach($quizzes as $quiz)
                         <option value="{{ $quiz->id }}" {{ request('quiz_id') == $quiz->id ? 'selected' : '' }}>
-                            {{ $quiz->name }}
+                            {{ $quiz->title }}
                         </option>
                     @endforeach
-                </select>
-            </div>
-
-            <!-- Skill Filter -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Skill</label>
-                <select name="skill" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white">
-                    <option value="">All Skills</option>
-                    <option value="reading" {{ request('skill') == 'reading' ? 'selected' : '' }}>Reading</option>
-                    <option value="listening" {{ request('skill') == 'listening' ? 'selected' : '' }}>Listening</option>
-                    <option value="writing" {{ request('skill') == 'writing' ? 'selected' : '' }}>Writing</option>
                 </select>
             </div>
 
@@ -73,12 +68,13 @@
             <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Set</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skill</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Part</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại (Type)</th>
+                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Điểm</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
             </tr>
         </thead>
 
@@ -90,6 +86,9 @@
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-900">
                         {{ $question->quiz->title }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        {{ $question->title ?: '-' }}
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-900">
                         @if($question->sets->isNotEmpty())
@@ -122,25 +121,27 @@
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
                         {{ $question->point }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
                         <!-- Edit Button -->
                         <a 
                             href="{{ route('admin.questions.edit', $question) }}" 
-                            class="inline-flex items-center px-2 py-1 bg-violet-500 text-white text-xs rounded hover:bg-violet-600 transition"
+                            class="inline-flex items-center px-3 py-1 bg-violet-100 text-violet-700 rounded-md hover:bg-violet-200 font-medium text-xs"
                         >
-                            Edit
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            Sửa
                         </a>
 
                         <!-- Delete Button -->
-                        <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" class="inline">
+                        <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" class="inline-block">
                             @csrf
                             @method('DELETE')
                             <button 
                                 type="submit" 
-                                onclick="return confirm('Are you sure you want to delete this question?')"
-                                class="inline-flex items-center px-2 py-1 bg-pink-500 text-white text-xs rounded hover:bg-pink-600 transition"
+                                onclick="return confirm('Bạn có chắc muốn xoá câu hỏi này?')"
+                                class="inline-flex items-center px-3 py-1 bg-pink-100 text-pink-700 rounded-md hover:bg-pink-200 font-medium text-xs"
                             >
-                                Delete
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                Xoá
                             </button>
                         </form>
                     </td>

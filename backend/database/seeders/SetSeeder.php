@@ -14,6 +14,11 @@ class SetSeeder extends Seeder
         $quizzes = Quiz::all();
 
         foreach ($quizzes as $quiz) {
+            // Only create Cohesive Sets for Writing Part 1. Parts 2, 3, 4 exist but hold no separate sets.
+            if ($quiz->skill === 'writing' && in_array($quiz->part, [2, 3, 4])) {
+                continue;
+            }
+
             for ($i = 1; $i <= 3; $i++) {
                 $set = Set::firstOrCreate(
                     [
@@ -59,11 +64,7 @@ class SetSeeder extends Seeder
 
         if ($quiz->skill === 'writing') {
             match ($quiz->part) {
-                1 => $this->createWritingPart1($set, $quiz),
-                2 => $this->createWritingPart2($set, $quiz),
-                3 => $this->createWritingPart3($set, $quiz),
-                4 => $this->createWritingPart4($set, $quiz),
-                5 => $this->createWritingFullTest($set, $quiz),
+                1 => $this->createWritingFullTest($set, $quiz, $set->order),
                 default => null,
             };
         }
@@ -374,149 +375,137 @@ class SetSeeder extends Seeder
         ]);
         $set->questions()->attach($question->id);
     }
-    private function createWritingPart1(Set $set, Quiz $quiz, $overridePart = null)
+    private function createWritingFullTest(Set $set, Quiz $quiz, int $setOrder)
     {
-        $metadata = [
-            'instructions' => "You want to join a sports club. Fill in the form.",
-            'fields' => [
-                ['label' => 'Full Name', 'placeholder' => 'e.g. Nguyen Van A'],
-                ['label' => 'Date of Birth', 'placeholder' => 'e.g. 01/01/1990'],
-                ['label' => 'Nationality', 'placeholder' => 'e.g. Vietnamese'],
-                ['label' => 'Languages Spoken', 'placeholder' => 'e.g. English, Vietnamese'],
-                ['label' => 'Interests', 'placeholder' => 'e.g. Football, Reading'],
+        // Define 3 cohesive themes based on the set order (0, 1, 2)
+        $themes = [
+            0 => [
+                'name' => 'Sports Club',
+                'p1_context' => 'You want to join a sports club.',
+                'p2_scenario' => 'You are a new member of the sports club. Write an email to your friend telling them about the club.',
+                'p3_prompts' => [
+                    "A member asks: 'I've never played sports before. Is this club suitable for beginners?'",
+                    "Another member posts: 'The changing rooms are always dirty. Does anyone else agree?'",
+                    "The manager posts: 'We are planning a social event next month. Any suggestions?'"
+                ],
+                'p4_context' => "You received an email from the club manager about a new membership fee increase.",
+                'p4_email' => "Dear Member,\n\nDue to rising maintenance costs, we must increase the monthly membership fee by 15% starting next month. We hope you understand and continue to enjoy our facilities.",
+                'p4_task1' => "Write an email to a friend who is also a member. Express your feelings about the increase.",
+                'p4_task2' => "Write a formal email to the club manager. Express your dissatisfaction and suggest an alternative solution (e.g., reducing hours instead)."
             ],
-            'sample_answer' => [
-                'Full Name' => 'Nguyen Van An',
-                'Date of Birth' => '15/05/1995',
-                'Nationality' => 'Vietnamese',
-                'Languages Spoken' => 'Vietnamese, English (B2)',
-                'Interests' => 'Swimming, Tennis, Reading Science Fiction'
-            ]
+            1 => [
+                'name' => 'Photography Course',
+                'p1_context' => 'You want to enroll in a weekend photography course.',
+                'p2_scenario' => 'You just had your first photography class. Write to a friend about what you learned.',
+                'p3_prompts' => [
+                    "A student asks: 'What kind of camera should a beginner buy?'",
+                    "A student complains: 'The instructor speaks too fast and I can't follow the technical terms.'",
+                    "The instructor posts: 'We are going on a field trip for landscape photography. Where should we go?'"
+                ],
+                'p4_context' => "You received an email from the course coordinator.",
+                'p4_email' => "Dear Student,\n\nUnfortunately, the upcoming field trip has been canceled due to bad weather. We will refund the bus fee or offer a studio session instead. Please vote on your preference.",
+                'p4_task1' => "Write an informal email to your classmate discussing the cancellation and which option you prefer.",
+                'p4_task2' => "Write a formal email to the coordinator stating your preference and asking for more details about the studio session."
+            ],
+            2 => [
+                'name' => 'Technology Expo',
+                'p1_context' => 'You are registering as a volunteer for an upcoming Technology Expo.',
+                'p2_scenario' => 'You have been accepted as a volunteer. Write an email to a friend sharing the good news.',
+                'p3_prompts' => [
+                    "A volunteer asks: 'What is the dress code for the event?'",
+                    "Someone posts: 'I heard we have to work 10 hours a day. That seems too exhausting.'",
+                    "The organizer asks: 'We need ideas to keep the crowd entertained while waiting in line.'"
+                ],
+                'p4_context' => "You received an email from the head of the volunteer committee.",
+                'p4_email' => "Dear Volunteer,\n\nDue to unexpectedly high ticket sales, we need all volunteers to arrive 2 hours earlier than previously scheduled. We know this is an inconvenience, but we count on your support.",
+                'p4_task1' => "Write an informal email to a fellow volunteer complaining about the early start.",
+                'p4_task2' => "Write a formal email to the committee head. Explain why arriving 2 hours early is difficult for you, but offer a compromise."
+            ],
         ];
 
-        $part = $overridePart ?? $quiz->part;
+        $theme = $themes[$setOrder] ?? $themes[0];
 
-        $question = Question::create([
+        // Part 1: Form Filling
+        Question::create([
             'quiz_id' => $quiz->id,
             'skill' => $quiz->skill,
-            'part' => $part,
+            'part' => 1,
             'type' => 'writing-part-1',
-            'title' => "Writing Part 1 - Form Filling",
+            'title' => "{$theme['name']} - Part 1 (Form Filling)",
             'stem' => "Please fill in the form below.",
             'point' => 5,
             'order' => 1,
-            'metadata' => $metadata,
-        ]);
-        $set->questions()->attach($question->id);
-    }
+            'metadata' => [
+                'instructions' => $theme['p1_context'] . " Fill in the form.",
+                'fields' => [
+                    ['label' => 'Full Name', 'placeholder' => 'e.g. Nguyen Van A'],
+                    ['label' => 'Date of Birth', 'placeholder' => 'e.g. 01/01/1990'],
+                    ['label' => 'Interests', 'placeholder' => 'Briefly state your interests.'],
+                ],
+            ]
+        ])->sets()->attach($set->id);
 
-    private function createWritingPart2(Set $set, Quiz $quiz, $overridePart = null)
-    {
-        $metadata = [
-            'scenario' => "You are a new member of the sports club. Write an email to your friend telling them about the club.",
-            'word_limit' => ['min' => 20, 'max' => 30],
-            'hints' => "Tell them where it is, what you do there, and why you like it.",
-            'sample_answer' => "Hi John! I just joined a new sports club near my house. It has a great pool and gym. I go there every weekend effectively. It's really fun!"
-        ];
-
-        $part = $overridePart ?? $quiz->part;
-
-        $question = Question::create([
+        // Part 2: Email
+        Question::create([
             'quiz_id' => $quiz->id,
             'skill' => $quiz->skill,
-            'part' => $part,
+            'part' => 2,
             'type' => 'writing-part-2',
-            'title' => "Writing Part 2 - Email",
+            'title' => "{$theme['name']} - Part 2 (Email)",
             'stem' => "Write a short email.",
             'point' => 5,
             'order' => 2,
-            'metadata' => $metadata,
-        ]);
-        $set->questions()->attach($question->id);
-    }
-
-    private function createWritingPart3(Set $set, Quiz $quiz, $overridePart = null)
-    {
-        $metadata = [
-            'questions' => [
-                [
-                    'prompt' => "A member asks: 'I've never played sports before. Is this club suitable for beginners?'",
-                    'word_limit' => ['min' => 30, 'max' => 40]
-                ],
-                [
-                    'prompt' => "Another member posts: 'The changing rooms are always dirty. Does anyone else agree?'",
-                    'word_limit' => ['min' => 30, 'max' => 40]
-                ],
-                [
-                    'prompt' => "The manager posts: 'We are planning a social event next month. Any suggestions?'",
-                    'word_limit' => ['min' => 30, 'max' => 40]
-                ]
-            ],
-            'sample_answer' => [
-                "Don't worry! This club is perfect for beginners. The coaches are very friendly and there are classes specifically for new members. You will fit right in!",
-                "I totally agree with you. I was there yesterday and the floor was muddy. We should complain to the manager so they hire more cleaners.",
-                "How about a BBQ party in the garden? It would be a great way for members to socialize and enjoy some good food after working out."
+            'metadata' => [
+                'scenario' => $theme['p2_scenario'],
+                'word_limit' => ['min' => 20, 'max' => 30],
+                'hints' => "Write roughly 20-30 words.",
             ]
-        ];
+        ])->sets()->attach($set->id);
 
-        $part = $overridePart ?? $quiz->part;
-
-        $question = Question::create([
+        // Part 3: Social Response
+        Question::create([
             'quiz_id' => $quiz->id,
             'skill' => $quiz->skill,
-            'part' => $part,
+            'part' => 3,
             'type' => 'writing-part-3',
-            'title' => "Writing Part 3 - Social Media Response",
-            'stem' => "You are chatting in the club's social media group. Respond to the messages.",
+            'title' => "{$theme['name']} - Part 3 (Social Media)",
+            'stem' => "Respond to the messages in the group.",
             'point' => 10,
             'order' => 3, 
-            'metadata' => $metadata,
-        ]);
-        $set->questions()->attach($question->id);
-    }
-
-    private function createWritingPart4(Set $set, Quiz $quiz, $overridePart = null)
-    {
-        $metadata = [
-            'context' => "You are a member of a local environmental group. You received this email from the secretary of the group.",
-            'email' => [
-                'greeting' => "Dear Member,",
-                'body' => "I am writing to inform you that we are planning to organize a 'Green Week' in our neighborhood next month. We would like to have some activities that involve everyone in the community. What activities do you think we should include, and how can we get more people to join us? Please let me know your thoughts.",
-                'sign_off' => "Best regards,\nThe Secretary"
-            ],
-            'task1' => [
-                'instruction' => "Write an email to a friend who is also a member of the group. Tell your friend about the email you received and suggest some activities. Write about 50 words. You have 10 minutes.",
-                'word_limit' => ['min' => 40, 'max' => 50],
-                'sample_answer' => "Hi Sam! Did you see the secretary's email about 'Green Week'? I'm thinking we could suggest a community garden project and a plastic recycling workshop. It would be a great way to involve everyone and improve our neighborhood. Let me know what you think!"
-            ],
-            'task2' => [
-                'instruction' => "Write an email to the secretary. Explain your suggestions for 'Green Week' and how to attract more participants. Write 120-150 words. You have 20 minutes.",
-                'word_limit' => ['min' => 120, 'max' => 150],
-                'sample_answer' => "Dear Secretary,\n\nThank you for the email regarding the upcoming 'Green Week'. I think this is a fantastic initiative for our community.\n\nI would like to suggest two main activities. First, a community garden project where residents can plant local flowers and vegetables. This would provide a shared space for people to gather and learn about sustainability. Second, a series of workshops on plastic recycling and composting might be very beneficial.\n\nTo attract more participants, I suggest we promote the event through social media and local school newsletters. We could also offer small incentives, like 'green' certificates or eco-friendly prizes, for those who participate in multiple activities. Additionally, creating a fun, family-oriented atmosphere with music and refreshments would likely encourage more families to join.\n\nI hope these suggestions are helpful. I look forward to hearing more about the plans.\n\nBest regards,\n[Your Name]"
+            'metadata' => [
+                'questions' => array_map(fn($prompt) => [
+                    'prompt' => $prompt,
+                    'word_limit' => ['min' => 30, 'max' => 40]
+                ], $theme['p3_prompts']),
             ]
-        ];
+        ])->sets()->attach($set->id);
 
-        $part = $overridePart ?? $quiz->part;
-
-        $question = Question::create([
+        // Part 4: Dual Email
+        Question::create([
             'quiz_id' => $quiz->id,
             'skill' => $quiz->skill,
-            'part' => $part,
+            'part' => 4,
             'type' => 'writing-part-4',
-            'title' => "Writing Part 4 - Email Chain",
+            'title' => "{$theme['name']} - Part 4 (Formal & Informal Mails)",
             'stem' => "Read the email and complete the two tasks.",
-            'point' => 20, // Sum of points for Part 4 & 5
+            'point' => 20, 
             'order' => 4,
-            'metadata' => $metadata,
-        ]);
-        $set->questions()->attach($question->id);
-    }
-    
-    private function createWritingFullTest(Set $set, Quiz $quiz)
-    {
-        $this->createWritingPart1($set, $quiz, 1);
-        $this->createWritingPart2($set, $quiz, 2);
-        $this->createWritingPart3($set, $quiz, 3);
-        $this->createWritingPart4($set, $quiz, 4);
+            'metadata' => [
+                'context' => $theme['p4_context'],
+                'email' => [
+                    'greeting' => "Dear Member,",
+                    'body' => $theme['p4_email'],
+                    'sign_off' => "Best regards,\nThe Management"
+                ],
+                'task1' => [
+                    'instruction' => $theme['p4_task1'] . " Write about 50 words.",
+                    'word_limit' => ['min' => 40, 'max' => 50],
+                ],
+                'task2' => [
+                    'instruction' => $theme['p4_task2'] . " Write 120-150 words.",
+                    'word_limit' => ['min' => 120, 'max' => 150],
+                ]
+            ]
+        ])->sets()->attach($set->id);
     }
 }

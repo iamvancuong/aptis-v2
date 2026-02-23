@@ -62,7 +62,14 @@
         </div>
     </div>
 
-    <div class="mt-6 flex gap-3">
+    <div class="mt-6 flex flex-wrap gap-3">
+        <form action="{{ route('admin.users.reset-ai', $user) }}" method="POST" class="inline" onsubmit="return confirm('Reset AI Usage (Làm mới số lần dùng AI) cho người dùng này?')">
+            @csrf
+            <button type="submit" class="px-4 py-2 bg-fuchsia-600 text-white rounded-lg hover:bg-fuchsia-700">
+                Reset AI Usage
+            </button>
+        </form>
+
         @if($user->violation_count > 0)
             <form action="{{ route('admin.users.reset-violations', $user) }}" method="POST" class="inline">
                 @csrf

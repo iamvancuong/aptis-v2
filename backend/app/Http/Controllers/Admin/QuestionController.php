@@ -21,21 +21,43 @@ class QuestionController extends Controller
     }
 
     /**
-     * Display a listing of questions grouped by Quiz/Part.
+     * Display a listing of Reading questions grouped by Quiz/Part.
      */
-    public function index(Request $request)
+    public function readingIndex(Request $request)
     {
+        $request->merge(['skill' => 'reading']);
         $questions = $this->questionService->getQuestions($request->all());
-        // Load sets for display in index
+        
         if ($questions instanceof \Illuminate\Pagination\LengthAwarePaginator) {
              $questions->getCollection()->each(function ($question) {
                  $question->load('sets');
              });
         }
 
-        $quizzes = Quiz::orderBy('name')->get();
+        $quizzes = Quiz::where('skill', 'reading')->orderBy('title')->get();
+        $currentSkill = 'reading';
 
-        return view('admin.questions.index', compact('questions', 'quizzes'));
+        return view('admin.questions.index', compact('questions', 'quizzes', 'currentSkill'));
+    }
+
+    /**
+     * Display a listing of Listening questions grouped by Quiz/Part.
+     */
+    public function listeningIndex(Request $request)
+    {
+        $request->merge(['skill' => 'listening']);
+        $questions = $this->questionService->getQuestions($request->all());
+        
+        if ($questions instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+             $questions->getCollection()->each(function ($question) {
+                 $question->load('sets');
+             });
+        }
+
+        $quizzes = Quiz::where('skill', 'listening')->orderBy('title')->get();
+        $currentSkill = 'listening';
+
+        return view('admin.questions.index', compact('questions', 'quizzes', 'currentSkill'));
     }
 
     /**
@@ -43,9 +65,14 @@ class QuestionController extends Controller
      */
     public function create()
     {
-        $quizzes = Quiz::orderBy('name')->get();
+        $skill = request('skill');
+        $quizzesQuery = Quiz::where('skill', '!=', 'writing')->orderBy('title');
+        if ($skill) {
+            $quizzesQuery->where('skill', $skill);
+        }
+        $quizzes = $quizzesQuery->get();
 
-        return view('admin.questions.create', compact('quizzes'));
+        return view('admin.questions.create', compact('quizzes', 'skill'));
     }
 
     /**
@@ -60,7 +87,8 @@ class QuestionController extends Controller
             $request->input('set_id')
         );
 
-        return redirect()->route('admin.questions.index')
+        $skill = $request->input('skill', 'reading');
+        return redirect()->route("admin.questions.{$skill}")
             ->with('success', 'Question created successfully.');
     }
 
@@ -80,7 +108,7 @@ class QuestionController extends Controller
     public function edit(Question $question)
     {
         $question->load('sets'); // Eager load sets for JSON serialization in view
-        $quizzes = Quiz::orderBy('name')->get();
+        $quizzes = Quiz::where('skill', '!=', 'writing')->orderBy('title')->get();
         // Load sets for the selected quiz to populate the dropdown
         $sets = $this->questionService->getSetsByQuiz($question->quiz_id);
 
@@ -99,7 +127,8 @@ class QuestionController extends Controller
             $request->file('speaker_audio')
         );
 
-        return redirect()->route('admin.questions.index')
+        $skill = $request->input('skill', 'reading');
+        return redirect()->route("admin.questions.{$skill}")
             ->with('success', 'Question updated successfully.');
     }
 
@@ -108,6 +137,7 @@ class QuestionController extends Controller
      */
     public function destroy(Question $question)
     {
+        $skill = $question->quiz->skill ?? 'reading';
         $this->questionService->deleteQuestion($question);
 
         if (request()->wantsJson()) {
@@ -117,7 +147,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.questions.index')
+        return redirect()->route("admin.questions.{$skill}")
             ->with('success', 'Question deleted successfully.');
     }
 

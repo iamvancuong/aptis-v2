@@ -57,7 +57,7 @@
                                         <option value="{{ $quiz->id }}" 
                                                 data-skill="{{ $quiz->skill }}" 
                                                 data-part="{{ $quiz->part }}">
-                                            {{ $quiz->name }} ({{ ucfirst($quiz->skill) }} - Part {{ $quiz->part }})
+                                            {{ $quiz->title }} ({{ ucfirst($quiz->skill) }} - Part {{ $quiz->part }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -157,7 +157,7 @@
                         <x-button type="submit" class="flex-1 justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200">
                             Create Question
                         </x-button>
-                        <a href="{{ route('admin.questions.index') }}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
+                        <a href="{{ route('admin.questions.' . ($skill ?? 'reading')) }}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200">
                             Cancel
                         </a>
                     </div>
@@ -275,53 +275,7 @@
                     </div>
                </template>
 
-               <!-- WRITING PART 1: Form Filling -->
-               <template x-if="isWritingPart1">
-                    <div x-data="writingPart1">
-                        <x-card title="Writing Part 1: Form Filling" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part1-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part1-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
 
-               <!-- WRITING PART 2: Email -->
-               <template x-if="isWritingPart2">
-                    <div x-data="writingPart2">
-                        <x-card title="Writing Part 2: Email Writing" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part2-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part2-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
-
-               <!-- WRITING PART 3: Social Responses -->
-               <template x-if="isWritingPart3">
-                    <div x-data="writingPart3">
-                        <x-card title="Writing Part 3: Social Responses" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part3-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part3-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
-
-               <!-- WRITING PART 4: Email Writing (Task 1 + Task 2) -->
-               <template x-if="isWritingPart4">
-                    <div x-data="writingPart4">
-                        <x-card title="Writing Part 4 & 5: Email Writing" class="bg-white shadow-sm ring-1 ring-black/5">
-                            @include('admin.questions.partials.writing.part4-form')
-                            <div class="mt-8 border-t border-gray-100 pt-6">
-                                @include('admin.questions.partials.writing.part4-preview')
-                            </div>
-                        </x-card>
-                    </div>
-               </template>
 
                <!-- Fallback -->
                <div x-show="selectedQuizId && !isReadingPart1 && !isReadingPart2 && !isReadingPart3 && !isReadingPart4 && !isListeningPart1 && !isListeningPart2 && !isListeningPart3 && !isListeningPart4 && !isWritingPart1 && !isWritingPart2 && !isWritingPart3 && !isWritingPart4" class="p-8 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
@@ -357,10 +311,7 @@
     <script src="{{ asset('admin/js/questions/listening-part2.js') }}"></script>
     <script src="{{ asset('admin/js/questions/listening-part3.js') }}"></script>
     <script src="{{ asset('admin/js/questions/listening-part4.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part1.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part2.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part3.js') }}"></script>
-    <script src="{{ asset('admin/js/questions/writing-part4.js') }}"></script>
+
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('questionForm', () => ({

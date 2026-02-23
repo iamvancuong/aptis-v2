@@ -18,12 +18,14 @@ class Attempt extends Model
         'finished_at',
         'duration_seconds',
         'score',
+        'metadata',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
         'score' => 'decimal:2',
+        'metadata' => 'array',
     ];
 
     public function user(): BelongsTo

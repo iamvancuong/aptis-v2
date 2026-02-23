@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">Lịch sử làm bài</h1>
+    <h1 class="text-3xl font-bold text-gray-900">{{ $title ?? 'Lịch sử làm bài' }}</h1>
     <p class="mt-2 text-gray-600">Xem lại các bài thi và luyện tập của bạn</p>
 </div>
 
@@ -58,13 +58,26 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right">
                             @if($attempt->mock_test_id)
-                                <a href="{{ route('mock-test.result', $attempt->mock_test_id) }}" class="text-blue-600 hover:text-blue-700">
-                                    Xem kết quả
-                                </a>
+                                <div class="flex items-center justify-end gap-3 text-sm">
+                                    <a href="{{ route('mock-test.result', $attempt->mock_test_id) }}" class="text-blue-600 hover:text-blue-700 font-medium">
+                                        KQ Mock Test
+                                    </a>
+                                    @if(isset($isWriting) && $isWriting)
+                                        <span class="text-gray-300">|</span>
+                                        <a href="{{ route('writingHistory.show', $attempt->id) }}" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+                                            Xem chi tiết
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                                        </a>
+                                    @endif
+                                </div>
                             @else
-                                <a href="{{ route('history.show', $attempt->id) }}" class="text-blue-600 hover:text-blue-700">
-                                    Xem chi tiết
-                                </a>
+                                @if(isset($isWriting) && $isWriting)
+                                    <a href="{{ route('writingHistory.show', $attempt->id) }}" class="text-blue-600 hover:text-blue-700 font-medium">
+                                        Xem chi tiết
+                                    </a>
+                                @else
+                                    <span class="text-gray-400">Không có chi tiết</span>
+                                @endif
                             @endif
                         </td>
                     </tr>

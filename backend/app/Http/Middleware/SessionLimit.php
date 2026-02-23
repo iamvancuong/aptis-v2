@@ -20,6 +20,12 @@ class SessionLimit
         }
 
         $user = auth()->user();
+        
+        // Admins are exempt from session limits
+        if ($user->isAdmin()) {
+            return $next($request);
+        }
+
         $deviceId = $this->getDeviceId($request);
 
         // Update or create session for this device

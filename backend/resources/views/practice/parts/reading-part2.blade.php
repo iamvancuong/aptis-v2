@@ -86,13 +86,13 @@
                     </div>
                 </template>
                 
-                <div x-show="part2Pool.length === 0 && !hasAnswered(currentQuestion.id)" class="p-4 text-center text-gray-400 text-sm italic border border-dashed border-gray-300 rounded-lg">
+                <div x-show="part2Pool.length === 0 && !hasAnswered(currentQuestion.id) && !isFullTest" class="p-4 text-center text-gray-400 text-sm italic border border-dashed border-gray-300 rounded-lg">
                     All sentences placed! Click "Submit Order" to check.
                 </div>
             </div>
         </div>
         
-        <button x-show="!hasAnswered(currentQuestion.id)" 
+        <button x-show="!hasAnswered(currentQuestion.id) && !isFullTest" 
                 @click="submitPart2()" 
                 :disabled="part2Pool.length > 0"
                 class="mt-4 w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">

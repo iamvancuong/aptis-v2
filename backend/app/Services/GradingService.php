@@ -45,6 +45,9 @@ class GradingService
         $attemptAnswers = [];
         $totalPossible = $questions->sum('point');
         $totalEarned = 0;
+        
+        $isWritingMock = ($questions->first()?->skill === 'writing' && $mode === 'mock_test');
+        $aiService = $isWritingMock ? app(\App\Services\AiService::class) : null;
 
         foreach ($questions as $question) {
             $userAnswer = $answers[$question->id] ?? null;
@@ -58,16 +61,48 @@ class GradingService
                     'grading_status' => ($question->skill === 'writing' && $mode === 'mock_test') ? 'pending' : null,
                 ];
             }
+            
+            $aiMetadata = null;
+            if ($aiService && $question->skill === 'writing') {
+                try {
+                    // Only call OpenAI if there's an actual answer to grade
+                    if (!empty($userAnswer)) {
+                        $aiMetadata = $aiService->gradeWriting([
+                            'part' => $question->part,
+                            'word_limit' => $question->metadata['word_limit'] ?? null,
+                            'question_stem' => $question->stem,
+                            'student_answer' => $userAnswer,
+                        ]);
+                        $result['grading_status'] = 'ai_graded';
+                    } else {
+                        // Empty answer -> instant 0
+                        $aiMetadata = [
+                            'feedback' => [
+                                'schema_version' => 3,
+                                'part' => $question->part,
+                                'overall_score' => 0,
+                                'scores' => ['grammar' => 0, 'vocabulary' => 0, 'coherence' => 0, 'task_fulfillment' => 0],
+                                'feedback' => ['task_fulfillment' => 'No answer provided.']
+                            ]
+                        ];
+                        $result['grading_status'] = 'ai_graded';
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Auto AI Grading failed: ' . $e->getMessage());
+                    // Will remain 'pending'
+                }
+            }
 
             $totalEarned += $result['score'];
 
             $attemptAnswers[] = [
                 'question_id' => $question->id,
-                'answer' => $userAnswer,
+                'answer' => $userAnswer ?? "",
                 'is_correct' => $result['is_correct'],
                 'score' => $result['score'],
                 'feedback' => null,
                 'grading_status' => $result['grading_status'],
+                'ai_metadata' => $aiMetadata,
             ];
         }
 

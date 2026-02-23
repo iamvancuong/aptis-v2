@@ -30,7 +30,7 @@
                 <h4 class="font-bold text-gray-800">Task 1: Informal Email</h4>
             </div>
             
-            <div class="bg-green-50/50 border border-green-100 rounded-lg p-4 text-sm text-green-800" x-text="currentQuestion.metadata.task1?.instruction"></div>
+            <div class="bg-green-50/50 border border-green-100 rounded-lg p-4 text-sm text-green-800" x-text="typeof currentQuestion.metadata.task1 === 'string' ? currentQuestion.metadata.task1 : (currentQuestion.metadata.task1?.instruction || '')"></div>
             
             <div class="relative">
                 <textarea
@@ -60,7 +60,7 @@
                 <h4 class="font-bold text-gray-800">Task 2: Formal Email</h4>
             </div>
             
-            <div class="bg-orange-50/50 border border-orange-100 rounded-lg p-4 text-sm text-orange-800" x-text="currentQuestion.metadata.task2?.instruction"></div>
+            <div class="bg-orange-50/50 border border-orange-100 rounded-lg p-4 text-sm text-orange-800" x-text="typeof currentQuestion.metadata.task2 === 'string' ? currentQuestion.metadata.task2 : (currentQuestion.metadata.task2?.instruction || '')"></div>
             
             <div class="relative">
                 <textarea

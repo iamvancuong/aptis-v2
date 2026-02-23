@@ -9,13 +9,13 @@
 
         {{-- Prompts --}}
         <div class="space-y-6">
-            <template x-for="(item, idx) in currentQuestion.metadata.questions" :key="idx">
+            <template x-for="(item, idx) in currentQuestion.metadata?.questions || []" :key="idx">
                 <div class="bg-gray-50 rounded-lg p-4 space-y-3">
                     {{-- Social Post --}}
                     <div class="flex items-start gap-3">
                         <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                             x-text="idx + 1"></div>
-                        <p class="text-sm text-gray-700 font-medium" x-text="item.prompt"></p>
+                        <p class="text-sm text-gray-700 font-medium" x-text="typeof item === 'string' ? item : (item.prompt || '')"></p>
                     </div>
 
                     {{-- Word limit --}}
@@ -64,7 +64,7 @@
                             <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
                                 <h4 class="font-bold text-indigo-800 mb-2">💡 Đáp án gợi ý (Sample Answer)</h4>
                                 <div class="space-y-4">
-                                    <template x-for="(ans, idx) in currentQuestion.metadata.sample_answer" :key="idx">
+                                    <template x-for="(ans, idx) in currentQuestion.metadata?.sample_answer || []" :key="idx">
                                         <div>
                                             <div class="text-xs font-bold text-indigo-400 mb-1" x-text="'Response ' + (idx + 1)"></div>
                                             <div class="text-sm text-indigo-900 whitespace-pre-line leading-relaxed" x-text="ans"></div>

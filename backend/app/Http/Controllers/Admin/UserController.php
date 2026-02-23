@@ -191,6 +191,13 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'Violations have been reset successfully.');
     }
 
+    public function resetAi(User $user)
+    {
+        $user->increment('ai_reset_version');
+
+        return redirect()->back()->with('success', 'AI Usage limit has been reset successfully.');
+    }
+
     public function export(Request $request)
     {
         return Excel::download(new UsersExport($request->all()), 'users_' . now()->format('Y-m-d') . '.xlsx');

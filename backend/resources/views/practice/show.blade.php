@@ -2,18 +2,41 @@
 
 @section('content')
 <div class="min-h-screen bg-gray-50 flex flex-col" x-data="practiceSession({{ $set->questions }})">
-    {{-- Header --}}
-    <header class="bg-white shadow-sm sticky top-0 z-30">
+    {{-- Premium Header --}}
+    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-30 border-b border-gray-100 shadow-sm transition-all duration-300">
+        <div class="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 w-full">
+            {{-- Progress indicator line --}}
+            <div class="h-full bg-white/40 transition-all duration-500 ease-out flex justify-end" 
+                 :style="`width: ${100 - ((currentIndex + 1) / questions.length) * 100}%`"></div>
+        </div>
+        
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a href="{{ route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]) }}" class="text-gray-500 hover:text-gray-800 flex items-center gap-2 transition-colors">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
+                {{-- Back Button --}}
+                <a href="{{ route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]) }}" 
+                   class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all shrink-0">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                 </a>
-                <h1 class="text-lg font-bold text-gray-800">
-                    Reading Part <span x-text="currentQuestion?.part"></span>: <span x-text="currentQuestion?.title || 'Multiple Choice'"></span> - {{ $set->name }}
-                </h1>
-                <div class="text-sm text-gray-600">
-                    <span x-text="currentIndex + 1"></span>/<span x-text="questions.length"></span>
+                
+                {{-- Title Area --}}
+                <div class="flex flex-col flex-1 min-w-0 text-center sm:text-left md:flex-row md:items-baseline md:justify-center md:gap-3">
+                    <h1 class="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate tracking-tight">
+                        <span class="capitalize" x-text="currentQuestion?.skill || '{{ ucfirst($set->quiz->skill) }}'"></span> 
+                        Part <span x-text="currentQuestion?.part || '{{ $set->quiz->part }}'"></span>
+                        <span class="hidden md:inline text-gray-300 mx-1">|</span>
+                    </h1>
+                    <p class="text-sm font-medium text-indigo-600 truncate mt-0.5 md:mt-0">
+                        <span x-text="currentQuestion?.title || '{{ $set->name }}'"></span>
+                    </p>
+                </div>
+
+                {{-- Counter & Progress --}}
+                <div class="flex flex-col items-end shrink-0">
+                    <div class="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-semibold text-sm">
+                        <span x-text="currentIndex + 1"></span>
+                        <span class="text-indigo-300 opacity-60">/</span>
+                        <span x-text="questions.length"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,14 +95,43 @@
                             <svg class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
                         {{-- Dropdown Nav Panel --}}
-                        <div x-show="showNavMenu" @click.outside="showNavMenu = false" x-transition class="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 p-3 min-w-[200px] z-50">
-                            <p class="text-xs text-gray-500 uppercase font-bold mb-2 tracking-wide">Questions</p>
-                            <div class="flex flex-wrap gap-2">
-                                <template x-for="(q, index) in questions" :key="q.id">
-                                    <button @click="jumpTo(index); showNavMenu = false"
-                                        class="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-medium transition-all border-2"
-                                        :class="getNavCircleClass(index, q.id)">
-                                        <span x-text="index + 1"></span>
+                        <div x-show="showNavMenu" @click.outside="showNavMenu = false" x-transition 
+                             class="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[280px] sm:min-w-[340px] max-w-[90vw] max-h-[60vh] flex flex-col z-50 overflow-hidden">
+                            
+                            {{-- Sticky Header with Search --}}
+                            <div class="flex items-center justify-between p-3 border-b border-gray-100 bg-gray-50 shrink-0">
+                                <p class="text-xs text-gray-500 uppercase font-bold tracking-wide">Danh sách câu hỏi</p>
+                            </div>
+                            <div class="p-2 border-b border-gray-100 bg-white shrink-0">
+                                <div class="relative">
+                                    <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                    <input type="text" x-model="searchQuery" placeholder="Tìm kiếm nội dung đề bài..." 
+                                        class="w-full text-sm pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                                    <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600">
+                                        <svg class="w-4 h-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Scrollable List view --}}
+                            <div class="flex-1 overflow-y-auto bg-gray-50 p-2 space-y-2">
+                                <template x-if="filteredQuestions().length === 0">
+                                    <div class="text-sm text-center text-gray-500 py-4">Không tìm thấy câu hỏi phù hợp</div>
+                                </template>
+                                <template x-for="q in filteredQuestions()" :key="q.originalIndex">
+                                    <button @click="jumpTo(q.originalIndex); showNavMenu = false; searchQuery = ''"
+                                        class="w-full text-left bg-white p-3 rounded-lg border shadow-sm hover:border-indigo-300 transition-colors flex items-start gap-3"
+                                        :class="currentIndex === q.originalIndex ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-200'">
+                                        
+                                        <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold border-2 shrink-0"
+                                            :class="getNavCircleClass(q.originalIndex, q.id)">
+                                            <span x-text="q.originalIndex + 1"></span>
+                                        </div>
+
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Part <span x-text="q.part"></span></p>
+                                            <p class="text-sm text-gray-800 line-clamp-2" x-text="q.stem || 'Câu hỏi #' + (q.originalIndex + 1)"></p>
+                                        </div>
                                     </button>
                                 </template>
                             </div>
@@ -118,6 +170,7 @@
             answers: {},
             feedback: {},
             showNavMenu: false,
+            searchQuery: '', // Search text
 
             // Reading state
             part1Answers: {},
@@ -563,6 +616,23 @@
 
             jumpTo(index) {
                 this.currentIndex = index;
+            },
+
+            filteredQuestions() {
+                const query = this.searchQuery.toLowerCase().trim();
+                return this.questions
+                    .map((q, index) => ({ ...q, originalIndex: index }))
+                    .filter(q => {
+                        if (!query) return true;
+                        
+                        // Check if query matches question number directly
+                        if (!isNaN(query) && parseInt(query) === q.originalIndex + 1) return true;
+
+                        // Flexible multi-word search
+                        const searchTarget = ((q.stem || '') + ' ' + (q.title || '')).toLowerCase();
+                        const searchWords = query.split(/\s+/);
+                        return searchWords.every(word => searchTarget.includes(word));
+                    });
             },
 
             finish() {

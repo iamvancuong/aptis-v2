@@ -16,9 +16,21 @@
         <div class="space-y-4">
             <template x-for="(field, idx) in currentQuestion.metadata.fields" :key="idx">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" x-text="field.label"></label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700" x-text="field.label"></label>
+                        <span class="text-xs" :class="getWordCountClass(writingPart1Answers[idx], {max: 20})">
+                            <span x-text="countWords(writingPart1Answers[idx])"></span>/20 từ
+                        </span>
+                    </div>
                     <input type="text"
                         x-model="writingPart1Answers[idx]"
+                        @input="
+                            if (countWords($event.target.value) > 20) {
+                                const words = $event.target.value.trim().split(/\s+/).slice(0, 20);
+                                writingPart1Answers[idx] = words.join(' ');
+                                $event.target.value = writingPart1Answers[idx];
+                            }
+                        "
                         :placeholder="field.placeholder || ''"
                         :disabled="hasAnswered(currentQuestion.id)"
                         class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500">

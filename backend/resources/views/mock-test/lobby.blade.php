@@ -75,6 +75,18 @@
             <form method="POST" action="{{ route('mock-test.start') }}">
                 @csrf
                 <input type="hidden" name="skill" value="{{ $skill }}">
+                
+                @if($skill === 'writing' && isset($writingSets) && $writingSets->count() > 0)
+                    <div class="mb-6">
+                        <label for="set_id" class="block text-sm font-medium text-gray-700 mb-2 mt-4">Chọn bộ đề Writing</label>
+                        <select name="set_id" id="set_id" class="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-purple-500 focus:border-purple-500 py-3 px-4 bg-white hover:border-gray-400 transition-colors cursor-pointer" required>
+                            @foreach($writingSets as $set)
+                                <option value="{{ $set->id }}">{{ $set->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
                 <button type="submit" class="w-full py-4 px-6 bg-gradient-to-r
                     @if($skill === 'reading') from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700
                     @elseif($skill === 'listening') from-green-500 to-green-600 hover:from-green-600 hover:to-green-700

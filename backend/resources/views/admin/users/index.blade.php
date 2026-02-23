@@ -33,11 +33,11 @@
                 <option value="blocked" {{ request('status') === 'blocked' ? 'selected' : '' }}>Blocked</option>
             </select>
             <select name="expiration" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="">All Expiration</option>
-                <option value="expired" {{ request('expiration') === 'expired' ? 'selected' : '' }}>Expired</option>
-                <option value="warning" {{ request('expiration') === 'warning' ? 'selected' : '' }}>Warning</option>
-                <option value="active" {{ request('expiration') === 'active' ? 'selected' : '' }}>Active</option>
-                <option value="never" {{request('expiration') === 'never' ? 'selected' : '' }}>Never</option>
+                <option value="">Lọc ngày thi</option>
+                <option value="expired" {{ request('expiration') === 'expired' ? 'selected' : '' }}>Đã quá hạn</option>
+                <option value="warning" {{ request('expiration') === 'warning' ? 'selected' : '' }}>Sắp thi (7 ngày)</option>
+                <option value="active" {{ request('expiration') === 'active' ? 'selected' : '' }}>Chưa thi</option>
+                <option value="never" {{request('expiration') === 'never' ? 'selected' : '' }}>Không giới hạn</option>
             </select>
             <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap">
                 Filter
@@ -76,7 +76,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Violations</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiration</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày thi</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quick Extend</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
         </tr>
@@ -113,10 +113,10 @@
                         ];
                     @endphp
                     <span class="px-2 py-1 text-xs font-semibold rounded {{ $badgeColors[$status] }}">
-                        @if($status === 'expired') Expired
-                        @elseif($status === 'warning') {{ $user->daysUntilExpiration() }} days
-                        @elseif($status === 'active') {{ $user->expires_at->format('M d, Y') }}
-                        @else Never
+                        @if($status === 'expired') Đã quá hạn
+                        @elseif($status === 'warning') {{ $user->expires_at->format('d/m/Y') }} (Còn {{ $user->daysUntilExpiration() }} ngày)
+                        @elseif($status === 'active') {{ $user->expires_at->format('d/m/Y') }}
+                        @else Không giới hạn
                         @endif
                     </span>
                 </td>
@@ -156,39 +156,55 @@
                     <!-- View -->
                     <a href="{{ route('admin.users.show', $user) }}" 
                         class="inline-flex items-center px-3 py-1 bg-sky-100 text-sky-700 rounded-md hover:bg-sky-200 font-medium text-xs">
-                        View
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        Xem
                     </a>
                     
                     <!-- Edit -->
                     <a href="{{ route('admin.users.edit', $user) }}" 
                         class="inline-flex items-center px-3 py-1 bg-violet-100 text-violet-700 rounded-md hover:bg-violet-200 font-medium text-xs">
-                        Edit
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        Sửa
                     </a>
+                    
+                    <!-- Reset AI -->
+                    @if(!$user->isAdmin())
+                        <form action="{{ route('admin.users.reset-ai', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Reset AI Usage (Làm mới số lần dùng AI) cho người dùng này?')">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center px-3 py-1 bg-fuchsia-100 text-fuchsia-700 rounded-md hover:bg-fuchsia-200 font-medium text-xs">
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                Reset AI
+                            </button>
+                        </form>
+                    @endif
                     
                     <!-- Block/Unblock -->
                     @if($user->status === 'active' && !$user->isAdmin())
-                        <form action="{{ route('admin.users.block', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Block this user?')">
+                        <form action="{{ route('admin.users.block', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Khóa người dùng này?')">
                             @csrf
                             <button type="submit" class="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium text-xs">
-                                Block
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                Khóa
                             </button>
                         </form>
                     @elseif($user->status === 'blocked')
                         <form action="{{ route('admin.users.unblock', $user) }}" method="POST" class="inline-block">
                             @csrf
                             <button type="submit" class="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-md hover:bg-emerald-200 font-medium text-xs">
-                                Unblock
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                                Mở khóa
                             </button>
                         </form>
                     @endif
                     
                     <!-- Delete -->
                     @if(!$user->isAdmin() && $user->id !== auth()->id())
-                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Delete this user permanently?')">
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Xoá vĩnh viễn người dùng này?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="inline-flex items-center px-3 py-1 bg-pink-100 text-pink-700 rounded-md hover:bg-pink-200 font-medium text-xs">
-                                Delete
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                Xóa
                             </button>
                         </form>
                     @endif

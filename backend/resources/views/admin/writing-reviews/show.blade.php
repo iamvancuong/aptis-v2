@@ -19,9 +19,13 @@
         </div>
     </div>
 
-    {{-- Each Writing Answer --}}
-    @foreach($attempt->attemptAnswers as $answer)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {{-- Overall Grading Form --}}
+    <form action="{{ route('admin.writing-reviews.grade', $attempt->id) }}" method="POST" class="flex flex-col gap-10 pb-28">
+        @csrf
+
+        {{-- Each Writing Answer --}}
+        @foreach($attempt->attemptAnswers as $answer)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {{-- Part Header --}}
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                 <h2 class="font-bold text-gray-800">{{ $answer->question->title ?? 'Writing Part ' . $answer->question->part }}</h2>
@@ -38,8 +42,8 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
-                {{-- Left: Question + Student Answer --}}
+            <div class="flex flex-col border-t border-gray-200">
+                {{-- Top: Question + Student Answer --}}
                 <div class="p-6 space-y-4">
                     {{-- Question Prompt --}}
                     <div>
@@ -91,21 +95,83 @@
                                 : str_word_count($answer->answer ?? '');
                         @endphp
                         <p class="text-xs text-gray-400 mt-1">Số từ: ~{{ $wordCount }}</p>
+
+                        {{-- AI Feedback Schema V3 Reference for Admin --}}
+                        @if(!empty($answer->ai_metadata['feedback']))
+                            @php
+                                $aiFeedback = $answer->ai_metadata['feedback'];
+                                $schemaVersion = $aiFeedback['schema_version'] ?? 1;
+                            @endphp
+
+                            <div class="mt-6 border border-indigo-100 rounded-xl overflow-hidden shadow-sm" x-data="{ openAiNotes: false }">
+                                {{-- Header --}}
+                                <button type="button" @click="openAiNotes = !openAiNotes" class="w-full bg-indigo-50 px-4 py-3 flex items-center justify-between text-indigo-800 hover:bg-indigo-100 transition-colors">
+                                    <div class="flex items-center gap-2 font-bold text-sm">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                        <span>Tham khảo phân tích từ AI (AI chấm: {{ $aiFeedback['overall_score'] ?? '--' }})</span>
+                                    </div>
+                                    <svg class="w-4 h-4 transition-transform" :class="{'rotate-180': openAiNotes}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </button>
+
+                                <div x-show="openAiNotes" x-transition class="p-4 bg-white space-y-4 text-sm" x-cloak>
+                                    {{-- Criteria Scores --}}
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach(['grammar', 'vocabulary', 'coherence', 'task_fulfillment'] as $criteria)
+                                            @if(isset($aiFeedback['scores'][$criteria]))
+                                                <div class="bg-gray-50 rounded p-2 border border-gray-100">
+                                                    <div class="font-bold text-gray-700 capitalize flex justify-between">
+                                                        <span>{{ str_replace('_', ' ', $criteria) }}</span>
+                                                        <span class="text-indigo-600">{{ $aiFeedback['scores'][$criteria] }}/5</span>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                    {{-- Schema V3 Part Responses --}}
+                                    @if($schemaVersion >= 3 && !empty($aiFeedback['part_responses']))
+                                        <div class="space-y-4 mt-4 border-t border-gray-100 pt-4">
+                                            @foreach($aiFeedback['part_responses'] as $idx => $response)
+                                                <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                                                    <div class="font-bold text-gray-800 mb-2 truncate">
+                                                        {{ $idx + 1 }}. {{ $response['label'] ?? 'Phần' }}
+                                                    </div>
+                                                    
+                                                    @if(!empty($response['detailed_corrections']))
+                                                        <div class="space-y-2 mb-3">
+                                                            @foreach($response['detailed_corrections'] as $correction)
+                                                                <div class="bg-white rounded p-2 border border-amber-100 text-xs text-gray-600">
+                                                                    <div class="line-through text-gray-400">{{ $correction['original'] ?? '' }}</div>
+                                                                    <div class="font-bold text-green-600">{{ $correction['corrected'] ?? '' }}</div>
+                                                                    <div class="italic text-gray-500 mt-1">{{ $correction['explanation'] ?? '' }}</div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+
+                                                    @if(!empty($response['improved_sample']))
+                                                        <div class="text-xs text-indigo-700 bg-indigo-50 p-2 rounded border border-indigo-100 whitespace-pre-wrap">{{ $response['improved_sample'] }}</div>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
-                {{-- Right: Grading Form --}}
-                <div class="p-6" x-data="{ score: {{ $answer->writingReview->total_score ?? 0 }} }">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Đánh giá</h3>
+                {{-- Bottom: Grading Form --}}
+                <div class="p-6 bg-gray-50 border-t border-gray-200" x-data="{ score: {{ $answer->writingReview->total_score ?? 0 }} }">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Đánh giá Part {{ $answer->question->part }}</h3>
 
-                    <form action="{{ route('admin.writing-reviews.grade', $answer->id) }}" method="POST" class="space-y-5">
-                        @csrf
-
+                    <div class="space-y-5">
                         {{-- Score --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Điểm (0-10)</label>
                             <div class="flex items-center gap-4">
-                                <input type="range" name="total_score" min="0" max="10" step="0.5"
+                                <input type="range" name="scores[{{ $answer->id }}]" min="0" max="10" step="0.5"
                                     x-model="score"
                                     class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
                                 <span class="text-2xl font-bold text-indigo-600 w-12 text-center" x-text="score"></span>
@@ -120,20 +186,11 @@
                         {{-- Comment --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Nhận xét / Comment</label>
-                            <textarea name="comment" rows="5"
+                            <textarea name="comments[{{ $answer->id }}]" rows="5"
                                 class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
                                 placeholder="Nhận xét về bài viết...">{{ $answer->writingReview->comment ?? '' }}</textarea>
                         </div>
-
-                        {{-- Submit --}}
-                        <button type="submit"
-                            class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            {{ $answer->grading_status === 'graded' ? 'Cập nhật đánh giá' : 'Lưu đánh giá' }}
-                        </button>
-                    </form>
+                    </div>
 
                     @if($answer->writingReview)
                         <p class="text-xs text-gray-400 mt-3 text-center">
@@ -145,6 +202,20 @@
             </div>
         </div>
     @endforeach
+
+        {{-- Master Submit Button --}}
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40">
+            <div class="max-w-7xl mx-auto flex justify-end">
+                <button type="submit"
+                    class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Lưu toàn bộ điểm Writing
+                </button>
+            </div>
+        </div>
+    </form>
 
     @if(session('success'))
         <div class="fixed bottom-6 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce"

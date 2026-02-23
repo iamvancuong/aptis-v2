@@ -28,21 +28,44 @@ class MockTestController extends Controller
 
         // Check available sets per part
         $partCounts = [];
-        foreach (array_count_values($sections) as $part => $needed) {
-            $available = Set::whereHas('quiz', function ($q) use ($skill, $part) {
-                $q->where('skill', $skill)->where('part', $part);
-            })->where('is_public', true)->count();
+        
+        $writingSets = collect();
+        if ($skill === 'writing') {
+            // For writing, we just need at least one cohesive set (Part 1 container)
+            $writingSetsQuery = Set::whereHas('quiz', function ($q) use ($skill) {
+                $q->where('skill', $skill)->where('part', 1);
+            })->where('is_public', true);
+            
+            $availableSets = $writingSetsQuery->count();
+            $writingSets = $writingSetsQuery->get();
 
-            $partCounts[$part] = [
-                'needed' => $needed,
-                'available' => $available,
-                'enough' => $available >= $needed,
-            ];
+            foreach ($sections as $part) {
+                $partCounts[$part] = [
+                    'needed' => 1,
+                    'available' => $availableSets,
+                    'enough' => $availableSets >= 1,
+                ];
+            }
+        } else {
+            foreach (array_count_values($sections) as $part => $repeats) {
+                $perPartCount = config("aptis.exam_part_counts.{$skill}.{$part}", 1);
+                $needed = $repeats * $perPartCount;
+
+                $available = Set::whereHas('quiz', function ($q) use ($skill, $part) {
+                    $q->where('skill', $skill)->where('part', $part);
+                })->where('is_public', true)->count();
+
+                $partCounts[$part] = [
+                    'needed' => $needed,
+                    'available' => $available,
+                    'enough' => $available >= 1, // At least one set required to start
+                ];
+            }
         }
 
         $canStart = collect($partCounts)->every(fn($p) => $p['enough']);
 
-        return view('mock-test.lobby', compact('skill', 'sections', 'duration', 'partCounts', 'canStart'));
+        return view('mock-test.lobby', compact('skill', 'sections', 'duration', 'partCounts', 'canStart', 'writingSets'));
     }
 
     /**
@@ -59,27 +82,60 @@ class MockTestController extends Controller
         $duration = config("aptis.exam_duration.{$skill}");
 
         // Pick random sets for each section, ensuring no duplicates for repeated parts
-        $usedSetIds = [];
-        $sections = [];
+        // For Writing, we MUST use a single cohesive Set across all parts to maintain the scenario context.
+        if ($skill === 'writing') {
+            $request->validate([
+                'set_id' => 'required|exists:sets,id',
+            ]);
 
-        foreach ($sectionConfig as $part) {
-            $set = Set::whereHas('quiz', function ($q) use ($skill, $part) {
-                $q->where('skill', $skill)->where('part', $part);
-            })
+            // Pick the selected cohesive Set
+            $cohesiveSet = Set::where('id', $request->set_id)
                 ->where('is_public', true)
-                ->whereNotIn('id', $usedSetIds)
-                ->inRandomOrder()
                 ->first();
 
-            if (!$set) {
-                return back()->with('error', "Không đủ bộ đề cho Part {$part}. Vui lòng liên hệ admin.");
+            if (!$cohesiveSet) {
+                return back()->with('error', "Không đủ bộ đề Writing hoàn chỉnh. Vui lòng liên hệ admin.");
             }
 
-            $usedSetIds[] = $set->id;
-            $sections[] = [
-                'part' => $part,
-                'set_id' => $set->id,
-            ];
+            foreach ($sectionConfig as $part) {
+                $sections[] = [
+                    'part' => $part,
+                    'set_id' => $cohesiveSet->id,
+                ];
+            }
+        } else {
+            // For Reading and Listening, pick random sets for each section
+            $usedSetIds = [];
+            foreach ($sectionConfig as $part) {
+                $idealCount = config("aptis.exam_part_counts.{$skill}.{$part}", 1);
+
+                $sets = Set::whereHas('quiz', function ($q) use ($skill, $part) {
+                    $q->where('skill', $skill)->where('part', $part);
+                })
+                    ->where('is_public', true)
+                    ->whereNotIn('id', $usedSetIds)
+                    ->inRandomOrder()
+                    ->limit($idealCount)
+                    ->get();
+
+                if ($sets->isEmpty()) {
+                    return back()->with('error', "Không đủ bộ đề cho Part {$part}. Vui lòng liên hệ admin.");
+                }
+
+                $usedSetIds = array_merge($usedSetIds, $sets->pluck('id')->toArray());
+                
+                if ($idealCount > 1) {
+                    $sections[] = [
+                        'part' => $part,
+                        'set_ids' => $sets->pluck('id')->toArray(),
+                    ];
+                } else {
+                    $sections[] = [
+                        'part' => $part,
+                        'set_id' => $sets->first()->id,
+                    ];
+                }
+            }
         }
 
         $mockTest = MockTest::create([
@@ -112,12 +168,17 @@ class MockTestController extends Controller
         $sectionsWithSets = $mockTest->getSectionsWithSets();
 
         // Pre-build JSON-safe data for Alpine.js (can't use closures in @json)
-        $sectionsJson = $sectionsWithSets->map(function ($s) {
+        $sectionsJson = $sectionsWithSets->map(function ($s) use ($mockTest) {
+            $questions = $s['set']->questions;
+            if ($mockTest->skill === 'writing') {
+                $questions = $questions->filter(fn($q) => $q->part === (int)$s['part']);
+            }
+
             return [
                 'index' => $s['index'],
                 'part' => $s['part'],
                 'set_id' => $s['set_id'],
-                'questions' => $s['set']->questions->map(function ($q) {
+                'questions' => $questions->map(function ($q) {
                     return [
                         'id' => $q->id,
                         'skill' => $q->skill,
@@ -161,32 +222,43 @@ class MockTestController extends Controller
         $sectionScores = [];
         $totalEarned = 0;
         $totalPossible = 0;
+        
+        $allAttemptAnswers = [];
+        // For writing, we'll store the cohesive set ID to attach to the single attempt
+        $firstSetId = null;
 
         $finishedAt = now();
         $durationSeconds = $mockTest->started_at->diffInSeconds($finishedAt);
+        
+        $partStats = [];
 
         foreach ($sectionsWithSets as $sectionIndex => $section) {
+            /** @var array $section */
             $set = $section['set'];
+            if (!$firstSetId) $firstSetId = $set->id;
+            
             $questions = $set->questions;
+            if ($mockTest->skill === 'writing') {
+                $questions = $questions->filter(fn($q) => $q->part === (int)$section['part']);
+            }
             $sectionAnswers = $data['answers'][$sectionIndex] ?? [];
 
             // Grade this section using shared GradingService
             $result = $this->gradingService->gradeSet($questions, $sectionAnswers, 'mock_test');
 
-            // Create an attempt for this section
-            $attempt = \App\Models\Attempt::create([
-                'user_id' => auth()->id(),
-                'skill' => $mockTest->skill,
-                'mode' => 'mock_test',
-                'set_id' => $set->id,
-                'mock_test_id' => $mockTest->id,
-                'started_at' => $mockTest->started_at,
-                'finished_at' => $finishedAt,
-                'duration_seconds' => $durationSeconds,
-                'score' => $result['percentage'],
-            ]);
+            // Collect attempt answers for this section
+            $allAttemptAnswers = array_merge($allAttemptAnswers, $result['attempt_answers']);
 
-            $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+            // Collect part stats for metadata
+            $part = (int)$section['part'];
+            if (!isset($partStats[$part])) {
+                $partStats[$part] = ['correct' => 0, 'total' => count($questions)];
+            }
+            foreach ($result['attempt_answers'] as $ans) {
+                if ($ans['is_correct']) {
+                    $partStats[$part]['correct']++;
+                }
+            }
 
             $sectionScores[] = round($result['percentage'], 2);
             $totalEarned += $result['total_earned'];
@@ -195,6 +267,22 @@ class MockTestController extends Controller
 
         // Calculate overall score
         $overallScore = ($totalPossible > 0) ? ($totalEarned / $totalPossible) * 100 : 0;
+
+        // Create a SINGLE attempt for the entire mock test skill
+        $attempt = \App\Models\Attempt::create([
+            'user_id' => auth()->id(),
+            'skill' => $mockTest->skill,
+            'mode' => 'mock_test',
+            'set_id' => $firstSetId,
+            'mock_test_id' => $mockTest->id,
+            'started_at' => $mockTest->started_at,
+            'finished_at' => $finishedAt,
+            'duration_seconds' => $durationSeconds,
+            'score' => round($overallScore, 2),
+            'metadata' => ['part_stats' => $partStats],
+        ]);
+
+        $attempt->attemptAnswers()->createMany($allAttemptAnswers);
 
         // Update mock test
         $mockTest->update([

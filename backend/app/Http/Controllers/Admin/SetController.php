@@ -16,6 +16,7 @@ class SetController extends Controller
         // Get paginated sets with quiz relationship
         $sets = Set::with('quiz')
                   ->join('quizzes', 'sets.quiz_id', '=', 'quizzes.id')
+                  ->where('quizzes.skill', '!=', 'writing') // Managed by WritingSetController
                   ->select('sets.*')
                   ->orderBy('quizzes.skill')
                   ->orderBy('quizzes.part')

@@ -21,12 +21,6 @@ class QuizSeeder extends Seeder
             ['skill' => 'listening', 'part' => 2, 'title' => 'Listening Part 2: Conversation', 'duration_minutes' => 15],
             ['skill' => 'listening', 'part' => 3, 'title' => 'Listening Part 3: Monologue', 'duration_minutes' => 20],
             ['skill' => 'listening', 'part' => 4, 'title' => 'Listening Part 4: Complex Audio', 'duration_minutes' => 25],
-
-            // Writing
-            ['skill' => 'writing', 'part' => 1, 'title' => 'Writing Part 1: Form Filling', 'duration_minutes' => 5],
-            ['skill' => 'writing', 'part' => 2, 'title' => 'Writing Part 2: Email', 'duration_minutes' => 10],
-            ['skill' => 'writing', 'part' => 3, 'title' => 'Writing Part 3: Social Response', 'duration_minutes' => 10],
-            ['skill' => 'writing', 'part' => 4, 'title' => 'Writing Part 4: Essay', 'duration_minutes' => 20],
         ];
 
         foreach ($quizzes as $quiz) {

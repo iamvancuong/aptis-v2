@@ -64,7 +64,7 @@
             <x-button href="{{ route('admin.sets.index') }}" variant="secondary" class="w-full">
                 Manage Sets
             </x-button>
-            <x-button href="{{ route('admin.questions.index') }}" variant="secondary" class="w-full">
+            <x-button href="{{ route('admin.questions.reading') }}" variant="secondary" class="w-full">
                 Manage Questions
             </x-button>
             <x-button href="{{ route('admin.users.index') }}" variant="secondary" class="w-full">
