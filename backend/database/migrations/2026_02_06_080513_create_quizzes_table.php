@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->enum('skill', ['reading', 'listening', 'writing']);
+            $table->enum('skill', ['reading', 'listening', 'writing', 'grammar']);
             $table->tinyInteger('part');
             $table->integer('duration_minutes')->nullable();
             $table->boolean('is_published')->default(false);

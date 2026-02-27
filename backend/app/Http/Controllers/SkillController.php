@@ -10,8 +10,13 @@ class SkillController extends Controller
     public function show($skill)
     {
         // Validate skill
-        if (!in_array($skill, ['reading', 'listening', 'writing'])) {
+        if (!in_array($skill, ['reading', 'listening', 'writing', 'grammar'])) {
             abort(404);
+        }
+
+        // Grammar doesn't use parts → redirect to grammar index
+        if ($skill === 'grammar') {
+            return redirect()->route('grammar.index');
         }
 
         // Get all quizzes (parts) for this skill

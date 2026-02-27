@@ -27,7 +27,12 @@
         </div>
 
         <div class="space-x-4">
-            <a href="{{ route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]) }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200">
+            @php
+                $summaryBackRoute = $set->quiz->skill === 'grammar' 
+                    ? route('grammar.index') 
+                    : route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]);
+            @endphp
+            <a href="{{ $summaryBackRoute }}" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200">
                 Back to Sets
             </a>
             <button @click="resetPractice()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">

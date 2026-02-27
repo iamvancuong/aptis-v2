@@ -101,4 +101,40 @@ class WritingReviewController extends Controller
 
         return redirect()->route('admin.writing-reviews.index')->with('success', 'Đã chấm bài Writing thành công!');
     }
+
+    /**
+     * Bulk approve: set grading_status = 'graded' for all ai_graded answers.
+     */
+    public function bulkApprove(Request $request)
+    {
+        $data = $request->validate(['attempt_ids' => 'required|array', 'attempt_ids.*' => 'integer']);
+
+        $attempts = Attempt::whereIn('id', $data['attempt_ids'])
+            ->where('skill', 'writing')
+            ->with(['attemptAnswers.question'])
+            ->get();
+
+        $count = 0;
+        foreach ($attempts as $attempt) {
+            $writingAnswers = $attempt->attemptAnswers
+                ->filter(fn($a) => $a->grading_status === 'ai_graded');
+
+            foreach ($writingAnswers as $answer) {
+                // Use AI overall_score as the score
+                $aiScore = $answer->ai_metadata['feedback']['overall_score'] ?? $answer->score;
+                $answer->update(['grading_status' => 'graded', 'score' => $aiScore]);
+            }
+
+            if ($writingAnswers->count() > 0) {
+                // Recalculate attempt score
+                $attempt->refresh()->load('attemptAnswers.question');
+                $totalEarned   = $attempt->attemptAnswers->sum('score');
+                $totalPossible = $attempt->attemptAnswers->sum(fn($a) => $a->question->point ?? 10);
+                $attempt->update(['score' => $totalPossible > 0 ? round($totalEarned / $totalPossible * 100, 2) : 0]);
+                $count++;
+            }
+        }
+
+        return redirect()->back()->with('success', "Đã duyệt {$count} bài Writing thành công!");
+    }
 }

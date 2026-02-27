@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quiz_id')->constrained()->onDelete('cascade');
-            $table->enum('skill', ['reading', 'listening', 'writing']);
+            $table->enum('skill', ['reading', 'listening', 'writing', 'grammar']);
             $table->tinyInteger('part');
             $table->string('type');
             $table->text('stem')->nullable();

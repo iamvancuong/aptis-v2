@@ -11,6 +11,7 @@ class Set extends Model
     protected $fillable = [
         'quiz_id',
         'title',
+        'status',
         'order',
         'is_public',
         'deadline',

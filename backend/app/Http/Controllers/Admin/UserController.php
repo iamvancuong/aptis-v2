@@ -198,6 +198,17 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'AI Usage limit has been reset successfully.');
     }
 
+    public function addAi(Request $request, User $user)
+    {
+        $request->validate([
+            'amount' => 'required|integer|min:1|max:1000'
+        ]);
+
+        $user->increment('ai_extra_uses', $request->amount);
+
+        return redirect()->back()->with('success', "Thêm {$request->amount} lượt dùng AI thành công.");
+    }
+
     public function export(Request $request)
     {
         return Excel::download(new UsersExport($request->all()), 'users_' . now()->format('Y-m-d') . '.xlsx');

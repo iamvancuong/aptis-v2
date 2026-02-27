@@ -8,7 +8,102 @@
     <p class="mt-2 text-gray-600">Chọn một trong ba kỹ năng để bắt đầu luyện tập</p>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+{{-- Writing Graded Notification Banner --}}
+@if(($newlyGraded ?? 0) > 0)
+<div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+    <div class="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div class="flex-1">
+        <p class="text-sm font-semibold text-green-800">
+            🎉 {{ $newlyGraded }} bài Writing của bạn đã được chấm trong 7 ngày qua!
+        </p>
+        <p class="text-xs text-green-600">Xem kết quả chi tiết trong lịch sử Writing</p>
+    </div>
+    <a href="{{ route('writingHistory.index') }}"
+       class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+        Xem ngay →
+    </a>
+</div>
+@endif
+
+{{-- Quick Stats Row --}}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {{-- Total Attempts --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
+        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+            <div class="text-xl font-black text-gray-800">{{ $totalAttempts }}</div>
+            <div class="text-xs text-gray-500 font-medium">Bài đã làm</div>
+        </div>
+    </div>
+
+    {{-- Avg Score --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        </div>
+        <div>
+            <div class="text-xl font-black text-gray-800">
+                {{ $avgScore !== null ? $avgScore . '%' : '—' }}
+            </div>
+            <div class="text-xs text-gray-500 font-medium">Điểm trung bình</div>
+        </div>
+    </div>
+
+    {{-- AI Remaining --}}
+    @php
+        $isAiUnlimited = $totalAiLimit === -1;
+        $aiPct = ($totalAiLimit > 0 && !$isAiUnlimited) ? round($aiRemaining / $totalAiLimit * 100) : ($isAiUnlimited ? 100 : 0);
+        $aiColor = $isAiUnlimited ? 'text-green-600 bg-green-100' : ($aiRemaining > $totalAiLimit * 0.5 ? 'text-green-600 bg-green-100' : ($aiRemaining > 0 ? 'text-amber-600 bg-amber-100' : 'text-red-600 bg-red-100'));
+    @endphp
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
+        <div class="w-10 h-10 {{ $aiColor }} rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+        <div>
+            @if ($isAiUnlimited)
+                <div class="text-xl font-black text-gray-800">∞<span class="text-sm font-medium text-gray-400">/∞</span></div>
+                <div class="text-xs text-gray-500 font-medium">AI Writing không giới hạn</div>
+            @else
+                <div class="text-xl font-black text-gray-800">{{ $aiRemaining }}<span class="text-sm font-medium text-gray-400">/{{ $totalAiLimit }}</span></div>
+                <div class="text-xs text-gray-500 font-medium">AI Writing còn lại</div>
+            @endif
+        </div>
+    </div>
+
+    {{-- Account Expiry --}}
+    @php
+        $expiryColor = match($expirationStatus) {
+            'expired' => 'text-red-600 bg-red-100',
+            'warning' => 'text-amber-600 bg-amber-100',
+            'active'  => 'text-green-600 bg-green-100',
+            default   => 'text-gray-500 bg-gray-100',
+        };
+    @endphp
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
+        <div class="w-10 h-10 {{ $expiryColor }} rounded-lg flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <div>
+            @if($expirationStatus === 'never')
+                <div class="text-xl font-black text-gray-600">∞</div>
+                <div class="text-xs text-gray-500 font-medium">Không giới hạn</div>
+            @elseif($expirationStatus === 'expired')
+                <div class="text-base font-black text-red-600">Đã hết hạn</div>
+                <div class="text-xs text-gray-500 font-medium">{{ $expiresAt->format('d/m/Y') }}</div>
+            @else
+                <div class="text-xl font-black text-gray-800">{{ $daysUntilExpiry }}d</div>
+                <div class="text-xs text-gray-500 font-medium">Còn {{ $expiresAt->format('d/m/Y') }}</div>
+            @endif
+        </div>
+    </div>
+</div>
+
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
     <!-- Reading -->
     <x-card>
         <div class="text-center">
@@ -50,6 +145,20 @@
             <x-button href="{{ route('skills.show', 'writing') }}" class="w-full">Bắt đầu</x-button>
         </div>
     </x-card>
+
+    <!-- Grammar & Vocabulary -->
+    <x-card>
+        <div class="text-center">
+            <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Grammar</h3>
+            <p class="text-gray-600 text-sm mb-4">Ngữ pháp & Từ vựng</p>
+            <x-button href="{{ route('grammar.index') }}" class="w-full">Bắt đầu</x-button>
+        </div>
+    </x-card>
 </div>
 
 <div class="mt-8 mb-8">
@@ -67,11 +176,15 @@
         <div class="flex flex-col sm:flex-row gap-3">
             <x-button href="{{ route('history.index') }}" variant="secondary" class="flex-1 justify-center flex items-center gap-2">
                 <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Trắc nghiệm (Reading / Listening)
+                Trắc nghiệm & Ngữ pháp
             </x-button>
             <x-button href="{{ route('writingHistory.index') }}" variant="secondary" class="flex-1 justify-center flex items-center gap-2">
                 <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 Tự luận (Writing)
+            </x-button>
+            <x-button href="{{ route('leaderboard.index') }}" variant="secondary" class="flex-1 justify-center flex items-center gap-2">
+                <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                🏆 Leaderboard
             </x-button>
         </div>
     </x-card>
@@ -89,7 +202,7 @@
 
             // Extract all unique dates for the X-axis labels to align the different datasets
             const allDates = new Set();
-            ['reading', 'listening', 'writing', 'mock_test'].forEach(skill => {
+            ['reading', 'listening', 'writing', 'grammar', 'mock_test'].forEach(skill => {
                 if (result[skill]) {
                     result[skill].forEach(dataPoint => allDates.add(dataPoint.date));
                 }
@@ -153,6 +266,15 @@
                             data: mapDataToDates(result.writing),
                             borderColor: '#8b5cf6', // purple-500
                             backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Grammar Practice',
+                            data: mapDataToDates(result.grammar),
+                            borderColor: '#ec4899', // pink-500
+                            backgroundColor: 'rgba(236, 72, 153, 0.1)',
                             borderWidth: 2,
                             tension: 0.3,
                             spanGaps: true

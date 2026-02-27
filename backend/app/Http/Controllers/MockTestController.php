@@ -6,6 +6,7 @@ use App\Models\MockTest;
 use App\Models\Quiz;
 use App\Models\Set;
 use App\Services\GradingService;
+use App\Jobs\ProcessWritingGrading;
 use Illuminate\Http\Request;
 
 class MockTestController extends Controller
@@ -283,6 +284,20 @@ class MockTestController extends Controller
         ]);
 
         $attempt->attemptAnswers()->createMany($allAttemptAnswers);
+
+        // For writing mock test: dispatch AI grading jobs asynchronously
+        if ($mockTest->skill === 'writing') {
+            $attempt->load(['attemptAnswers.question']);
+            foreach ($attempt->attemptAnswers as $aa) {
+                if ($aa->grading_status === 'pending' && $aa->question) {
+                    ProcessWritingGrading::dispatch($aa->id, [
+                        'part'       => $aa->question->part,
+                        'word_limit' => $aa->question->metadata['word_limit'] ?? null,
+                        'stem'       => $aa->question->stem,
+                    ]);
+                }
+            }
+        }
 
         // Update mock test
         $mockTest->update([

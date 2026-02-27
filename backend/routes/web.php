@@ -27,6 +27,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
+    // Grammar & Vocabulary
+    Route::get('/grammar', [App\Http\Controllers\GrammarController::class, 'index'])->name('grammar.index');
+
     // Skills
     Route::get('/skills/{skill}', [SkillController::class, 'show'])->name('skills.show');
 
@@ -36,12 +39,15 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
 
     // Practice
     Route::get('/practice/{set}', [App\Http\Controllers\PracticeController::class, 'show'])->name('practice.show');
-    Route::post('/practice/{set}/attempt', [App\Http\Controllers\PracticeController::class, 'store'])->name('practice.store');
-    Route::get('/ai/usage-status', [App\Http\Controllers\PracticeController::class, 'getAiUsageStatus'])->name('ai.usage-status');
+    Route::post('/practice/{set}/attempt', [App\Http\Controllers\PracticeController::class, 'store'])
+        ->middleware(['throttle:10,1'])
+        ->name('practice.store');
     
-    // History
-    Route::get('/attempts', [App\Http\Controllers\AttemptController::class, 'index'])->name('attempts.index');
-    Route::get('/attempts/{attempt}', [App\Http\Controllers\AttemptController::class, 'show'])->name('attempts.show');
+    // AI Writing Features
+    Route::get('/ai/usage-status', [App\Http\Controllers\PracticeController::class, 'getAiUsageStatus'])->name('ai.usage-status');
+    Route::post('/ai/grade-writing/{answer}', [App\Http\Controllers\PracticeController::class, 'gradeWriting'])->name('ai.grade-writing');
+    
+    // History (attempts routes removed — not in active use)
 
     // Mock Test
     Route::get('/mock-test/{skill}', [App\Http\Controllers\MockTestController::class, 'create'])->name('mock-test.create');
@@ -57,8 +63,10 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     // Writing History specific
     Route::get('/writing-history', [App\Http\Controllers\HistoryController::class, 'writingIndex'])->name('writingHistory.index');
     Route::get('/writing-history/{attempt}', [App\Http\Controllers\HistoryController::class, 'writingShow'])->name('writingHistory.show');
-
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Leaderboard
+    Route::get('/leaderboard', [\App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.index');
 });
 
 use App\Http\Controllers\Admin\WritingSetController;
@@ -70,10 +78,20 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::get('/', function () {
         return redirect()->route('admin.dashboard');
     });
-    Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     // Route::resource('quizzes', QuizController::class); // Removed as Quizzes are seeded
     Route::resource('sets', AdminSetController::class);
     Route::resource('writing-sets', WritingSetController::class);
+    Route::get('mock-tests/export', [\App\Http\Controllers\Admin\MockTestController::class, 'export'])->name('mock-tests.export');
+    Route::get('mock-tests', [\App\Http\Controllers\Admin\MockTestController::class, 'index'])->name('mock-tests.index');
+    
+    // Reports
+    Route::get('reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('reports.export');
+    Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+
+    // Grammar Sets
+    Route::post('grammar-sets/{grammarSet}/save-draft', [\App\Http\Controllers\Admin\GrammarSetController::class, 'saveDraft'])->name('grammar-sets.save-draft');
+    Route::resource('grammar-sets', \App\Http\Controllers\Admin\GrammarSetController::class);
 
     // User Management
     Route::get('users/export', [UserController::class, 'export'])->name('users.export');
@@ -84,6 +102,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::post('users/{user}/reset-violations', [UserController::class, 'resetViolations'])->name('users.reset-violations');
     Route::post('users/{user}/extend-expiration', [UserController::class, 'extendExpiration'])->name('users.extend-expiration');
     Route::post('users/{user}/reset-ai', [UserController::class, 'resetAi'])->name('users.reset-ai');
+    Route::post('users/{user}/add-ai', [UserController::class, 'addAi'])->name('users.add-ai');
     Route::resource('users', UserController::class);
 
     // Question Management (Phase 3)
@@ -99,6 +118,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::delete('questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
 
     // Writing Reviews
+    Route::post('writing-reviews/bulk-approve', [\App\Http\Controllers\Admin\WritingReviewController::class, 'bulkApprove'])->name('writing-reviews.bulk-approve');
     Route::get('writing-reviews', [\App\Http\Controllers\Admin\WritingReviewController::class, 'index'])->name('writing-reviews.index');
     Route::get('writing-reviews/{attempt}', [\App\Http\Controllers\Admin\WritingReviewController::class, 'show'])->name('writing-reviews.show');
     Route::post('writing-reviews/{attempt}/grade', [\App\Http\Controllers\Admin\WritingReviewController::class, 'grade'])->name('writing-reviews.grade');

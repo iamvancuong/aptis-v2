@@ -18,10 +18,15 @@ class GradingService
         // Writing is always manually graded in mock_test mode, self-check in practice
         if ($skill === 'writing') {
             return [
-                'score' => 0,
-                'is_correct' => null,
+                'score'          => 0,
+                'is_correct'     => null,
                 'grading_status' => ($mode === 'mock_test') ? 'pending' : 'graded',
             ];
+        }
+
+        // Grammar: MCQ (part=1) or Vocab dropdown (part=2)
+        if ($skill === 'grammar') {
+            return $this->gradeGrammarQuestion($question, $userAnswer);
         }
 
         // Auto-grade Reading & Listening
@@ -29,8 +34,8 @@ class GradingService
         $isCorrect = abs($calculatedScore - $question->point) < 0.01;
 
         return [
-            'score' => $calculatedScore,
-            'is_correct' => $isCorrect,
+            'score'          => $calculatedScore,
+            'is_correct'     => $isCorrect,
             'grading_status' => null,
         ];
     }
@@ -43,66 +48,32 @@ class GradingService
     public function gradeSet($questions, array $answers, string $mode = 'practice'): array
     {
         $attemptAnswers = [];
-        $totalPossible = $questions->sum('point');
-        $totalEarned = 0;
-        
-        $isWritingMock = ($questions->first()?->skill === 'writing' && $mode === 'mock_test');
-        $aiService = $isWritingMock ? app(\App\Services\AiService::class) : null;
+        $totalPossible  = $questions->sum('point');
+        $totalEarned    = 0;
 
         foreach ($questions as $question) {
             $userAnswer = $answers[$question->id] ?? null;
 
-            if ($userAnswer) {
+            if ($userAnswer !== null && $userAnswer !== '' && $userAnswer !== []) {
                 $result = $this->gradeQuestion($question, $userAnswer, $mode);
             } else {
                 $result = [
-                    'score' => 0,
-                    'is_correct' => false,
-                    'grading_status' => ($question->skill === 'writing' && $mode === 'mock_test') ? 'pending' : null,
+                    'score'          => 0,
+                    'is_correct'     => ($question->skill === 'writing') ? null : false,
+                    'grading_status' => ($question->skill === 'writing') ? 'pending' : null,
                 ];
-            }
-            
-            $aiMetadata = null;
-            if ($aiService && $question->skill === 'writing') {
-                try {
-                    // Only call OpenAI if there's an actual answer to grade
-                    if (!empty($userAnswer)) {
-                        $aiMetadata = $aiService->gradeWriting([
-                            'part' => $question->part,
-                            'word_limit' => $question->metadata['word_limit'] ?? null,
-                            'question_stem' => $question->stem,
-                            'student_answer' => $userAnswer,
-                        ]);
-                        $result['grading_status'] = 'ai_graded';
-                    } else {
-                        // Empty answer -> instant 0
-                        $aiMetadata = [
-                            'feedback' => [
-                                'schema_version' => 3,
-                                'part' => $question->part,
-                                'overall_score' => 0,
-                                'scores' => ['grammar' => 0, 'vocabulary' => 0, 'coherence' => 0, 'task_fulfillment' => 0],
-                                'feedback' => ['task_fulfillment' => 'No answer provided.']
-                            ]
-                        ];
-                        $result['grading_status'] = 'ai_graded';
-                    }
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error('Auto AI Grading failed: ' . $e->getMessage());
-                    // Will remain 'pending'
-                }
             }
 
             $totalEarned += $result['score'];
 
             $attemptAnswers[] = [
-                'question_id' => $question->id,
-                'answer' => $userAnswer ?? "",
-                'is_correct' => $result['is_correct'],
-                'score' => $result['score'],
-                'feedback' => null,
+                'question_id'    => $question->id,
+                'answer'         => $userAnswer ?? '',
+                'is_correct'     => $result['is_correct'],
+                'score'          => $result['score'],
+                'feedback'       => null,
                 'grading_status' => $result['grading_status'],
-                'ai_metadata' => $aiMetadata,
+                'ai_metadata'    => null,
             ];
         }
 
@@ -110,21 +81,105 @@ class GradingService
 
         return [
             'attempt_answers' => $attemptAnswers,
-            'total_earned' => $totalEarned,
-            'total_possible' => $totalPossible,
-            'percentage' => $percentage,
+            'total_earned'    => $totalEarned,
+            'total_possible'  => $totalPossible,
+            'percentage'      => $percentage,
+        ];
+    }
+
+    // ─── Grammar Grading ─────────────────────────────────────────────────────
+
+    /**
+     * Dispatch to correct grammar grader based on part.
+     */
+    private function gradeGrammarQuestion(Question $question, $userAnswer): array
+    {
+        return match ($question->part) {
+            1       => $this->gradeGrammarMcq($question, $userAnswer),
+            2       => $this->gradeVocabQuestion($question, $userAnswer),
+            default => ['score' => 0, 'is_correct' => false, 'grading_status' => null],
+        };
+    }
+
+    /**
+     * Grade Grammar MCQ (Part 1): 3-option A/B/C question.
+     */
+    private function gradeGrammarMcq(Question $question, $userAnswer): array
+    {
+        $correctOption = $question->metadata['correct_option'] ?? null;
+        $isCorrect     = ($correctOption !== null && (string) $userAnswer === (string) $correctOption);
+
+        return [
+            'score'          => $isCorrect ? (float) $question->point : 0.0,
+            'is_correct'     => $isCorrect,
+            'grading_status' => null,
         ];
     }
 
     /**
+     * Grade Vocabulary dropdown (Part 2).
+     * Types: synonym_match, definition_match, sentence_completion, collocation_match
+     *
+     * $userAnswer: {"1": "learn", "2": "get", ...}
+     *
+     * Rules:
+     *  - Dynamic point-per-item (NOT hardcoded)
+     *  - Backend duplicate validation: duplicate choices score 0
+     */
+    private function gradeVocabQuestion(Question $question, $userAnswer): array
+    {
+        $metadata       = $question->metadata ?? [];
+        $correctAnswers = $metadata['correct_answers'] ?? [];
+        $totalItems     = count($correctAnswers);
+
+        if ($totalItems === 0 || !is_array($userAnswer)) {
+            return ['score' => 0, 'is_correct' => false, 'grading_status' => null];
+        }
+
+        $pointPerItem = $question->point / $totalItems; // Dynamic — NOT hardcoded to 5
+
+        // Backend duplicate validation
+        $valueCounts     = array_count_values(array_values(array_filter($userAnswer, fn($v) => $v !== null && $v !== '')));
+        $duplicateValues = array_keys(array_filter($valueCounts, fn($c) => $c > 1));
+
+        $earned = 0;
+        foreach ($correctAnswers as $pairId => $correctWord) {
+            $chosen = $userAnswer[(string) $pairId] ?? null;
+
+            if ($chosen === null || $chosen === '') {
+                continue; // Not answered
+            }
+
+            // Duplicate answer → 0 for this sub-item
+            if (in_array($chosen, $duplicateValues)) {
+                continue;
+            }
+
+            if ((string) $chosen === (string) $correctWord) {
+                $earned += $pointPerItem;
+            }
+        }
+
+        $earned    = round($earned, 2);
+        $isCorrect = abs($earned - (float) $question->point) < 0.01;
+
+        return [
+            'score'          => $earned,
+            'is_correct'     => $isCorrect,
+            'grading_status' => null,
+        ];
+    }
+
+    // ─── Reading / Listening Grading ─────────────────────────────────────────
+
+    /**
      * Calculate score for a reading/listening question.
-     * Extracted from PracticeController::calculateQuestionScore()
      */
     private function calculateScore(Question $question, $userAnswer): float
     {
-        $metadata = $question->metadata;
-        $skill = $question->skill;
-        $part = $question->part;
+        $metadata  = $question->metadata;
+        $skill     = $question->skill;
+        $part      = $question->part;
         $maxPoints = $question->point;
 
         if ($skill === 'reading') {
@@ -133,7 +188,7 @@ class GradingService
                 case 3: // Matching
                 case 4: // Headings
                     $correctAnswers = $metadata['correct_answers'] ?? [];
-                    $totalItems = count($correctAnswers);
+                    $totalItems     = count($correctAnswers);
 
                     if ($totalItems === 0) return 0;
                     if (!is_array($userAnswer)) return 0;
@@ -175,7 +230,7 @@ class GradingService
                 case 3: // Shared Dropdown
                 case 4: // Complex Audio MCQ
                     $correctAnswers = $metadata['correct_answers'] ?? [];
-                    $totalItems = count($correctAnswers);
+                    $totalItems     = count($correctAnswers);
 
                     if ($totalItems === 0) return 0;
                     if (!is_array($userAnswer)) return 0;

@@ -15,8 +15,15 @@
                     {{ ucfirst($mockTest->skill) }} — Thi thử
                 </h1>
                 <div class="flex items-center gap-4">
+                    {{-- Auto-save indicator --}}
+                    <span x-show="lastSaved" x-transition:leave="transition ease-in duration-500" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                          class="text-xs text-green-600 font-medium flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Đã lưu
+                    </span>
                     <div class="flex items-center gap-2 px-4 py-2 rounded-full"
                          :class="timeRemaining <= 300 ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700'">
+
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -195,8 +202,11 @@ function mockTestExam() {
         currentSectionIndex: 0,
         timeRemaining: {{ $mockTest->duration_minutes }} * 60,
         timerInterval: null,
+        autoSaveInterval: null,
         showConfirmModal: false,
         submitting: false,
+        storageKey: 'mock_exam_{{ $mockTest->id }}',
+        lastSaved: null,
 
         // Per-section answers: { sectionIndex: { questionId: answer } }
         sectionAnswers: {},
@@ -230,7 +240,10 @@ function mockTestExam() {
         writingPart4Answers: [],
 
         init() {
-            // Start timer
+            // Restore from localStorage if available
+            this.restoreFromStorage();
+
+            // Start countdown timer
             this.timerInterval = setInterval(() => {
                 if (this.timeRemaining > 0) {
                     this.timeRemaining--;
@@ -239,12 +252,19 @@ function mockTestExam() {
                 }
             }, 1000);
 
-            // Load first section
-            this.loadSection(0);
+            // Auto-save every 15 seconds
+            this.autoSaveInterval = setInterval(() => {
+                this.saveSectionState();
+                this.saveToStorage();
+            }, 15000);
+
+            // Load first section (or restored section)
+            this.loadSection(this.currentSectionIndex);
         },
 
         destroy() {
             if (this.timerInterval) clearInterval(this.timerInterval);
+            if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
         },
 
         formatTime(seconds) {
@@ -280,6 +300,52 @@ function mockTestExam() {
             // Save answers for current section
             this.collectCurrentAnswers();
             this.sectionAnswers[this.currentSectionIndex] = { ...this.answers };
+            // Persist to localStorage immediately after saving
+            this.saveToStorage();
+        },
+
+        // --- localStorage persistence ---
+        saveToStorage() {
+            try {
+                const state = {
+                    sectionAnswers: this.sectionAnswers,
+                    currentSectionIndex: this.currentSectionIndex,
+                    timeRemaining: this.timeRemaining,
+                    savedAt: Date.now(),
+                };
+                localStorage.setItem(this.storageKey, JSON.stringify(state));
+                this.lastSaved = Date.now();
+                setTimeout(() => { this.lastSaved = null; }, 2000);
+            } catch (e) {
+                // localStorage might be full or unavailable — silently ignore
+            }
+        },
+
+        restoreFromStorage() {
+            try {
+                const raw = localStorage.getItem(this.storageKey);
+                if (!raw) return;
+                const state = JSON.parse(raw);
+                // Only restore if saved within exam duration (avoid stale data)
+                const maxAge = {{ $mockTest->duration_minutes }} * 60 * 1000;
+                if (Date.now() - (state.savedAt || 0) > maxAge) {
+                    localStorage.removeItem(this.storageKey);
+                    return;
+                }
+                if (state.sectionAnswers) this.sectionAnswers = state.sectionAnswers;
+                if (typeof state.timeRemaining === 'number' && state.timeRemaining > 0) {
+                    this.timeRemaining = state.timeRemaining;
+                }
+                if (typeof state.currentSectionIndex === 'number') {
+                    this.currentSectionIndex = state.currentSectionIndex;
+                }
+            } catch (e) {
+                // Corrupted data — ignore
+            }
+        },
+
+        clearStorage() {
+            try { localStorage.removeItem(this.storageKey); } catch (e) {}
         },
 
         collectCurrentAnswers() {
@@ -634,6 +700,7 @@ function mockTestExam() {
                 const data = await response.json();
 
                 if (data.success && data.redirect) {
+                    this.clearStorage(); // Remove saved state after successful submit
                     window.location.href = data.redirect;
                 } else {
                     alert(data.message || 'Có lỗi xảy ra.');

@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             QuizSeeder::class,
             SetSeeder::class,
+            GrammarSetSeeder::class,
         ]);
 
         // Create test user account

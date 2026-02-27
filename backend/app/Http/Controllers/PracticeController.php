@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Set;
+use App\Models\AttemptAnswer;
+use App\Models\WritingAiUsage;
+use App\Jobs\ProcessWritingGrading;
+use App\Services\AiService;
 use App\Services\GradingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PracticeController extends Controller
 {
     public function __construct(
-        private GradingService $gradingService
+        private GradingService $gradingService,
+        private AiService $aiService
     ) {}
 
     public function show(Set $set)
@@ -110,10 +116,22 @@ class PracticeController extends Controller
                 ]);
             }
 
+            $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+
+            // For writing practice: dispatch AI grading jobs asynchronously
             if ($set->quiz->skill === 'writing') {
-                $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+                $attempt->load(['attemptAnswers.question']);
+                foreach ($attempt->attemptAnswers as $aa) {
+                    if ($aa->grading_status === 'pending' && $aa->question) {
+                        ProcessWritingGrading::dispatch($aa->id, [
+                            'part'       => $aa->question->part,
+                            'word_limit' => $aa->question->metadata['word_limit'] ?? null,
+                            'stem'       => $aa->question->stem,
+                        ]);
+                    }
+                }
             }
-            
+
             return $attempt;
         });
 
@@ -137,5 +155,116 @@ class PracticeController extends Controller
             'attempt_id' => $attempt->id,
             'answer_ids' => $set->quiz->skill === 'writing' ? clone $attempt->refresh()->attemptAnswers->pluck('id', 'question_id')->toArray() : []
         ]);
+    }
+
+    public function getAiUsageStatus(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) return response()->json(['error' => 'Unauthorized'], 401);
+
+        $resetVersion = $user->ai_reset_version ?? 0;
+        $aiUsagesCount = WritingAiUsage::where('user_id', $user->id)
+            ->where('reset_version', $resetVersion)
+            ->sum('usage_count');
+
+        $limit = 10 + ($user->ai_extra_uses ?? 0);
+        $remaining = max(0, $limit - $aiUsagesCount);
+
+        if ($user->isAdmin()) {
+            $remaining = 'unlimited';
+        }
+
+        // Return same structure for all parts
+        $status = [];
+        for ($i = 1; $i <= 4; $i++) {
+             $status[$i] = [
+                 'used' => $aiUsagesCount,
+                 'limit' => $limit,
+                 'remaining' => $remaining
+             ];
+        }
+
+        return response()->json($status);
+    }
+
+    public function gradeWriting(AttemptAnswer $answer, Request $request)
+    {
+        $user = $request->user();
+        
+        if ($answer->attempt->user_id !== $user->id && !$user->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $answer->load('question');
+        if ($answer->question->skill !== 'writing') {
+            return response()->json(['message' => 'Invalid question type.'], 400);
+        }
+
+        $resetVersion = $user->ai_reset_version ?? 0;
+        $aiUsagesCount = WritingAiUsage::where('user_id', $user->id)
+            ->where('reset_version', $resetVersion)
+            ->sum('usage_count');
+
+        $limit = 10 + ($user->ai_extra_uses ?? 0);
+        
+        if (!$user->isAdmin() && $aiUsagesCount >= $limit) {
+            return response()->json(['message' => 'Bạn đã hết lượt chấm AI. Vui lòng liên hệ Admin để thêm lượt.'], 403);
+        }
+
+        try {
+            // Check if it's already graded manually or by AI just now
+            if ($answer->grading_status === 'graded') {
+                 return response()->json(['message' => 'Bài này đã được chấm thủ công.'], 400);
+            }
+
+            $data = [
+                'part' => $answer->question->part,
+                'question' => $answer->question->stem,
+                'metadata' => $answer->question->metadata,
+                'answer' => $answer->answer
+            ];
+
+            $result = $this->aiService->gradeWriting($data);
+
+            DB::transaction(function () use ($answer, $result, $user, $resetVersion) {
+                // Update answer
+                $answer->update([
+                    'ai_metadata' => $result,
+                    'grading_status' => 'ai_graded'
+                ]);
+
+                // Process scoring based on AI result
+                $aiScore = $result['feedback']['scores']['overall_score'] ?? $result['feedback']['overall_score'] ?? null;
+                if ($aiScore !== null) {
+                    $answer->update(['score' => $aiScore]);
+                }
+
+                // Record usage
+                if (!$user->isAdmin()) {
+                    $usage = WritingAiUsage::firstOrCreate([
+                        'user_id' => $user->id,
+                        'writing_part' => $answer->question->part,
+                        'reset_version' => $resetVersion
+                    ]);
+                    $usage->increment('usage_count');
+                }
+            });
+
+            // Update attempt score locally
+            $attempt = $answer->attempt;
+            $attempt->refresh()->load('attemptAnswers.question');
+            $totalEarned = $attempt->attemptAnswers->sum('score');
+            $totalPossible = $attempt->attemptAnswers->sum(fn($a) => $a->question->point ?? 10);
+            $attempt->update(['score' => $totalPossible > 0 ? round($totalEarned / $totalPossible * 100, 2) : 0]);
+
+            return response()->json([
+                'success' => true,
+                'review' => $result['feedback']
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Manual AI Grading Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Lỗi kết nối AI. Vui lòng thử lại sau.'], 500);
+        }
     }
 }

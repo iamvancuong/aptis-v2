@@ -167,15 +167,23 @@
                         Sửa
                     </a>
                     
-                    <!-- Reset AI -->
+                    <!-- Reset AI & Add AI -->
                     @if(!$user->isAdmin())
-                        <form action="{{ route('admin.users.reset-ai', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Reset AI Usage (Làm mới số lần dùng AI) cho người dùng này?')">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center px-3 py-1 bg-fuchsia-100 text-fuchsia-700 rounded-md hover:bg-fuchsia-200 font-medium text-xs">
-                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                Reset AI
-                            </button>
-                        </form>
+                        <div class="inline-flex gap-1 items-center bg-gray-50 p-1 rounded-md border border-gray-200 h-8">
+                            <form action="{{ route('admin.users.reset-ai', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Reset AI Usage (Làm mới số lần dùng AI) cho người dùng này?')">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-fuchsia-100 text-fuchsia-700 rounded hover:bg-fuchsia-200 font-medium text-xs" title="Reset lịch sử AI">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    Reset
+                                </button>
+                            </form>
+                            <span class="text-gray-300 mx-0.5 text-xs">|</span>
+                            <form action="{{ route('admin.users.add-ai', $user) }}" method="POST" class="inline-flex items-center gap-1">
+                                    @csrf
+                                    <input type="number" name="amount" value="10" min="1" max="100" class="w-12 h-5 text-xs px-1 border-gray-300 rounded" required title="Số lượt muốn cộng thêm (mặc định gốc là 10, đang cộng thêm {{ $user->ai_extra_uses }})">
+                                    <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 font-medium text-xs" title="Thêm lượt AI">+</button>
+                            </form>
+                        </div>
                     @endif
                     
                     <!-- Block/Unblock -->

@@ -13,7 +13,12 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
                 {{-- Back Button --}}
-                <a href="{{ route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]) }}" 
+                @php
+                    $backRoute = $set->quiz->skill === 'grammar' 
+                        ? route('grammar.index') 
+                        : route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]);
+                @endphp
+                <a href="{{ $backRoute }}" 
                    class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all shrink-0">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                 </a>
@@ -70,6 +75,8 @@
                         @include('practice.parts.writing-part2')
                         @include('practice.parts.writing-part3')
                         @include('practice.parts.writing-part4')
+                        @include('practice.parts.grammar-part1')
+                        @include('practice.parts.grammar-part2')
                     </div>
 
                     {{-- Feedback Footer --}}
@@ -193,6 +200,10 @@
             writingPart3Answers: [],
             writingPart4Answers: [],
 
+            // Grammar state
+            grammarAnswers: {},
+            vocabAnswers: {},
+
             // State
             attemptId: null,
 
@@ -250,6 +261,10 @@
                     if (q.part === 2) this.writingPart2Answer = '';
                     if (q.part === 3) this.writingPart3Answers = new Array(q.metadata.questions?.length || 0).fill('');
                     if (q.part === 4) this.writingPart4Answers = new Array(2).fill('');
+                }
+
+                if (q.skill === 'grammar') {
+                    if (q.part === 2) this.vocabAnswers[q.id] = this.vocabAnswers[q.id] || {};
                 }
             },
 
@@ -534,6 +549,40 @@
                 this.feedback = { ...this.feedback, [qId]: { correct: null, pending: true } };
             },
 
+            // --- Grammar Methods ---
+            submitGrammarPart1() {
+                const qId = this.currentQuestion.id;
+                const userAns = this.grammarAnswers[qId];
+                if (!userAns) { alert('Vui lòng chọn một đáp án.'); return; }
+                const isCorrect = userAns == this.currentQuestion.metadata.correct_option;
+                this.answers = { ...this.answers, [qId]: userAns };
+                this.feedback = { ...this.feedback, [qId]: { correct: isCorrect } };
+            },
+
+            setVocabAnswer(qId, pairId, word) {
+                if (this.hasAnswered(qId)) return;
+                this.vocabAnswers[qId] = this.vocabAnswers[qId] || {};
+                this.vocabAnswers[qId][pairId] = word;
+            },
+
+            submitGrammarPart2() {
+                const qId = this.currentQuestion.id;
+                const userAns = this.vocabAnswers[qId] || {};
+                const correctAns = this.currentQuestion.metadata.correct_answers || {};
+                const totalPairs = Object.keys(correctAns).length;
+                
+                if (Object.keys(userAns).length < totalPairs || Object.values(userAns).some(v => v === '')) {
+                    alert('Vui lòng chọn từ cho tất cả các ô trống.');
+                    return;
+                }
+                
+                // Flexible duplicate answer check (to match backend grading rules if any, though frontend just warns or auto-evaluates)
+                const isCorrect = Object.entries(correctAns).every(([pid, word]) => userAns[pid] === word);
+                
+                this.answers = { ...this.answers, [qId]: userAns };
+                this.feedback = { ...this.feedback, [qId]: { correct: isCorrect } };
+            },
+
             // --- Word Count Helpers ---
             countWords(text) {
                 if (!text || !text.trim()) return 0;
@@ -578,6 +627,11 @@
                         }
                         // For Writing: auto-save immediately to enable AI feedback
                         await this.submitAttempt();
+                    } else if (q.skill === 'grammar') {
+                        switch (q.part) {
+                            case 1: this.submitGrammarPart1(); break;
+                            case 2: this.submitGrammarPart2(); break;
+                        }
                     }
 
                     return; // Stop here — show feedback first
@@ -734,6 +788,10 @@
                 this.writingPart2Answer = '';
                 this.writingPart3Answers = [];
                 this.writingPart4Answers = [];
+                // Grammar
+                this.grammarAnswers = {};
+                this.vocabAnswers = {};
+                
                 this.currentIndex = 0;
                 this.step = 'practice';
                 this.loadQuestionState();
