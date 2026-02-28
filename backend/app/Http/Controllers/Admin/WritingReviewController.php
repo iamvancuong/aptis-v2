@@ -16,11 +16,20 @@ class WritingReviewController extends Controller
      */
     public function index(Request $request)
     {
-        $filter = $request->get('filter', 'all');
+        $filter = $request->get('filter', 'pending');
+        $search = $request->get('search');
 
         $query = Attempt::where('skill', 'writing')
             ->where('mode', 'mock_test')
+            ->where('is_grading_requested', true)
             ->with(['user', 'set.quiz', 'attemptAnswers.writingReview', 'attemptAnswers.question']);
+
+        if ($search) {
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
 
         if ($filter === 'pending') {
             $query->whereHas('attemptAnswers', function ($q) {
@@ -32,9 +41,9 @@ class WritingReviewController extends Controller
             });
         }
 
-        $attempts = $query->latest('created_at')->paginate(20);
+        $attempts = $query->latest('grading_requested_at')->paginate(20)->appends($request->all());
 
-        return view('admin.writing-reviews.index', compact('attempts', 'filter'));
+        return view('admin.writing-reviews.index', compact('attempts', 'filter', 'search'));
     }
 
     /**

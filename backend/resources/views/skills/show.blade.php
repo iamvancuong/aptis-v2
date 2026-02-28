@@ -26,7 +26,7 @@
     </x-card>
 </div>
 
-@if($skill !== 'writing')
+@if($skill !== 'writing' && $skill !== 'speaking')
     <!-- Parts List -->
     <h2 class="text-2xl font-semibold mb-4">Danh sách Part</h2>
 
@@ -57,7 +57,7 @@
 @else
     <div class="mt-8">
         <x-alert type="info">
-            Kỹ năng Writing đòi hỏi sự liên kết ngữ cảnh chặt chẽ giữa các Phần (Part 1 đến Part 4). Vì vậy, bạn chỉ có thể luyện tập Writing dưới dạng <strong>Thi thử toàn bộ kỹ năng</strong>.
+            Kỹ năng {{ ucfirst($skill) }} đòi hỏi sự liên kết ngữ cảnh chặt chẽ giữa các Phần (Part 1 đến Part 4). Vì vậy, bạn chỉ có thể luyện tập dưới dạng <strong>Thi thử toàn bộ kỹ năng</strong>.
         </x-alert>
     </div>
 @endif

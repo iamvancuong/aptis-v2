@@ -19,6 +19,8 @@ class Attempt extends Model
         'duration_seconds',
         'score',
         'metadata',
+        'is_grading_requested',
+        'grading_requested_at',
     ];
 
     protected $casts = [
@@ -26,6 +28,8 @@ class Attempt extends Model
         'finished_at' => 'datetime',
         'score' => 'decimal:2',
         'metadata' => 'array',
+        'is_grading_requested' => 'boolean',
+        'grading_requested_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

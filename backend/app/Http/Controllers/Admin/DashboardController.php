@@ -38,6 +38,13 @@ class DashboardController extends Controller
             ->where('grading_status', 'ai_graded')
             ->count();
             
+        // 3.5. Speaking Reviews needing attention
+        $pendingSpeaking = AttemptAnswer::whereHas('question', function ($q) {
+                $q->where('skill', 'speaking');
+            })
+            ->where('grading_status', 'pending')
+            ->count();
+            
         // 4. Recent completed mock tests (Last 5)
         $recentMockTests = MockTest::with('user')
             ->where('status', 'completed')
@@ -57,6 +64,7 @@ class DashboardController extends Controller
             'totalUsers',
             'mockTestStats',
             'pendingWritings',
+            'pendingSpeaking',
             'aiGradedWritings',
             'recentMockTests',
             'expiringUsers'

@@ -32,7 +32,7 @@ class PracticeController extends Controller
     public function store(Request $request, Set $set)
     {
         $data = $request->validate([
-            'answers' => 'required|array',
+            'answers' => 'required',
             'duration' => 'nullable|integer',
         ]);
 
@@ -40,6 +40,12 @@ class PracticeController extends Controller
 
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Handle Speaking single string format if answers is sent as string (e.g., from formData)
+        $parsedAnswers = $request->input('answers', []);
+        if (is_string($parsedAnswers)) {
+            $parsedAnswers = json_decode($parsedAnswers, true) ?: [];
         }
 
         // --- Writing Specific Checks ---
@@ -60,7 +66,7 @@ class PracticeController extends Controller
         $questions = $set->questions()->orderBy('order')->get();
 
         // Use shared GradingService
-        $result = $this->gradingService->gradeSet($questions, $data['answers'], 'practice');
+        $result = $this->gradingService->gradeSet($questions, $parsedAnswers, 'practice');
 
         $totalPossiblePoints = $result['total_possible'];
         $finalScore = $result['percentage'];
@@ -117,6 +123,26 @@ class PracticeController extends Controller
             }
 
             $attempt->attemptAnswers()->createMany($result['attempt_answers']);
+
+            // Handle Speaking Audio Uploads
+            if ($set->quiz->skill === 'speaking' && $request->hasFile('speaking_audio')) {
+                $audioFiles = $request->file('speaking_audio');
+                foreach ($audioFiles as $qId => $files) {
+                    $savedPaths = [];
+                    foreach ($files as $idx => $file) {
+                        $path = $file->store('speaking_attempts', 'public');
+                        $savedPaths[] = $path;
+                    }
+                    
+                    // Update the attempt_answer with the audio paths
+                    $attemptAnswer = $attempt->attemptAnswers()->where('question_id', $qId)->first();
+                    if ($attemptAnswer) {
+                        $attemptAnswer->update([
+                            'answer' => $savedPaths // Store array of paths in answer column
+                        ]);
+                    }
+                }
+            }
 
             // For writing practice: dispatch AI grading jobs asynchronously
             if ($set->quiz->skill === 'writing') {

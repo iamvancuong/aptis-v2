@@ -12,6 +12,7 @@ return [
         'reading'   => [1, 2, 3, 4],
         'listening' => [1, 2, 3, 4],
         'writing'   => [1, 2, 3, 4],
+        'speaking'  => [1, 2, 3, 4],
     ],
 
     /*
@@ -23,6 +24,7 @@ return [
         'reading'   => 35,
         'listening' => 35,
         'writing'   => 50,
+        'speaking'  => 12,
     ],
 
     /*

@@ -25,6 +25,10 @@
         toggleDesktop() {
             this.isDesktopCollapsed = !this.isDesktopCollapsed;
             localStorage.setItem('sidebarCollapsed', this.isDesktopCollapsed);
+        },
+        expandSidebar() {
+            this.isDesktopCollapsed = false;
+            localStorage.setItem('sidebarCollapsed', false);
         }
     }" x-init="init()">
         
@@ -67,109 +71,117 @@
                 </div>
 
                 <!-- Navigation -->
-                <nav class="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
-                    <x-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Dashboard
-                        </span>
-                    </x-nav-link>
+                <nav class="flex-1 px-3 py-4 space-y-2 overflow-y-auto custom-scrollbar" x-data="{ 
+                    activeMenu: @if(request()->routeIs('admin.sets.*', 'admin.questions.*')) 'rl' 
+                                @elseif(request()->routeIs('admin.writing-sets.*', 'admin.writing-reviews.*')) 'writing'
+                                @elseif(request()->routeIs('admin.speaking-sets.*', 'admin.speaking-reviews.*')) 'speaking'
+                                @elseif(request()->routeIs('admin.grammar-sets.*')) 'grammar'
+                                @elseif(request()->routeIs('admin.mock-tests.*', 'admin.reports.*')) 'reports'
+                                @else null @endif
+                }">
+                    {{-- System Group --}}
+                    <div class="mb-4">
+                        <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2" x-show="!isDesktopCollapsed || isMobile">Hệ thống</p>
+                        <x-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300" :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">Dashboard</span>
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')" class="flex items-center mt-1" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                            <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300" :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">Học viên</span>
+                        </x-nav-link>
+                    </div>
 
-                    <!-- Quizzes link removed as they are seeded -->
+                    {{-- Reading & Listening Group --}}
+                    <div class="mb-2" x-data="{ open: activeMenu === 'rl' }">
+                        <button @click="open = !open; if(open) expandSidebar()" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors group" :class="{'justify-center px-0': (isDesktopCollapsed && !isMobile), 'bg-gray-50': activeMenu === 'rl'}">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 flex-shrink-0 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                                <span class="ml-3 font-semibold whitespace-nowrap" x-show="!isDesktopCollapsed || isMobile">R & L Skill</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': open}" x-show="!isDesktopCollapsed || isMobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open && (!isDesktopCollapsed || isMobile)" x-transition class="mt-1 space-y-1 ml-4 border-l-2 border-blue-100 pl-2" x-cloak>
+                            <x-nav-link href="{{ route('admin.sets.index') }}" :active="request()->routeIs('admin.sets.*')" class="text-sm py-1.5">Bộ đề R&L</x-nav-link>
+                            <x-nav-link href="{{ route('admin.questions.reading') }}" :active="request()->routeIs('admin.questions.reading')" class="text-sm py-1.5">Câu hỏi Reading</x-nav-link>
+                            <x-nav-link href="{{ route('admin.questions.listening') }}" :active="request()->routeIs('admin.questions.listening')" class="text-sm py-1.5">Câu hỏi Listening</x-nav-link>
+                        </div>
+                    </div>
 
-                    <x-nav-link href="{{ route('admin.sets.index') }}" :active="request()->routeIs('admin.sets.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Sets (R & L)
-                        </span>
-                    </x-nav-link>
+                    {{-- Writing Group --}}
+                    <div class="mb-2" x-data="{ open: activeMenu === 'writing' }">
+                        <button @click="open = !open; if(open) expandSidebar()" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors group" :class="{'justify-center px-0': (isDesktopCollapsed && !isMobile), 'bg-gray-50': activeMenu === 'writing'}">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 flex-shrink-0 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                                <span class="ml-3 font-semibold whitespace-nowrap" x-show="!isDesktopCollapsed || isMobile">Writing Skill</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': open}" x-show="!isDesktopCollapsed || isMobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open && (!isDesktopCollapsed || isMobile)" x-transition class="mt-1 space-y-1 ml-4 border-l-2 border-emerald-100 pl-2" x-cloak>
+                            <x-nav-link href="{{ route('admin.writing-sets.index') }}" :active="request()->routeIs('admin.writing-sets.*')" class="text-sm py-1.5">Bộ đề Writing</x-nav-link>
+                            <x-nav-link href="{{ route('admin.writing-reviews.index') }}" :active="request()->routeIs('admin.writing-reviews.*')" class="text-sm py-1.5">Bài chờ chấm</x-nav-link>
+                        </div>
+                    </div>
 
-                    <x-nav-link href="{{ route('admin.writing-sets.index') }}" :active="request()->routeIs('admin.writing-sets.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Writing Sets
-                        </span>
-                    </x-nav-link>
+                    {{-- Speaking Group --}}
+                    <div class="mb-2" x-data="{ open: activeMenu === 'speaking' }">
+                        <button @click="open = !open; if(open) expandSidebar()" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors group" :class="{'justify-center px-0': (isDesktopCollapsed && !isMobile), 'bg-gray-50': activeMenu === 'speaking'}">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 flex-shrink-0 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                                </svg>
+                                <span class="ml-3 font-semibold whitespace-nowrap" x-show="!isDesktopCollapsed || isMobile">Speaking Skill</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': open}" x-show="!isDesktopCollapsed || isMobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open && (!isDesktopCollapsed || isMobile)" x-transition class="mt-1 space-y-1 ml-4 border-l-2 border-rose-100 pl-2" x-cloak>
+                            <x-nav-link href="{{ route('admin.speaking-sets.index') }}" :active="request()->routeIs('admin.speaking-sets.*')" class="text-sm py-1.5">Bộ đề Speaking</x-nav-link>
+                            <x-nav-link href="{{ route('admin.speaking-reviews.index') }}" :active="request()->routeIs('admin.speaking-reviews.*')" class="text-sm py-1.5">Chấm Speaking</x-nav-link>
+                        </div>
+                    </div>
 
-                    <x-nav-link href="{{ route('admin.grammar-sets.index') }}" :active="request()->routeIs('admin.grammar-sets.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Grammar Sets
-                        </span>
-                    </x-nav-link>
+                    {{-- Grammar Group --}}
+                    <div class="mb-2">
+                        <x-nav-link href="{{ route('admin.grammar-sets.index') }}" :active="request()->routeIs('admin.grammar-sets.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
+                            <svg class="w-5 h-5 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="ml-3 font-semibold whitespace-nowrap transition-opacity duration-300" :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">Grammar Skill</span>
+                        </x-nav-link>
+                    </div>
 
-                     <x-nav-link href="{{ route('admin.questions.reading') }}" :active="request()->routeIs('admin.questions.reading')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Questions (Reading)
-                        </span>
-                    </x-nav-link>
-
-                    <x-nav-link href="{{ route('admin.questions.listening') }}" :active="request()->routeIs('admin.questions.listening')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Questions (Listening)
-                        </span>
-                    </x-nav-link>
-
-                    <x-nav-link href="{{ route('admin.writing-reviews.index') }}" :active="request()->routeIs('admin.writing-reviews.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Bài cần chấm
-                        </span>
-                    </x-nav-link>
-
-                    <x-nav-link href="{{ route('admin.mock-tests.index') }}" :active="request()->routeIs('admin.mock-tests.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Mock Tests
-                        </span>
-                    </x-nav-link>
-
-                    <x-nav-link href="{{ route('admin.reports.index') }}" :active="request()->routeIs('admin.reports.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Báo cáo
-                        </span>
-                    </x-nav-link>
-
-                    <x-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')" class="flex items-center" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                        <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300"
-                              :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">
-                            Users
-                        </span>
-                    </x-nav-link>
-                   
+                    {{-- Reports Group --}}
+                    <div class="mb-2 pt-4 border-t border-gray-100" x-data="{ open: activeMenu === 'reports' }">
+                        <button @click="open = !open; if(open) expandSidebar()" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors group" :class="{'justify-center px-0': (isDesktopCollapsed && !isMobile), 'bg-gray-50': activeMenu === 'reports'}">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 flex-shrink-0 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span class="ml-3 font-semibold whitespace-nowrap" x-show="!isDesktopCollapsed || isMobile">Báo cáo</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': open}" x-show="!isDesktopCollapsed || isMobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open && (!isDesktopCollapsed || isMobile)" x-transition class="mt-1 space-y-1 ml-4 border-l-2 border-indigo-100 pl-2" x-cloak>
+                            <x-nav-link href="{{ route('admin.mock-tests.index') }}" :active="request()->routeIs('admin.mock-tests.*')" class="text-sm py-1.5">Mock Tests</x-nav-link>
+                            <x-nav-link href="{{ route('admin.reports.index') }}" :active="request()->routeIs('admin.reports.*')" class="text-sm py-1.5">Tổng quan</x-nav-link>
+                        </div>
+                    </div>
                 </nav>
             </aside>
      

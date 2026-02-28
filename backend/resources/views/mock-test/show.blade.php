@@ -116,6 +116,10 @@
                     @include('practice.parts.writing-part2')
                     @include('practice.parts.writing-part3')
                     @include('practice.parts.writing-part4')
+                    @include('practice.parts.speaking-part1')
+                    @include('practice.parts.speaking-part2')
+                    @include('practice.parts.speaking-part3')
+                    @include('practice.parts.speaking-part4')
                 </div>
             </div>
         </template>
@@ -239,6 +243,16 @@ function mockTestExam() {
         writingPart3Answers: [],
         writingPart4Answers: [],
 
+        // Speaking state
+        speakingAnswers: {},
+        speakingState: 'idle', // idle, prep, recording, saving
+        speakingTimer: 0,
+        speakingInterval: null,
+        speakingSubIndex: 0,
+        mediaRecorder: null,
+        audioChunks: [],
+        audioPlayerUrl: null,
+
         init() {
             // Restore from localStorage if available
             this.restoreFromStorage();
@@ -260,11 +274,42 @@ function mockTestExam() {
 
             // Load first section (or restored section)
             this.loadSection(this.currentSectionIndex);
+
+            // Cleanup on page exit/reload
+            window.addEventListener('beforeunload', () => this.cleanup());
         },
 
         destroy() {
+            this.cleanup();
+        },
+
+        cleanup() {
+            // 1. Stop all intervals
             if (this.timerInterval) clearInterval(this.timerInterval);
             if (this.autoSaveInterval) clearInterval(this.autoSaveInterval);
+            if (this.speakingInterval) clearInterval(this.speakingInterval);
+
+            // 2. Stop TTS (SpeechSynthesis)
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            // 3. Stop MediaRecorder and release Microphone
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                try { this.mediaRecorder.stop(); } catch(e) {}
+            }
+            if (this.mediaRecorder && this.mediaRecorder.stream) {
+                this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+
+            // 4. Force stop all audio elements
+            document.querySelectorAll('audio').forEach(audio => {
+                try {
+                    audio.pause();
+                    audio.src = '';
+                    audio.load(); // This stops the buffering/loading
+                } catch(e) {}
+            });
         },
 
         formatTime(seconds) {
@@ -406,6 +451,10 @@ function mockTestExam() {
                         if (this.writingPart4Answers.some(a => (a || '').trim())) this.answers[q.id] = [...this.writingPart4Answers];
                         break;
                 }
+            } else if (q.skill === 'speaking') {
+                if (this.speakingAnswers[q.id]) {
+                    this.answers[q.id] = this.speakingAnswers[q.id];
+                }
             }
         },
 
@@ -503,6 +552,23 @@ function mockTestExam() {
                     ? [...saved] : new Array(q.metadata.questions?.length || 0).fill('');
                 if (q.part === 4) this.writingPart4Answers = saved && Array.isArray(saved)
                     ? [...saved] : new Array(2).fill('');
+            }
+
+            if (q.skill === 'speaking') {
+                 // Stop any in-progress recordings when switching questions
+                if (this.speakingState === 'recording' || this.speakingState === 'prep') {
+                    if (window.activeMediaRecorder && window.activeMediaRecorder.state !== 'inactive') {
+                        window.activeMediaRecorder.stop();
+                    }
+                }
+                this.speakingState = 'idle';
+                
+                // Auto-start speaking part after a slight delay
+                setTimeout(() => {
+                    if (this.currentQuestion && this.currentQuestion.id === q.id && this.speakingState === 'idle') {
+                        this.startSpeakingPart();
+                    }
+                }, 1000);
             }
         },
 
@@ -642,6 +708,197 @@ function mockTestExam() {
             this.feedback = { ...this.feedback, [qId]: { correct: null, pending: true } };
         },
 
+        // --- Speaking Methods ---
+        playTTS(text, onComplete) {
+            if (!('speechSynthesis' in window)) {
+                console.warn("TTS not supported in this browser.");
+                onComplete();
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1.0;
+            
+            utterance.onend = () => {
+                onComplete();
+            };
+            
+            utterance.onerror = (e) => {
+                console.error("TTS Error", e);
+                onComplete();
+            };
+            
+            window.speechSynthesis.speak(utterance);
+        },
+
+        async setupRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                this.mediaRecorder = new MediaRecorder(stream);
+                
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) this.audioChunks.push(event.data);
+                };
+
+                this.mediaRecorder.onstop = () => {
+                    const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                    const qId = this.currentQuestion.id;
+                    this.speakingAnswers[qId] = this.speakingAnswers[qId] || [];
+                    this.speakingAnswers[qId].push(blob);
+                };
+            } catch (err) {
+                alert('Không thể truy cập Microphone. Vui lòng cấp quyền.');
+                console.error('Microphone error:', err);
+            }
+        },
+
+        async startSpeakingPart() {
+            if (!this.mediaRecorder) {
+                await this.setupRecording();
+                if (!this.mediaRecorder) return;
+            }
+            
+            this.speakingSubIndex = 0;
+            this.audioChunks = [];
+            this.runSpeakingSubQuestion();
+        },
+
+        runSpeakingSubQuestion() {
+            const q = this.currentQuestion;
+            if (!q) return;
+
+            const meta = q.metadata;
+            const prepTime = meta.prep_time || 0;
+            const totalQs = meta.questions ? meta.questions.length : 1;
+            
+            let introText = "";
+            if (this.speakingSubIndex === 0) {
+                if (q.part === 1) introText = "Personal Information. Please answer the 3 questions below. You will have 30 seconds for each question. ";
+                else if (q.part === 2) introText = "Describe a Picture. Please describe the picture and answer the 2 questions below. You will have 45 seconds for each response. ";
+                else if (q.part === 3) introText = "Compare Two Pictures. Please compare the two pictures and answer the 3 questions below. You will have 45 seconds for each response. ";
+                else if (q.part === 4) introText = "Extended Discussion. Please look at the picture and answer the 3 questions. You have 1 minute to think and 2 minutes to talk. ";
+            }
+
+            let textToRead = "";
+            if (q.part === 4) {
+                textToRead = introText + meta.questions.join(". ");
+            } else {
+                textToRead = introText + meta.questions[this.speakingSubIndex];
+            }
+            
+            if (q.part === 4) {
+                if (this.speakingSubIndex > 0) return; 
+                
+                this.speakingState = 'playing_audio';
+                this.playTTS(textToRead, () => {
+                    this.startTimerState('prep', prepTime, () => {
+                        this.playBeepAndRecord(meta.total_answer_time, () => {
+                            this.finishSpeakingQuestion();
+                        });
+                    });
+                });
+            } else {
+                this.speakingState = 'playing_audio';
+                this.playTTS(textToRead, () => {
+                    this.startTimerState('prep', prepTime, () => {
+                        this.playBeepAndRecord(meta.answer_time_per_question, () => {
+                            this.speakingSubIndex++;
+                            if (this.speakingSubIndex < totalQs) {
+                                this.runSpeakingSubQuestion();
+                            } else {
+                                this.finishSpeakingQuestion();
+                            }
+                        });
+                    });
+                });
+            }
+        },
+
+        startTimerState(stateName, seconds, onComplete) {
+            if (seconds <= 0) {
+                onComplete();
+                return;
+            }
+            this.speakingState = stateName;
+            this.speakingTimer = seconds;
+            
+            clearInterval(this.speakingInterval);
+            this.speakingInterval = setInterval(() => {
+                this.speakingTimer--;
+                if (this.speakingTimer <= 0) {
+                    clearInterval(this.speakingInterval);
+                    onComplete();
+                }
+            }, 1000);
+        },
+
+        playBeepAndRecord(recordSeconds, onComplete) {
+            // Web Audio API Beep
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const obj = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                obj.type = 'sine';
+                obj.frequency.value = 800;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                obj.connect(gain);
+                gain.connect(audioCtx.destination);
+                obj.start();
+                setTimeout(() => obj.stop(), 200);
+            } catch (e) {
+                console.warn("Web Audio API beep blocked or unsupported");
+            }
+            
+            setTimeout(() => {
+                this.audioChunks = [];
+                this.speakingState = 'recording';
+                this.speakingTimer = recordSeconds;
+                
+                try {
+                    if (this.mediaRecorder.state === 'inactive') {
+                        this.mediaRecorder.start();
+                    }
+                } catch(e) { console.error(e); }
+
+                clearInterval(this.speakingInterval);
+                this.speakingInterval = setInterval(() => {
+                    this.speakingTimer--;
+                    if (this.speakingTimer <= 0) {
+                        clearInterval(this.speakingInterval);
+                        try {
+                            if (this.mediaRecorder.state !== 'inactive') {
+                                this.mediaRecorder.stop();
+                            }
+                        } catch(e) { console.error(e); }
+                        
+                        setTimeout(() => {
+                            onComplete();
+                        }, 300);
+                    }
+                }, 1000);
+            }, 600);
+        },
+
+        finishSpeakingQuestion() {
+            this.speakingState = 'saving';
+            const qId = this.currentQuestion.id;
+            
+            this.answers = { ...this.answers, [qId]: 'recorded' };
+            
+            setTimeout(() => {
+                this.speakingState = 'idle';
+                if (this.currentSectionIndex < this.sections.length - 1) {
+                    this.nextSection();
+                } else {
+                    this.autoSubmit();
+                }
+            }, 1000);
+        },
+
         // Word count helpers
         countWords(text) {
             if (!text || !text.trim()) return 0;
@@ -682,33 +939,82 @@ function mockTestExam() {
             this.submitting = true;
 
             // Build answers per section: { sectionIndex: { questionId: answer } }
-            const allAnswers = {};
-            for (let i = 0; i < this.sections.length; i++) {
-                allAnswers[i] = this.sectionAnswers[i] || {};
-            }
+            // For speaking audio files, we need FormData
+            const isSpeaking = this.sections.length > 0 && this.sections[0].questions.length > 0 && this.sections[0].questions[0].skill === 'speaking';
+            
+            if (isSpeaking) {
+                const formData = new FormData();
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                
+                // Build mapping from questionId to sectionIndex to know where to append
+                const qIdToSection = {};
+                for (let i = 0; i < this.sections.length; i++) {
+                    const sectionQs = this.sections[i].questions || [];
+                    for (const q of sectionQs) {
+                        qIdToSection[q.id] = i;
+                    }
+                }
 
-            try {
-                const response = await fetch('{{ route("mock-test.submit", $mockTest) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ answers: allAnswers })
-                });
+                // Pack speakingAnswers directly since MockTestController expects answers array
+                for (const [qId, blobs] of Object.entries(this.speakingAnswers)) {
+                    const secIdx = qIdToSection[qId];
+                    if (secIdx === undefined) continue;
+                    
+                    if (Array.isArray(blobs)) {
+                        for (let j = 0; j < blobs.length; j++) {
+                            const blob = blobs[j];
+                            if (blob instanceof Blob) {
+                                formData.append(`answers[${secIdx}][${qId}][]`, blob, `speaking_${qId}_${j}.webm`);
+                            }
+                        }
+                    } else if (blobs instanceof Blob) {
+                        formData.append(`answers[${secIdx}][${qId}]`, blobs, `speaking_${qId}.webm`);
+                    }
+                }
 
-                const data = await response.json();
-
-                if (data.success && data.redirect) {
-                    this.clearStorage(); // Remove saved state after successful submit
-                    window.location.href = data.redirect;
-                } else {
-                    alert(data.message || 'Có lỗi xảy ra.');
+                try {
+                    const response = await fetch('{{ route("mock-test.submit", $mockTest) }}', {
+                        method: 'POST',
+                        body: formData // No Content-Type header so browser sets multipart/form-data with boundary
+                    });
+                    this.handleSubmitResponse(response);
+                } catch (error) {
+                    console.error('Submit error:', error);
+                    alert('Lỗi kết nối. Vui lòng thử lại.');
                     this.submitting = false;
                 }
-            } catch (error) {
-                console.error('Submit error:', error);
-                alert('Lỗi kết nối. Vui lòng thử lại.');
+            } else {
+                const allAnswers = {};
+                for (let i = 0; i < this.sections.length; i++) {
+                    allAnswers[i] = this.sectionAnswers[i] || {};
+                }
+
+                try {
+                    const response = await fetch('{{ route("mock-test.submit", $mockTest) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({ answers: allAnswers })
+                    });
+                    this.handleSubmitResponse(response);
+                } catch (error) {
+                    console.error('Submit error:', error);
+                    alert('Lỗi kết nối. Vui lòng thử lại.');
+                    this.submitting = false;
+                }
+            }
+        },
+        
+        async handleSubmitResponse(response) {
+            const data = await response.json();
+
+            if (data.success && data.redirect) {
+                this.clearStorage();
+                window.location.href = data.redirect;
+            } else {
+                alert(data.message || 'Có lỗi xảy ra.');
                 this.submitting = false;
             }
         }

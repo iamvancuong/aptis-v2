@@ -77,6 +77,10 @@
                         @include('practice.parts.writing-part4')
                         @include('practice.parts.grammar-part1')
                         @include('practice.parts.grammar-part2')
+                        @include('practice.parts.speaking-part1')
+                        @include('practice.parts.speaking-part2')
+                        @include('practice.parts.speaking-part3')
+                        @include('practice.parts.speaking-part4')
                     </div>
 
                     {{-- Feedback Footer --}}
@@ -204,7 +208,15 @@
             grammarAnswers: {},
             vocabAnswers: {},
 
-            // State
+            // Speaking state
+            speakingState: 'idle', // idle, prep, recording, saving
+            speakingTimer: 0,
+            speakingInterval: null,
+            speakingSubIndex: 0,
+            speakingAnswers: {}, // Will store combined blobs or arrays of blobs per question
+            mediaRecorder: null,
+            audioChunks: [],
+            audioPlayerUrl: null,
             attemptId: null,
 
             // AI State
@@ -225,6 +237,40 @@
                 this.loadQuestionState();
                 this.loadAiUsageStatus();
                 this.$watch('currentIndex', () => this.loadQuestionState());
+
+                // Cleanup on page exit/reload
+                window.addEventListener('beforeunload', () => this.cleanup());
+            },
+
+            destroy() {
+                this.cleanup();
+            },
+
+            cleanup() {
+                // 1. Stop all intervals
+                if (this.speakingInterval) clearInterval(this.speakingInterval);
+
+                // 2. Stop TTS (SpeechSynthesis)
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+
+                // 3. Stop MediaRecorder and release Microphone
+                if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                    try { this.mediaRecorder.stop(); } catch(e) {}
+                }
+                if (this.mediaRecorder && this.mediaRecorder.stream) {
+                    this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+
+                // 4. Force stop all audio elements
+                document.querySelectorAll('audio').forEach(audio => {
+                    try {
+                        audio.pause();
+                        audio.src = '';
+                        audio.load(); // This stops the buffering/loading
+                    } catch(e) {}
+                });
             },
 
             get currentQuestion() {
@@ -265,6 +311,18 @@
 
                 if (q.skill === 'grammar') {
                     if (q.part === 2) this.vocabAnswers[q.id] = this.vocabAnswers[q.id] || {};
+                }
+
+                if (q.skill === 'speaking') {
+                    this.speakingState = 'idle';
+                    this.speakingTimer = 0;
+                    this.speakingSubIndex = 0;
+                    clearInterval(this.speakingInterval);
+                    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                        this.mediaRecorder.stop();
+                    }
+                    this.audioChunks = [];
+                    this.speakingAnswers[q.id] = this.speakingAnswers[q.id] || [];
                 }
             },
 
@@ -583,6 +641,214 @@
                 this.feedback = { ...this.feedback, [qId]: { correct: isCorrect } };
             },
 
+            // --- Speaking Methods ---
+            formatTime(seconds) {
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            },
+
+            async playTTS(text, onComplete) {
+                if (!('speechSynthesis' in window)) {
+                    // Fallback if not supported
+                    onComplete();
+                    return;
+                }
+                
+                // cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 1.0; // Normal speed
+                
+                utterance.onend = () => {
+                    onComplete();
+                };
+                
+                utterance.onerror = (e) => {
+                    console.error("TTS Error", e);
+                    onComplete();
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            },
+
+            async setupRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) this.audioChunks.push(event.data);
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                        const qId = this.currentQuestion.id;
+                        this.speakingAnswers[qId] = this.speakingAnswers[qId] || [];
+                        this.speakingAnswers[qId].push(blob);
+                    };
+                } catch (err) {
+                    alert('Không thể truy cập Microphone. Vui lòng cấp quyền.');
+                    console.error('Microphone error:', err);
+                }
+            },
+
+            async startSpeakingPart() {
+                if (!this.mediaRecorder) {
+                    await this.setupRecording();
+                    if (!this.mediaRecorder) return; // Permission denied
+                }
+                
+                this.speakingSubIndex = 0;
+                this.audioChunks = [];
+                this.runSpeakingSubQuestion();
+            },
+
+            runSpeakingSubQuestion() {
+                const q = this.currentQuestion;
+                if (!q) return;
+
+                const meta = q.metadata;
+                // If Part 4, total prep and total answer. Otherwise, per question.
+                const prepTime = meta.prep_time || 0;
+                const totalQs = meta.questions ? meta.questions.length : 1;
+                
+                // Determine text to read
+                let introText = "";
+                if (this.speakingSubIndex === 0) {
+                    if (q.part === 1) introText = "Personal Information. Please answer the 3 questions below. You will have 30 seconds for each question. ";
+                    else if (q.part === 2) introText = "Describe a Picture. Please describe the picture and answer the 2 questions below. You will have 45 seconds for each response. ";
+                    else if (q.part === 3) introText = "Compare Two Pictures. Please compare the two pictures and answer the 3 questions below. You will have 45 seconds for each response. ";
+                    else if (q.part === 4) introText = "Extended Discussion. Please look at the picture and answer the 3 questions. You have 1 minute to think and 2 minutes to talk. ";
+                }
+
+                let textToRead = "";
+                if (q.part === 4) {
+                    textToRead = introText + meta.questions.join(". ");
+                } else {
+                    textToRead = introText + meta.questions[this.speakingSubIndex];
+                }
+                
+                if (q.part === 4) {
+                    // Part 4 runs once for all 3 questions
+                    if (this.speakingSubIndex > 0) return; 
+                    
+                    this.speakingState = 'playing_audio';
+                    this.playTTS(textToRead, () => {
+                        this.startTimerState('prep', prepTime, () => {
+                            this.playBeepAndRecord(meta.total_answer_time, () => {
+                                this.finishSpeakingQuestion();
+                            });
+                        });
+                    });
+                } else {
+                    // Part 1, 2, 3 run sequentially per question
+                    this.speakingState = 'playing_audio';
+                    this.playTTS(textToRead, () => {
+                        this.startTimerState('prep', prepTime, () => {
+                            this.playBeepAndRecord(meta.answer_time_per_question, () => {
+                                this.speakingSubIndex++;
+                                if (this.speakingSubIndex < totalQs) {
+                                    this.runSpeakingSubQuestion();
+                                } else {
+                                    this.finishSpeakingQuestion();
+                                }
+                            });
+                        });
+                    });
+                }
+            },
+
+            startTimerState(stateName, seconds, onComplete) {
+                if (seconds <= 0) {
+                    onComplete();
+                    return;
+                }
+                this.speakingState = stateName;
+                this.speakingTimer = seconds;
+                
+                clearInterval(this.speakingInterval);
+                this.speakingInterval = setInterval(() => {
+                    this.speakingTimer--;
+                    if (this.speakingTimer <= 0) {
+                        clearInterval(this.speakingInterval);
+                        onComplete();
+                    }
+                }, 1000);
+            },
+
+            playBeepAndRecord(recordSeconds, onComplete) {
+                // Web Audio API Beep
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    const obj = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    obj.type = 'sine';
+                    obj.frequency.value = 800;
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    obj.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    obj.start();
+                    setTimeout(() => obj.stop(), 200);
+                } catch (e) {
+                    console.warn("Web Audio API beep blocked or unsupported");
+                }
+                
+                // Wait for beep to finish (~500ms usually), then record
+                setTimeout(() => {
+                    this.audioChunks = [];
+                    this.speakingState = 'recording';
+                    this.speakingTimer = recordSeconds;
+                    
+                    try {
+                        if (this.mediaRecorder.state === 'inactive') {
+                            this.mediaRecorder.start();
+                        }
+                    } catch(e) { console.error(e); }
+
+                    clearInterval(this.speakingInterval);
+                    this.speakingInterval = setInterval(() => {
+                        this.speakingTimer--;
+                        if (this.speakingTimer <= 0) {
+                            clearInterval(this.speakingInterval);
+                            try {
+                                if (this.mediaRecorder.state !== 'inactive') {
+                                    this.mediaRecorder.stop();
+                                }
+                            } catch(e) { console.error(e); }
+                            
+                            // Give mediaRecorder.onstop a moment to fire and push chunks
+                            setTimeout(() => {
+                                onComplete();
+                            }, 300);
+                        }
+                    }, 1000);
+                }, 600);
+            },
+
+            finishSpeakingQuestion() {
+                this.speakingState = 'saving';
+                const qId = this.currentQuestion.id;
+                
+                // Marking as answered for navigation
+                // Actual blob upload happens in handleFooterAction or finish
+                this.answers = { ...this.answers, [qId]: 'recorded' };
+                this.feedback = { ...this.feedback, [qId]: { correct: null, pending: true } };
+                
+                setTimeout(() => {
+                    this.speakingState = 'idle';
+                    // Auto next or finish
+                    if (this.currentIndex < this.questions.length - 1) {
+                        this.next();
+                    } else {
+                        this.finish();
+                    }
+                }, 1000);
+            },
+
             // --- Word Count Helpers ---
             countWords(text) {
                 if (!text || !text.trim()) return 0;
@@ -632,6 +898,16 @@
                             case 1: this.submitGrammarPart1(); break;
                             case 2: this.submitGrammarPart2(); break;
                         }
+                    } else if (q.skill === 'speaking') {
+                        // Speaking doesn't submit instantly on footer click if not answered.
+                        // It forces user to press the big Start Recording button in the UI.
+                        if (this.speakingState === 'idle') {
+                            alert('Vui lòng nhấn Start Recording để thu âm trước khi chuyển tiếp.');
+                            return;
+                        } else {
+                            alert('Đang trong quá trình thu âm, vui lòng đợi.');
+                            return;
+                        }
                     }
 
                     return; // Stop here — show feedback first
@@ -649,6 +925,7 @@
                 const q = this.currentQuestion;
                 const qId = q?.id;
                 if (!this.hasAnswered(qId)) {
+                    if (q?.skill === 'speaking') return 'Bỏ qua (Chưa thu âm)';
                     return q?.skill === 'writing' ? 'Nộp bài' : 'Kiểm tra';
                 }
                 if (this.currentIndex < this.questions.length - 1) return 'Tiếp theo';
@@ -698,22 +975,57 @@
             async submitAttempt() {
                 this.isSaving = true;
                 try {
-                    const response = await fetch(`{{ route('practice.store', $set->id) }}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': this.getCsrfToken()
-                        },
-                        body: JSON.stringify({
-                            answers: this.answers,
-                            duration: 0,
-                            attempt_id: this.attemptId
-                        })
-                    });
-                    if (!response.ok) throw new Error('Failed to save attempt');
-                    const result = await response.json();
-                    this.attemptId = result.attempt_id;
-                    this.answerIds = result.answer_ids || {};
+                    // For Speaking, we might have File blobs to send via FormData
+                    const hasSpeakingBlobs = Object.keys(this.speakingAnswers).some(k => this.speakingAnswers[k].length > 0);
+                    
+                    if (hasSpeakingBlobs) {
+                        // Send as FormData
+                        const formData = new FormData();
+                        formData.append('answers', JSON.stringify(this.answers));
+                        formData.append('duration', parseInt(0));
+                        if (this.attemptId) formData.append('attempt_id', this.attemptId);
+                        
+                        // Append audio files
+                        Object.keys(this.speakingAnswers).forEach(qId => {
+                            const blobs = this.speakingAnswers[qId];
+                            blobs.forEach((blob, idx) => {
+                                formData.append(`speaking_audio[${qId}][${idx}]`, blob, `q${qId}_p${idx}.webm`);
+                            });
+                        });
+                        
+                        const response = await fetch(`{{ route('practice.store', $set->id) }}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': this.getCsrfToken()
+                            },
+                            body: formData
+                        });
+                        if (!response.ok) throw new Error('Failed to save attempt with audio');
+                        const result = await response.json();
+                        this.attemptId = result.attempt_id;
+                        this.answerIds = result.answer_ids || {};
+                    } else {
+                        // Standard JSON check
+                        const response = await fetch(`{{ route('practice.store', $set->id) }}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': this.getCsrfToken()
+                            },
+                            body: JSON.stringify({
+                                answers: this.answers,
+                                duration: 0,
+                                attempt_id: this.attemptId
+                            })
+                        });
+                        if (!response.ok) throw new Error('Failed to save attempt');
+                        const result = await response.json();
+                        this.attemptId = result.attempt_id;
+                        this.answerIds = result.answer_ids || {};
+                    }
+                } catch (error) {
+                    console.error("Submit error:", error);
+                    alert("Có lỗi xảy ra khi nộp bài. Vui lòng thử lại.");
                 } finally {
                     this.isSaving = false;
                 }
@@ -791,6 +1103,12 @@
                 // Grammar
                 this.grammarAnswers = {};
                 this.vocabAnswers = {};
+                // Speaking
+                this.speakingAnswers = {};
+                clearInterval(this.speakingInterval);
+                this.speakingTimer = 0;
+                this.speakingState = 'idle';
+                this.audioChunks = [];
                 
                 this.currentIndex = 0;
                 this.step = 'practice';

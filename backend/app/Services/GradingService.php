@@ -15,8 +15,8 @@ class GradingService
     {
         $skill = $question->skill;
 
-        // Writing is always manually graded in mock_test mode, self-check in practice
-        if ($skill === 'writing') {
+        // Writing & Speaking are manually graded in mock_test mode
+        if ($skill === 'writing' || $skill === 'speaking') {
             return [
                 'score'          => 0,
                 'is_correct'     => null,
@@ -59,8 +59,8 @@ class GradingService
             } else {
                 $result = [
                     'score'          => 0,
-                    'is_correct'     => ($question->skill === 'writing') ? null : false,
-                    'grading_status' => ($question->skill === 'writing') ? 'pending' : null,
+                    'is_correct'     => in_array($question->skill, ['writing', 'speaking']) ? null : false,
+                    'grading_status' => in_array($question->skill, ['writing', 'speaking']) ? 'pending' : null,
                 ];
             }
 

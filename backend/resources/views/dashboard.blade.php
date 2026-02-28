@@ -103,7 +103,7 @@
 </div>
 
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
     <!-- Reading -->
     <x-card>
         <div class="text-center">
@@ -159,6 +159,20 @@
             <x-button href="{{ route('grammar.index') }}" class="w-full">Bắt đầu</x-button>
         </div>
     </x-card>
+
+    <!-- Speaking -->
+    <x-card>
+        <div class="text-center">
+            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Speaking</h3>
+            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng nói</p>
+            <x-button href="{{ route('skills.show', 'speaking') }}" class="w-full">Bắt đầu</x-button>
+        </div>
+    </x-card>
 </div>
 
 <div class="mt-8 mb-8">
@@ -202,7 +216,7 @@
 
             // Extract all unique dates for the X-axis labels to align the different datasets
             const allDates = new Set();
-            ['reading', 'listening', 'writing', 'grammar', 'mock_test'].forEach(skill => {
+            ['reading', 'listening', 'writing', 'grammar', 'speaking', 'mock_test'].forEach(skill => {
                 if (result[skill]) {
                     result[skill].forEach(dataPoint => allDates.add(dataPoint.date));
                 }
@@ -280,6 +294,15 @@
                             spanGaps: true
                         },
                         {
+                            label: 'Speaking Practice',
+                            data: mapDataToDates(result.speaking),
+                            borderColor: '#f97316', // orange-500
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            spanGaps: true
+                        },
+                        {
                             label: 'Mock Test (Full)',
                             data: mapDataToDates(result.mock_test),
                             borderColor: '#f59e0b', // amber-500
@@ -329,7 +352,9 @@
                                     if (datasetIndex === 0) skillKey = 'reading';
                                     else if (datasetIndex === 1) skillKey = 'listening';
                                     else if (datasetIndex === 2) skillKey = 'writing';
-                                    else if (datasetIndex === 3) skillKey = 'mock_test';
+                                    else if (datasetIndex === 3) skillKey = 'grammar';
+                                    else if (datasetIndex === 4) skillKey = 'speaking';
+                                    else if (datasetIndex === 5) skillKey = 'mock_test';
                                     
                                     const skillData = result[skillKey] || [];
                                     const originalPoint = skillData.find(d => d.date === dateLabel);

@@ -11,7 +11,9 @@
 {{-- Mode Filter Tabs --}}
 @php
     $currentMode = $mode ?? 'all';
-    $baseRoute = isset($isWriting) && $isWriting ? 'writingHistory.index' : 'history.index';
+    $baseRoute = 'history.index';
+    if (isset($isWriting) && $isWriting) $baseRoute = 'writingHistory.index';
+    if (isset($isSpeaking) && $isSpeaking) $baseRoute = 'speakingHistory.index';
 @endphp
 <div class="flex flex-wrap items-center gap-3 mb-6">
     <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
@@ -130,9 +132,20 @@
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                                         </a>
                                     @endif
+                                    @if(isset($isSpeaking) && $isSpeaking)
+                                        <span class="text-gray-300">|</span>
+                                        <a href="{{ route('speakingHistory.show', $attempt->id) }}" class="text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1">
+                                            Chi tiết
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                                        </a>
+                                    @endif
                                 </div>
                             @elseif(isset($isWriting) && $isWriting)
                                 <a href="{{ route('writingHistory.show', $attempt->id) }}" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">
+                                    Xem chi tiết →
+                                </a>
+                            @elseif(isset($isSpeaking) && $isSpeaking)
+                                <a href="{{ route('speakingHistory.show', $attempt->id) }}" class="text-rose-600 hover:text-rose-800 font-medium text-sm">
                                     Xem chi tiết →
                                 </a>
                             @elseif(in_array($attempt->skill, ['reading', 'listening', 'grammar']))

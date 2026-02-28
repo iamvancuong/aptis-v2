@@ -11,20 +11,27 @@
             <p class="text-sm text-gray-500 mt-1">Xem và chấm bài Writing của học sinh</p>
         </div>
 
-        {{-- Filter Tabs --}}
-        <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
-            <a href="{{ route('admin.writing-reviews.index', ['filter' => 'all']) }}"
-               class="px-4 py-2 text-sm font-medium {{ $filter === 'all' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-                Tất cả
-            </a>
-            <a href="{{ route('admin.writing-reviews.index', ['filter' => 'pending']) }}"
-               class="px-4 py-2 text-sm font-medium border-l border-gray-200 {{ $filter === 'pending' ? 'bg-amber-500 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-                ⏳ Chờ chấm
-            </a>
-            <a href="{{ route('admin.writing-reviews.index', ['filter' => 'graded']) }}"
-               class="px-4 py-2 text-sm font-medium border-l border-gray-200 {{ $filter === 'graded' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-                ✅ Đã chấm
-            </a>
+        {{-- Filter & Search --}}
+        <div class="flex flex-col md:flex-row items-center gap-4">
+            <form action="{{ route('admin.writing-reviews.index') }}" method="GET" class="relative w-full md:w-64">
+                <input type="hidden" name="filter" value="{{ $filter }}">
+                <input type="text" name="search" value="{{ $search }}" placeholder="Tìm tên/email học sinh..."
+                       class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm text-sm">
+                <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </form>
+
+            <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
+                <a href="{{ route('admin.writing-reviews.index', ['filter' => 'pending', 'search' => $search]) }}"
+                   class="px-4 py-2 text-sm font-medium {{ $filter === 'pending' ? 'bg-amber-500 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
+                    ⏳ Chờ chấm
+                </a>
+                <a href="{{ route('admin.writing-reviews.index', ['filter' => 'graded', 'search' => $search]) }}"
+                   class="px-4 py-2 text-sm font-medium border-l border-gray-200 {{ $filter === 'graded' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
+                    ✅ Đã chấm
+                </a>
+            </div>
         </div>
     </div>
 
@@ -50,7 +57,7 @@
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Học sinh</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Set / Part</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian nộp</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày yêu cầu</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điểm</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
@@ -85,7 +92,7 @@
                             <p class="text-xs text-gray-500">Writing Full (4 Parts)</p>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $attempt->created_at->format('d/m/Y H:i') }}
+                            {{ $attempt->grading_requested_at ? $attempt->grading_requested_at->format('d/m/Y H:i') : $attempt->created_at->format('d/m/Y H:i') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($allGraded)

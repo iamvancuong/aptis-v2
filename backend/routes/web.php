@@ -57,12 +57,18 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     Route::get('/mock-test/{mockTest}/result', [App\Http\Controllers\MockTestController::class, 'result'])->name('mock-test.result');
 
     // Unified Student History
-    Route::get('/history', [App\Http\Controllers\HistoryController::class, 'index'])->name('history.index');
-    Route::get('/history/{attempt}', [App\Http\Controllers\HistoryController::class, 'show'])->name('history.show');
+    Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
+    Route::get('/history/{attempt}', [HistoryController::class, 'show'])->name('history.show');
+    Route::post('/attempts/{attempt}/request-grading', [HistoryController::class, 'requestGrading'])->name('attempts.request-grading');
     
     // Writing History specific
     Route::get('/writing-history', [App\Http\Controllers\HistoryController::class, 'writingIndex'])->name('writingHistory.index');
     Route::get('/writing-history/{attempt}', [App\Http\Controllers\HistoryController::class, 'writingShow'])->name('writingHistory.show');
+
+    // Speaking History specific
+    Route::get('/speaking-history', [App\Http\Controllers\HistoryController::class, 'speakingIndex'])->name('speakingHistory.index');
+    Route::get('/speaking-history/{attempt}', [App\Http\Controllers\HistoryController::class, 'speakingShow'])->name('speakingHistory.show');
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Leaderboard
@@ -82,6 +88,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     // Route::resource('quizzes', QuizController::class); // Removed as Quizzes are seeded
     Route::resource('sets', AdminSetController::class);
     Route::resource('writing-sets', WritingSetController::class);
+    Route::resource('speaking-sets', \App\Http\Controllers\Admin\SpeakingSetController::class);
     Route::get('mock-tests/export', [\App\Http\Controllers\Admin\MockTestController::class, 'export'])->name('mock-tests.export');
     Route::get('mock-tests', [\App\Http\Controllers\Admin\MockTestController::class, 'index'])->name('mock-tests.index');
     
@@ -122,4 +129,9 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::get('writing-reviews', [\App\Http\Controllers\Admin\WritingReviewController::class, 'index'])->name('writing-reviews.index');
     Route::get('writing-reviews/{attempt}', [\App\Http\Controllers\Admin\WritingReviewController::class, 'show'])->name('writing-reviews.show');
     Route::post('writing-reviews/{attempt}/grade', [\App\Http\Controllers\Admin\WritingReviewController::class, 'grade'])->name('writing-reviews.grade');
+
+    // Speaking Reviews
+    Route::get('speaking-reviews', [\App\Http\Controllers\Admin\SpeakingReviewController::class, 'index'])->name('speaking-reviews.index');
+    Route::get('speaking-reviews/{attempt}', [\App\Http\Controllers\Admin\SpeakingReviewController::class, 'show'])->name('speaking-reviews.show');
+    Route::post('speaking-reviews/{attempt}/grade', [\App\Http\Controllers\Admin\SpeakingReviewController::class, 'grade'])->name('speaking-reviews.grade');
 });

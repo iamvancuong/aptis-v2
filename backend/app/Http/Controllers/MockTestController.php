@@ -20,7 +20,7 @@ class MockTestController extends Controller
      */
     public function create($skill)
     {
-        if (!in_array($skill, ['reading', 'listening', 'writing'])) {
+        if (!in_array($skill, ['reading', 'listening', 'writing', 'speaking'])) {
             abort(404);
         }
 
@@ -31,8 +31,8 @@ class MockTestController extends Controller
         $partCounts = [];
         
         $writingSets = collect();
-        if ($skill === 'writing') {
-            // For writing, we just need at least one cohesive set (Part 1 container)
+        if ($skill === 'writing' || $skill === 'speaking') {
+            // For writing and speaking, we just need at least one cohesive set (Part 1 container)
             $writingSetsQuery = Set::whereHas('quiz', function ($q) use ($skill) {
                 $q->where('skill', $skill)->where('part', 1);
             })->where('is_public', true);
@@ -75,7 +75,7 @@ class MockTestController extends Controller
     public function start(Request $request)
     {
         $request->validate([
-            'skill' => 'required|in:reading,listening,writing',
+            'skill' => 'required|in:reading,listening,writing,speaking',
         ]);
 
         $skill = $request->skill;
@@ -83,8 +83,8 @@ class MockTestController extends Controller
         $duration = config("aptis.exam_duration.{$skill}");
 
         // Pick random sets for each section, ensuring no duplicates for repeated parts
-        // For Writing, we MUST use a single cohesive Set across all parts to maintain the scenario context.
-        if ($skill === 'writing') {
+        // For Writing & Speaking, we MUST use a single cohesive Set across all parts to maintain the scenario context.
+        if ($skill === 'writing' || $skill === 'speaking') {
             $request->validate([
                 'set_id' => 'required|exists:sets,id',
             ]);
@@ -95,7 +95,7 @@ class MockTestController extends Controller
                 ->first();
 
             if (!$cohesiveSet) {
-                return back()->with('error', "Không đủ bộ đề Writing hoàn chỉnh. Vui lòng liên hệ admin.");
+                return back()->with('error', "Không đủ bộ đề hoàn chỉnh. Vui lòng liên hệ admin.");
             }
 
             foreach ($sectionConfig as $part) {
@@ -171,7 +171,7 @@ class MockTestController extends Controller
         // Pre-build JSON-safe data for Alpine.js (can't use closures in @json)
         $sectionsJson = $sectionsWithSets->map(function ($s) use ($mockTest) {
             $questions = $s['set']->questions;
-            if ($mockTest->skill === 'writing') {
+            if ($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') {
                 $questions = $questions->filter(fn($q) => $q->part === (int)$s['part']);
             }
 
@@ -215,9 +215,11 @@ class MockTestController extends Controller
             ]);
         }
 
-        $data = $request->validate([
-            'answers' => 'required|array', // answers[section_index][question_id] = answer
-        ]);
+        $rules = [];
+        if ($mockTest->skill !== 'speaking') {
+            $rules['answers'] = 'required|array';
+        }
+        $data = $request->validate($rules);
 
         $sectionsWithSets = $mockTest->getSectionsWithSets();
         $sectionScores = [];
@@ -239,10 +241,28 @@ class MockTestController extends Controller
             if (!$firstSetId) $firstSetId = $set->id;
             
             $questions = $set->questions;
-            if ($mockTest->skill === 'writing') {
+            if ($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') {
                 $questions = $questions->filter(fn($q) => $q->part === (int)$section['part']);
             }
-            $sectionAnswers = $data['answers'][$sectionIndex] ?? [];
+            $sectionAnswers = $request->input("answers.{$sectionIndex}") ?? [];
+
+            // Handle Speaking Audio uploads directly into structured answer payload
+            $sectionFiles = $request->file("answers.{$sectionIndex}");
+            if ($mockTest->skill === 'speaking' && is_array($sectionFiles)) {
+                foreach ($sectionFiles as $qId => $files) {
+                    $paths = [];
+                    // Ensure we always deal with an array
+                    if (!is_array($files)) {
+                        $files = [$files];
+                    }
+                    
+                    foreach ($files as $file) {
+                        $paths[] = $file->store('speaking_attempts', 'public');
+                    }
+                    
+                    $sectionAnswers[$qId] = $paths; // Always store array of paths in DB
+                }
+            }
 
             // Grade this section using shared GradingService
             $result = $this->gradingService->gradeSet($questions, $sectionAnswers, 'mock_test');
@@ -335,6 +355,12 @@ class MockTestController extends Controller
         // Load attempts for this mock test
         $attempts = $mockTest->attempts()->with('attemptAnswers')->get();
 
-        return view('mock-test.result', compact('mockTest', 'sectionsWithSets', 'attempts'));
+        // Calculate grading requests count for this skill
+        $gradingRequestsCount = \App\Models\Attempt::where('user_id', auth()->id())
+            ->where('skill', $mockTest->skill)
+            ->where('is_grading_requested', true)
+            ->count();
+
+        return view('mock-test.result', compact('mockTest', 'sectionsWithSets', 'attempts', 'gradingRequestsCount'));
     }
 }

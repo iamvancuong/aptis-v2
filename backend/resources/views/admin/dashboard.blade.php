@@ -16,7 +16,7 @@
 </div>
 
 <!-- TOP STATS -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
     <x-card class="border-l-4 border-l-blue-500 shadow-sm relative overflow-hidden group">
         <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition">
             <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path></svg>
@@ -57,6 +57,25 @@
         <div class="mt-4 text-sm">
             @if($pendingWritings > 0)
                 <a href="{{ route('admin.writing-reviews.index') }}" class="text-amber-600 hover:text-amber-800 font-medium inline-flex items-center">
+                    Chấm bài ngay <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </a>
+            @else
+                <span class="text-gray-400">Không có bài tồn đọng</span>
+            @endif
+        </div>
+    </x-card>
+
+    <x-card class="border-l-4 border-l-rose-500 shadow-sm relative overflow-hidden group">
+        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition">
+            <svg class="w-16 h-16 text-rose-600" fill="currentColor" viewBox="0 0 20 20"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+        </div>
+        <div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider mb-1">Thi Speaking</p>
+            <p class="text-4xl font-black {{ $pendingSpeaking > 0 ? 'text-rose-600' : 'text-gray-800' }}">{{ $pendingSpeaking }}</p>
+        </div>
+        <div class="mt-4 text-sm">
+            @if($pendingSpeaking > 0)
+                <a href="{{ route('admin.speaking-reviews.index') }}" class="text-rose-600 hover:text-rose-800 font-medium inline-flex items-center">
                     Chấm bài ngay <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </a>
             @else

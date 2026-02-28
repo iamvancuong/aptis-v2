@@ -10,7 +10,7 @@ class SkillController extends Controller
     public function show($skill)
     {
         // Validate skill
-        if (!in_array($skill, ['reading', 'listening', 'writing', 'grammar'])) {
+        if (!in_array($skill, ['reading', 'listening', 'writing', 'grammar', 'speaking'])) {
             abort(404);
         }
 

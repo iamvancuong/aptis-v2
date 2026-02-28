@@ -171,10 +171,11 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Điểm (0-10)</label>
                             <div class="flex items-center gap-4">
-                                <input type="range" name="scores[{{ $answer->id }}]" min="0" max="10" step="0.5"
+                                <input type="range" name="scores[{{ $answer->id }}]" min="0" max="10" step="0.1"
                                     x-model="score"
                                     class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
-                                <span class="text-2xl font-bold text-indigo-600 w-12 text-center" x-text="score"></span>
+                                <input type="number" step="0.1" min="0" max="10" x-model="score"
+                                    class="w-20 px-2 py-1 text-center bg-white border border-gray-300 rounded-lg font-bold text-indigo-600">
                             </div>
                             <div class="flex justify-between text-xs text-gray-400 mt-1 px-1">
                                 <span>0</span>

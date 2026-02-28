@@ -34,16 +34,53 @@
                 @else Cần ôn tập thêm 💪
                 @endif
             </h2>
-            @if($mockTest->skill !== 'writing')
+            @if($mockTest->skill !== 'writing' && $mockTest->skill !== 'speaking')
                 <p class="text-gray-500">
                     {{ number_format($score, 1) }}% câu trả lời đúng
                 </p>
             @else
                 <p class="text-amber-600">
-                    ⏳ Bài viết đang chờ chấm điểm
+                    ⏳ Bài thi đang chờ giáo viên chấm điểm
                 </p>
             @endif
         </div>
+
+        {{-- Grading Request Section --}}
+        @if(($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') && $attempts->first())
+            <div class="mt-8 pt-8 border-t border-gray-100 bg-indigo-50/30 -mx-8 -mb-8 px-8 pb-8 rounded-b-2xl">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            Yêu cầu giáo viên chấm điểm
+                        </h3>
+                        <p class="text-sm text-gray-600">
+                            Bạn có tối đa <strong>2 lần</strong> yêu cầu giáo viên chấm điểm chi tiết cho kỹ năng này. 
+                            Hiện tại bạn đã dùng <strong>{{ $gradingRequestsCount }}/2</strong> lượt.
+                        </p>
+                    </div>
+                    
+                    @if($attempts->first()->is_grading_requested)
+                        <div class="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                            Đã gởi yêu cầu
+                        </div>
+                    @elseif($gradingRequestsCount < 2)
+                        <form action="{{ route('attempts.request-grading', $attempts->first()->id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2 transform active:scale-95">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Gởi yêu cầu chấm bài này
+                            </button>
+                        </form>
+                    @else
+                        <div class="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-bold cursor-not-allowed">
+                            Đã hết lượt yêu cầu
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- Per-Section Breakdown --}}
@@ -70,7 +107,7 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        @if($mockTest->skill === 'writing')
+                        @if($mockTest->skill === 'writing' || $mockTest->skill === 'speaking')
                             <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">
                                 ⏳ Chờ chấm
                             </span>
@@ -92,8 +129,11 @@
 
     {{-- Actions --}}
     <div class="flex flex-col sm:flex-row gap-4">
-        @if($mockTest->skill === 'writing' && $attempts->first())
-            <a href="{{ route('writingHistory.show', $attempts->first()->id) }}"
+        @if(($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') && $attempts->first())
+            @php
+                $detailRoute = $mockTest->skill === 'writing' ? 'writingHistory.show' : 'speakingHistory.show';
+            @endphp
+            <a href="{{ route($detailRoute, $attempts->first()->id) }}"
                class="flex-1 text-center px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-md flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Xem chi tiết đánh giá
