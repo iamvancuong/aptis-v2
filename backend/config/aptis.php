@@ -36,8 +36,10 @@ return [
     |*/
     'exam_part_counts' => [
         'listening' => [
-            1 => 13,
-            4 => 2,
+            1 => 13,   // 13 random MC questions
+            2 => 1,    // 1 random speaker-matching question
+            3 => 1,    // 1 random man/woman/both question
+            4 => 2,    // 2 random passage questions
         ],
         'reading' => [
             1 => 1,

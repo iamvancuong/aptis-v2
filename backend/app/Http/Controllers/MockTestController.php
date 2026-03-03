@@ -107,10 +107,14 @@ class MockTestController extends Controller
                 ];
             }
         } else {
-            // For Reading and Listening, pick random sets for each section
+            // For Reading and Listening, pick random sets for each section.
+            // NOTE: exam_part_counts defines how many QUESTIONS to show per part (not sets).
+            //       getSectionsWithSets() handles the per-part question limit via crc32 deterministic slice.
+            //       So we always pick exactly 1 set per part; only Reading Part 2 uses set_ids (multiple sets).
             $usedSetIds = [];
             foreach ($sectionConfig as $part) {
-                $idealCount = config("aptis.exam_part_counts.{$skill}.{$part}", 1);
+                // Number of SETS to pick: Reading P2 uses 2 sets; everything else = 1 set
+                $setCount = ($skill === 'reading' && $part == 2) ? 2 : 1;
 
                 $sets = Set::whereHas('quiz', function ($q) use ($skill, $part) {
                     $q->where('skill', $skill)->where('part', $part);
@@ -118,7 +122,7 @@ class MockTestController extends Controller
                     ->where('is_public', true)
                     ->whereNotIn('id', $usedSetIds)
                     ->inRandomOrder()
-                    ->limit($idealCount)
+                    ->limit($setCount)
                     ->get();
 
                 if ($sets->isEmpty()) {
@@ -126,8 +130,8 @@ class MockTestController extends Controller
                 }
 
                 $usedSetIds = array_merge($usedSetIds, $sets->pluck('id')->toArray());
-                
-                if ($idealCount > 1) {
+
+                if ($setCount > 1) {
                     $sections[] = [
                         'part' => $part,
                         'set_ids' => $sets->pluck('id')->toArray(),

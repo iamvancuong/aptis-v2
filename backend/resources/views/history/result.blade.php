@@ -110,7 +110,164 @@
                             </div>
 
                             {{-- Part Specific Layouts --}}
-                            @if($attempt->skill === 'reading')
+                            @if($attempt->skill === 'listening')
+                                @if($q->part == 1)
+                                    {{-- Listening P1: Multiple Choice with optional audio --}}
+                                    @php
+                                        $choices   = $q->metadata['choices'] ?? [];
+                                        $cIdx      = $q->metadata['correct_answer'] ?? null;
+                                        $uIdx      = $userAns;
+                                        $audioPath = $q->metadata['audio'] ?? $q->audio_path ?? null;
+                                    @endphp
+                                    @if($audioPath)
+                                        <div class="mb-2">
+                                            <audio src="{{ asset('storage/' . $audioPath) }}" controls class="w-full h-8"></audio>
+                                        </div>
+                                    @endif
+                                    @if($q->stem)
+                                        <p class="text-sm font-medium text-gray-800 mb-2">{{ $q->stem }}</p>
+                                    @endif
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 mb-2">
+                                        @foreach($choices as $cIdxLoop => $cText)
+                                            @php
+                                                $isUser    = ($uIdx !== null && $uIdx == $cIdxLoop);
+                                                $isCorrect = ($cIdx !== null && $cIdx == $cIdxLoop);
+                                                $cls = 'bg-white border-gray-100';
+                                                if ($isUser && $isCorrect)  $cls = 'bg-green-50 border-green-200 text-green-700 font-bold';
+                                                elseif ($isUser)            $cls = 'bg-red-50 border-red-200 text-red-700 font-bold';
+                                                elseif ($isCorrect)         $cls = 'bg-green-50 border-green-200 text-green-700 font-bold opacity-80';
+                                            @endphp
+                                            <div class="px-3 py-2 rounded-lg border text-xs flex items-center gap-2 {{ $cls }}">
+                                                <span class="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] shrink-0">{{ chr(65 + $cIdxLoop) }}</span>
+                                                <span>{{ $cText }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                @elseif($q->part == 2)
+                                    {{-- Listening P2: Speaker Matching --}}
+                                    @php
+                                        $items       = $q->metadata['items'] ?? [];
+                                        $choices     = $q->metadata['choices'] ?? [];
+                                        $correctAns  = $q->metadata['correct_answers'] ?? [];
+                                        $audioFiles  = $q->metadata['audio_files'] ?? [];
+                                        $userAnswers = is_array($userAns) ? $userAns : [];
+                                    @endphp
+                                    @if($q->metadata['topic'] ?? $q->stem)
+                                        <p class="text-xs font-semibold text-indigo-700 mb-2">{{ $q->metadata['topic'] ?? $q->stem }}</p>
+                                    @endif
+                                    <div class="space-y-2 mb-2">
+                                        @foreach($items as $sIdx => $speakerName)
+                                            @php
+                                                $uA        = $userAnswers[$sIdx] ?? null;
+                                                $cA        = $correctAns[$sIdx] ?? null;
+                                                $isOk      = ($uA !== null && $uA == $cA);
+                                                $uText     = ($uA !== null && isset($choices[$uA])) ? $choices[$uA] : '(Bỏ trống)';
+                                                $cText     = isset($choices[$cA]) ? $choices[$cA] : 'N/A';
+                                                $audio     = $audioFiles[$sIdx] ?? null;
+                                            @endphp
+                                            <div class="p-2.5 rounded-lg border text-xs {{ $isOk ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100' }}">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <span class="font-bold text-gray-700">{{ $speakerName }}</span>
+                                                    @if($audio)
+                                                        <audio src="{{ asset('storage/' . $audio) }}" controls class="h-6 flex-1"></audio>
+                                                    @endif
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-gray-500">Bạn chọn:</span>
+                                                    <span class="font-bold {{ $isOk ? 'text-green-600' : 'text-red-600' }}">{{ $uText }}</span>
+                                                    @if(!$isOk)
+                                                        <span class="text-gray-400">|</span>
+                                                        <span class="text-green-600 font-bold">Đúng: {{ $cText }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                @elseif($q->part == 3)
+                                    {{-- Listening P3: Man/Woman/Both Multi-Matching --}}
+                                    @php
+                                        $statements  = $q->metadata['statements'] ?? [];
+                                        $sharedOpts  = $q->metadata['shared_choices'] ?? [];
+                                        $correctAns  = $q->metadata['correct_answers'] ?? [];
+                                        $userAnswers = is_array($userAns) ? $userAns : [];
+                                        $audioPath   = $q->audio_path ?? null;
+                                    @endphp
+                                    @if($audioPath)
+                                        <div class="mb-2">
+                                            <audio src="{{ asset('storage/' . $audioPath) }}" controls class="w-full h-8"></audio>
+                                        </div>
+                                    @endif
+                                    @if($q->metadata['topic'] ?? $q->stem)
+                                        <p class="text-xs font-semibold text-indigo-700 mb-2">{{ $q->metadata['topic'] ?? $q->stem }}</p>
+                                    @endif
+                                    <div class="space-y-1.5 mb-2">
+                                        @foreach($statements as $stIdx => $stText)
+                                            @php
+                                                $uA   = $userAnswers[$stIdx] ?? null;
+                                                $cA   = $correctAns[$stIdx] ?? null;
+                                                $isOk = ($uA !== null && $uA == $cA);
+                                                $uLabel = isset($sharedOpts[$uA]) ? $sharedOpts[$uA] : '(Bỏ trống)';
+                                                $cLabel = isset($sharedOpts[$cA]) ? $sharedOpts[$cA] : 'N/A';
+                                            @endphp
+                                            <div class="flex items-start gap-2 p-2 rounded border text-xs {{ $isOk ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100' }}">
+                                                <div class="flex-1"><span class="font-medium text-gray-800">{{ $stIdx + 1 }}. {{ $stText }}</span></div>
+                                                <div class="shrink-0 text-right">
+                                                    <span class="font-bold {{ $isOk ? 'text-green-600' : 'text-red-600' }}">{{ $uLabel }}</span>
+                                                    @if(!$isOk)
+                                                        <p class="text-[10px] text-green-600 font-bold">✓ {{ $cLabel }}</p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                @elseif($q->part == 4)
+                                    {{-- Listening P4: Multiple sub-questions (single choice each) --}}
+                                    @php
+                                        $subQuestions = $q->metadata['questions'] ?? [];
+                                        $userAnswers  = is_array($userAns) ? $userAns : [];
+                                        $audioPath    = $q->audio_path ?? null;
+                                    @endphp
+                                    @if($audioPath)
+                                        <div class="mb-2">
+                                            <audio src="{{ asset('storage/' . $audioPath) }}" controls class="w-full h-8"></audio>
+                                        </div>
+                                    @endif
+                                    <div class="space-y-2 mb-2">
+                                        @foreach($subQuestions as $sqIdx => $sq)
+                                            @php
+                                                $sqChoices  = $sq['choices'] ?? [];
+                                                $sqCorrect  = $sq['correct_answer'] ?? null;
+                                                $sqUser     = $userAnswers[$sqIdx] ?? null;
+                                                $sqIsOk     = ($sqUser !== null && $sqUser == $sqCorrect);
+                                                $sqAudio    = $sq['audio'] ?? null;
+                                            @endphp
+                                            <div class="p-2.5 rounded-lg border text-xs {{ $sqIsOk ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100' }}">
+                                                @if($sqAudio)
+                                                    <audio src="{{ asset('storage/' . $sqAudio) }}" controls class="w-full h-7 mb-1"></audio>
+                                                @endif
+                                                <p class="font-medium text-gray-800 mb-1.5">{{ $sqIdx + 1 }}. {{ $sq['question'] ?? '' }}</p>
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    @foreach($sqChoices as $cKey => $cVal)
+                                                        @php
+                                                            $isU = ($sqUser !== null && $sqUser == $cKey);
+                                                            $isC = ($sqCorrect !== null && $sqCorrect == $cKey);
+                                                            $cls = 'border-gray-200 text-gray-600';
+                                                            if ($isU && $isC)   $cls = 'bg-green-100 border-green-300 text-green-700 font-bold';
+                                                            elseif ($isU)       $cls = 'bg-red-100 border-red-300 text-red-700 font-bold';
+                                                            elseif ($isC)       $cls = 'bg-green-50 border-green-200 text-green-600 opacity-80';
+                                                        @endphp
+                                                        <span class="px-2 py-0.5 rounded border {{ $cls }}">{{ chr(65 + $cKey) }}. {{ $cVal }}</span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                            @elseif($attempt->skill === 'reading')
                                 @if($q->part == 1)
                                     <div class="text-sm text-gray-700 mb-2 p-3 bg-gray-50 rounded-lg border border-gray-100 italic">
                                         @php
@@ -236,10 +393,15 @@
                                             $cIdx = $correctAns;
                                         @endphp
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            @foreach($choices as $cIdxLoop => $cText)
+                                            @foreach($choices as $cIdxLoop => $cItem)
                                                 @php
-                                                    $isUser = ($uIdx !== null && $uIdx == $cIdxLoop);
-                                                    $isCorrect = ($cIdx !== null && $cIdx == $cIdxLoop);
+                                                    $optId = is_array($cItem) ? ($cItem['id'] ?? chr(65 + $cIdxLoop)) : $cIdxLoop;
+                                                    $optText = is_array($cItem) ? ($cItem['text'] ?? '') : $cItem;
+                                                    $optLabel = is_array($cItem) ? ($cItem['id'] ?? chr(65 + $cIdxLoop)) : chr(65 + $cIdxLoop);
+                                                    
+                                                    $isUser = ($uIdx !== null && (string)$uIdx === (string)$optId);
+                                                    $isCorrect = ($cIdx !== null && (string)$cIdx === (string)$optId);
+                                                    
                                                     $choiceClass = 'bg-white border-gray-100';
                                                     if ($isUser && $isCorrect) $choiceClass = 'bg-green-50 border-green-200 text-green-700 font-bold';
                                                     elseif ($isUser) $choiceClass = 'bg-red-50 border-red-200 text-red-700 font-bold';
@@ -247,9 +409,9 @@
                                                 @endphp
                                                 <div class="px-3 py-2 rounded-lg border text-xs flex items-center gap-2 {{ $choiceClass }}">
                                                     <span class="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] shrink-0">
-                                                        {{ chr(65 + $cIdxLoop) }}
+                                                        {{ $optLabel }}
                                                     </span>
-                                                    <span>{{ $cText }}</span>
+                                                    <span>{{ $optText }}</span>
                                                     @if($isUser && $isCorrect)
                                                         <svg class="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                     @elseif($isUser)
@@ -296,8 +458,9 @@
 
                             {{-- Skip redundant footer for parts that have detailed views --}}
                             @php
-                                $hasDetailedView = ($attempt->skill === 'reading' && in_array($q->part, [1, 2, 3, 4])) 
-                                                || ($attempt->skill === 'grammar' && in_array($q->part, [1, 2]));
+                                $hasDetailedView = ($attempt->skill === 'reading'   && in_array($q->part, [1, 2, 3, 4]))
+                                                || ($attempt->skill === 'grammar'   && in_array($q->part, [1, 2]))
+                                                || ($attempt->skill === 'listening' && in_array($q->part, [1, 2, 3, 4]));
                             @endphp
 
                             @if(!$hasDetailedView)

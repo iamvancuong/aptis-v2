@@ -18,15 +18,15 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-sm font-medium text-gray-700" x-text="field.label"></label>
-                        <span class="text-xs" :class="getWordCountClass(writingPart1Answers[idx], {max: 20})">
-                            <span x-text="countWords(writingPart1Answers[idx])"></span>/20 từ
+                        <span class="text-xs" :class="getWordCountClass(writingPart1Answers[idx], {max: 5})">
+                            <span x-text="countWords(writingPart1Answers[idx])"></span>/5 từ
                         </span>
                     </div>
                     <input type="text"
                         x-model="writingPart1Answers[idx]"
                         @input="
-                            if (countWords($event.target.value) > 20) {
-                                const words = $event.target.value.trim().split(/\s+/).slice(0, 20);
+                            if (countWords($event.target.value) > 5) {
+                                const words = $event.target.value.trim().split(/\s+/).slice(0, 5);
                                 writingPart1Answers[idx] = words.join(' ');
                                 $event.target.value = writingPart1Answers[idx];
                             }

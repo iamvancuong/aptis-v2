@@ -165,7 +165,7 @@ class HistoryController extends Controller
             abort(403);
         }
 
-        if (!in_array($attempt->skill, ['writing', 'speaking']) || $attempt->mode !== 'mock_test') {
+        if (!in_array($attempt->skill, ['writing', 'speaking']) || !in_array($attempt->mode, ['mock', 'mock_test'])) {
             return back()->with('error', 'Chỉ có thể yêu cầu chấm điểm cho bài thi Mock Test Writing hoặc Speaking.');
         }
 

@@ -264,7 +264,7 @@
                                 </h3>
                                 <p class="text-xs text-emerald-600/70 mb-3">Chấm lúc: {{ $answer->writingReview->updated_at->format('H:i d/m/Y') }}</p>
                                 
-                                <div class="bg-white p-4 rounded-lg border border-emerald-100 text-gray-800 text-sm leading-relaxed whitespace-pre-wrap shadow-sm">{{ $answer->writingReview->comment ?: 'Giảng viên không để lại nhận xét chi tiết.' }}</div>
+                                <div class="ck-content bg-white p-4 rounded-lg border border-emerald-100 text-gray-800 text-sm leading-relaxed whitespace-pre-wrap shadow-sm">{!! $answer->writingReview->comment ?: 'Giảng viên không để lại nhận xét chi tiết.' !!}</div>
                                 
                                 <div class="mt-4 pt-4 border-t border-emerald-100/50 flex justify-end">
                                     <div class="bg-white px-4 py-2 rounded-lg border border-emerald-200 flex items-center gap-2 shadow-sm">

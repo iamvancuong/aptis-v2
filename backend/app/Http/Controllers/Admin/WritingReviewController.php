@@ -20,7 +20,7 @@ class WritingReviewController extends Controller
         $search = $request->get('search');
 
         $query = Attempt::where('skill', 'writing')
-            ->where('mode', 'mock_test')
+            ->whereIn('mode', ['mock', 'mock_test'])
             ->where('is_grading_requested', true)
             ->with(['user', 'set.quiz', 'attemptAnswers.writingReview', 'attemptAnswers.question']);
 

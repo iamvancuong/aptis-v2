@@ -42,18 +42,20 @@ class WritingSetController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'is_public' => 'boolean',
+            'has_part_1' => 'boolean',
+            'has_part_2' => 'boolean',
             
             // Part 1 Validation
-            'part1_instructions' => 'required|string',
-            'part1_f1_label' => 'required|string', 'part1_f1_placeholder' => 'nullable|string',
-            'part1_f2_label' => 'required|string', 'part1_f2_placeholder' => 'nullable|string',
-            'part1_f3_label' => 'required|string', 'part1_f3_placeholder' => 'nullable|string',
-            'part1_f4_label' => 'required|string', 'part1_f4_placeholder' => 'nullable|string',
-            'part1_f5_label' => 'required|string', 'part1_f5_placeholder' => 'nullable|string',
+            'part1_instructions' => 'nullable|string',
+            'part1_f1_label' => 'nullable|string', 'part1_f1_placeholder' => 'nullable|string',
+            'part1_f2_label' => 'nullable|string', 'part1_f2_placeholder' => 'nullable|string',
+            'part1_f3_label' => 'nullable|string', 'part1_f3_placeholder' => 'nullable|string',
+            'part1_f4_label' => 'nullable|string', 'part1_f4_placeholder' => 'nullable|string',
+            'part1_f5_label' => 'nullable|string', 'part1_f5_placeholder' => 'nullable|string',
             'part1_sample_answer' => 'nullable|string',
             
             // Part 2 Validation
-            'part2_scenario' => 'required|string',
+            'part2_scenario' => 'nullable|string',
             'part2_hints' => 'nullable|string',
             'part2_min' => 'nullable|integer', 'part2_max' => 'nullable|integer',
             'part2_sample_answer' => 'nullable|string',
@@ -91,10 +93,14 @@ class WritingSetController extends Controller
                 'order' => Set::where('quiz_id', $quiz->id)->max('order') + 1,
             ]);
 
-            // Create Part 1 Question
-            $this->createPart1($set, $quiz, $validated);
-            // Create Part 2 Question
-            $this->createPart2($set, $quiz, $validated);
+            // Create Part 1 Question if enabled
+            if ($request->has('has_part_1')) {
+                $this->createPart1($set, $quiz, $validated);
+            }
+            // Create Part 2 Question if enabled
+            if ($request->has('has_part_2')) {
+                $this->createPart2($set, $quiz, $validated);
+            }
             // Create Part 3 Question
             $this->createPart3($set, $quiz, $validated);
             // Create Part 4 Question
@@ -130,18 +136,19 @@ class WritingSetController extends Controller
          $validated = $request->validate([
             'title' => 'required|string|max:255',
             'is_public' => 'boolean',
+            'has_part_1' => 'boolean',
             
             // Part 1 Validation
-            'part1_instructions' => 'required|string',
-            'part1_f1_label' => 'required|string', 'part1_f1_placeholder' => 'nullable|string',
-            'part1_f2_label' => 'required|string', 'part1_f2_placeholder' => 'nullable|string',
-            'part1_f3_label' => 'required|string', 'part1_f3_placeholder' => 'nullable|string',
-            'part1_f4_label' => 'required|string', 'part1_f4_placeholder' => 'nullable|string',
-            'part1_f5_label' => 'required|string', 'part1_f5_placeholder' => 'nullable|string',
+            'part1_instructions' => 'nullable|string',
+            'part1_f1_label' => 'nullable|string', 'part1_f1_placeholder' => 'nullable|string',
+            'part1_f2_label' => 'nullable|string', 'part1_f2_placeholder' => 'nullable|string',
+            'part1_f3_label' => 'nullable|string', 'part1_f3_placeholder' => 'nullable|string',
+            'part1_f4_label' => 'nullable|string', 'part1_f4_placeholder' => 'nullable|string',
+            'part1_f5_label' => 'nullable|string', 'part1_f5_placeholder' => 'nullable|string',
             'part1_sample_answer' => 'nullable|string',
             
             // Part 2 Validation
-            'part2_scenario' => 'required|string',
+            'part2_scenario' => 'nullable|string',
             'part2_hints' => 'nullable|string',
             'part2_min' => 'nullable|integer', 'part2_max' => 'nullable|integer',
             'part2_sample_answer' => 'nullable|string',
@@ -175,33 +182,60 @@ class WritingSetController extends Controller
 
             $questions = $writing_set->questions()->orderBy('order', 'asc')->get();
 
-            if ($questions->count() === 4) {
-                // Update Part 1
-                $p1 = $questions[0];
-                $p1Metadata = $p1->metadata;
-                $p1Metadata['instructions'] = $validated['part1_instructions'];
-                $p1Metadata['fields'] = [
-                    ['label' => $validated['part1_f1_label'], 'placeholder' => $validated['part1_f1_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f2_label'], 'placeholder' => $validated['part1_f2_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f3_label'], 'placeholder' => $validated['part1_f3_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f4_label'], 'placeholder' => $validated['part1_f4_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f5_label'], 'placeholder' => $validated['part1_f5_placeholder'] ?? ''],
-                ];
-                $p1Metadata['sample_answer'] = $validated['part1_sample_answer'] ?? '';
-                $p1->update(['metadata' => $p1Metadata]);
+            $p1 = $questions->where('part', 1)->first();
+            $hasPart1 = $request->has('has_part_1');
 
-                // Update Part 2
-                $p2 = $questions[1];
-                $p2Metadata = $p2->metadata;
-                $p2Metadata['scenario'] = $validated['part2_scenario'];
-                $p2Metadata['hints'] = $validated['part2_hints'] ?? '';
-                $p2Metadata['word_limit'] = ['min' => (int)($validated['part2_min'] ?? 20), 'max' => (int)($validated['part2_max'] ?? 30)];
-                $p2Metadata['sample_answer'] = $validated['part2_sample_answer'] ?? '';
-                $p2->update(['metadata' => $p2Metadata]);
+            if ($hasPart1) {
+                if ($p1) {
+                    // Update existing Part 1
+                    $p1Metadata = $p1->metadata ?? [];
+                    $p1Metadata['instructions'] = $validated['part1_instructions'] ?? '';
+                    $p1Metadata['fields'] = [
+                        ['label' => $validated['part1_f1_label'] ?? '', 'placeholder' => $validated['part1_f1_placeholder'] ?? ''],
+                        ['label' => $validated['part1_f2_label'] ?? '', 'placeholder' => $validated['part1_f2_placeholder'] ?? ''],
+                        ['label' => $validated['part1_f3_label'] ?? '', 'placeholder' => $validated['part1_f3_placeholder'] ?? ''],
+                        ['label' => $validated['part1_f4_label'] ?? '', 'placeholder' => $validated['part1_f4_placeholder'] ?? ''],
+                        ['label' => $validated['part1_f5_label'] ?? '', 'placeholder' => $validated['part1_f5_placeholder'] ?? ''],
+                    ];
+                    $p1Metadata['sample_answer'] = $validated['part1_sample_answer'] ?? '';
+                    $p1->update(['metadata' => $p1Metadata]);
+                } else {
+                    // Create new Part 1
+                    $quiz = $writing_set->quiz;
+                    $this->createPart1($writing_set, $quiz, $validated);
+                }
+            } else {
+                if ($p1) {
+                    $p1->delete();
+                }
+            }
 
-                // Update Part 3
-                $p3 = $questions[2];
-                $p3Metadata = $p3->metadata;
+            // Update Part 2
+            $p2 = $questions->where('part', 2)->first();
+            $hasPart2 = $request->has('has_part_2');
+
+            if ($hasPart2) {
+                if ($p2) {
+                    $p2Metadata = $p2->metadata ?? [];
+                    $p2Metadata['scenario'] = $validated['part2_scenario'] ?? '';
+                    $p2Metadata['hints'] = $validated['part2_hints'] ?? '';
+                    $p2Metadata['word_limit'] = ['min' => (int)($validated['part2_min'] ?? 20), 'max' => (int)($validated['part2_max'] ?? 30)];
+                    $p2Metadata['sample_answer'] = $validated['part2_sample_answer'] ?? '';
+                    $p2->update(['metadata' => $p2Metadata]);
+                } else {
+                    $quiz = $writing_set->quiz;
+                    $this->createPart2($writing_set, $quiz, $validated);
+                }
+            } else {
+                if ($p2) {
+                    $p2->delete();
+                }
+            }
+
+            // Update Part 3
+            $p3 = $questions->where('part', 3)->first();
+            if ($p3) {
+                $p3Metadata = $p3->metadata ?? [];
                 $p3Stem = $validated['part3_stem'] ?? "Respond to the messages in the group.";
                 $p3_min = (int)($validated['part3_min'] ?? 30);
                 $p3_max = (int)($validated['part3_max'] ?? 40);
@@ -209,10 +243,12 @@ class WritingSetController extends Controller
                 $p3Metadata['questions'][1] = ['prompt' => $validated['part3_prompt_2'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max], 'sample_answer' => $validated['part3_sample_2'] ?? ''];
                 $p3Metadata['questions'][2] = ['prompt' => $validated['part3_prompt_3'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max], 'sample_answer' => $validated['part3_sample_3'] ?? ''];
                 $p3->update(['stem' => $p3Stem, 'metadata' => $p3Metadata]);
+            }
 
-                // Update Part 4
-                $p4 = $questions[3];
-                $p4Metadata = $p4->metadata;
+            // Update Part 4
+            $p4 = $questions->where('part', 4)->first();
+            if ($p4) {
+                $p4Metadata = $p4->metadata ?? [];
                 $p4Metadata['context'] = $validated['part4_context'];
                 $p4Metadata['email']['greeting'] = $validated['part4_email_greeting'] ?? 'Dear Member,';
                 $p4Metadata['email']['body'] = $validated['part4_email_body'];
@@ -273,13 +309,13 @@ class WritingSetController extends Controller
             'point' => 5,
             'order' => 1,
             'metadata' => [
-                'instructions' => $validated['part1_instructions'],
+                'instructions' => $validated['part1_instructions'] ?? '',
                 'fields' => [
-                    ['label' => $validated['part1_f1_label'], 'placeholder' => $validated['part1_f1_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f2_label'], 'placeholder' => $validated['part1_f2_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f3_label'], 'placeholder' => $validated['part1_f3_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f4_label'], 'placeholder' => $validated['part1_f4_placeholder'] ?? ''],
-                    ['label' => $validated['part1_f5_label'], 'placeholder' => $validated['part1_f5_placeholder'] ?? ''],
+                    ['label' => $validated['part1_f1_label'] ?? '', 'placeholder' => $validated['part1_f1_placeholder'] ?? ''],
+                    ['label' => $validated['part1_f2_label'] ?? '', 'placeholder' => $validated['part1_f2_placeholder'] ?? ''],
+                    ['label' => $validated['part1_f3_label'] ?? '', 'placeholder' => $validated['part1_f3_placeholder'] ?? ''],
+                    ['label' => $validated['part1_f4_label'] ?? '', 'placeholder' => $validated['part1_f4_placeholder'] ?? ''],
+                    ['label' => $validated['part1_f5_label'] ?? '', 'placeholder' => $validated['part1_f5_placeholder'] ?? ''],
                 ],
                 'sample_answer' => $validated['part1_sample_answer'] ?? '',
             ]
@@ -299,7 +335,7 @@ class WritingSetController extends Controller
             'point' => 5,
             'order' => 2,
             'metadata' => [
-                'scenario' => $validated['part2_scenario'],
+                'scenario' => $validated['part2_scenario'] ?? '',
                 'word_limit' => ['min' => (int)($validated['part2_min'] ?? 20), 'max' => (int)($validated['part2_max'] ?? 30)],
                 'hints' => $validated['part2_hints'] ?? '',
                 'sample_answer' => $validated['part2_sample_answer'] ?? '',
