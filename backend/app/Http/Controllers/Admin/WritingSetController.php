@@ -50,16 +50,19 @@ class WritingSetController extends Controller
             'part1_f3_label' => 'required|string', 'part1_f3_placeholder' => 'nullable|string',
             'part1_f4_label' => 'required|string', 'part1_f4_placeholder' => 'nullable|string',
             'part1_f5_label' => 'required|string', 'part1_f5_placeholder' => 'nullable|string',
+            'part1_sample_answer' => 'nullable|string',
             
             // Part 2 Validation
             'part2_scenario' => 'required|string',
             'part2_hints' => 'nullable|string',
             'part2_min' => 'nullable|integer', 'part2_max' => 'nullable|integer',
+            'part2_sample_answer' => 'nullable|string',
             
             // Part 3 Validation
             'part3_stem' => 'nullable|string',
             'part3_prompt_1' => 'required|string', 'part3_prompt_2' => 'required|string', 'part3_prompt_3' => 'required|string',
             'part3_min' => 'nullable|integer', 'part3_max' => 'nullable|integer',
+            'part3_sample_1' => 'nullable|string', 'part3_sample_2' => 'nullable|string', 'part3_sample_3' => 'nullable|string',
             
             // Part 4 Validation
             'part4_context' => 'required|string',
@@ -68,8 +71,10 @@ class WritingSetController extends Controller
             'part4_email_sign_off' => 'nullable|string',
             'part4_task1_instruction' => 'required|string',
             'part4_task1_min' => 'nullable|integer', 'part4_task1_max' => 'nullable|integer',
+            'part4_task1_sample' => 'nullable|string',
             'part4_task2_instruction' => 'required|string',
             'part4_task2_min' => 'nullable|integer', 'part4_task2_max' => 'nullable|integer',
+            'part4_task2_sample' => 'nullable|string',
         ]);
 
         try {
@@ -133,16 +138,19 @@ class WritingSetController extends Controller
             'part1_f3_label' => 'required|string', 'part1_f3_placeholder' => 'nullable|string',
             'part1_f4_label' => 'required|string', 'part1_f4_placeholder' => 'nullable|string',
             'part1_f5_label' => 'required|string', 'part1_f5_placeholder' => 'nullable|string',
+            'part1_sample_answer' => 'nullable|string',
             
             // Part 2 Validation
             'part2_scenario' => 'required|string',
             'part2_hints' => 'nullable|string',
             'part2_min' => 'nullable|integer', 'part2_max' => 'nullable|integer',
+            'part2_sample_answer' => 'nullable|string',
             
             // Part 3 Validation
             'part3_stem' => 'nullable|string',
             'part3_prompt_1' => 'required|string', 'part3_prompt_2' => 'required|string', 'part3_prompt_3' => 'required|string',
             'part3_min' => 'nullable|integer', 'part3_max' => 'nullable|integer',
+            'part3_sample_1' => 'nullable|string', 'part3_sample_2' => 'nullable|string', 'part3_sample_3' => 'nullable|string',
             
             // Part 4 Validation
             'part4_context' => 'required|string',
@@ -151,8 +159,10 @@ class WritingSetController extends Controller
             'part4_email_sign_off' => 'nullable|string',
             'part4_task1_instruction' => 'required|string',
             'part4_task1_min' => 'nullable|integer', 'part4_task1_max' => 'nullable|integer',
+            'part4_task1_sample' => 'nullable|string',
             'part4_task2_instruction' => 'required|string',
             'part4_task2_min' => 'nullable|integer', 'part4_task2_max' => 'nullable|integer',
+            'part4_task2_sample' => 'nullable|string',
         ]);
 
         try {
@@ -177,6 +187,7 @@ class WritingSetController extends Controller
                     ['label' => $validated['part1_f4_label'], 'placeholder' => $validated['part1_f4_placeholder'] ?? ''],
                     ['label' => $validated['part1_f5_label'], 'placeholder' => $validated['part1_f5_placeholder'] ?? ''],
                 ];
+                $p1Metadata['sample_answer'] = $validated['part1_sample_answer'] ?? '';
                 $p1->update(['metadata' => $p1Metadata]);
 
                 // Update Part 2
@@ -185,6 +196,7 @@ class WritingSetController extends Controller
                 $p2Metadata['scenario'] = $validated['part2_scenario'];
                 $p2Metadata['hints'] = $validated['part2_hints'] ?? '';
                 $p2Metadata['word_limit'] = ['min' => (int)($validated['part2_min'] ?? 20), 'max' => (int)($validated['part2_max'] ?? 30)];
+                $p2Metadata['sample_answer'] = $validated['part2_sample_answer'] ?? '';
                 $p2->update(['metadata' => $p2Metadata]);
 
                 // Update Part 3
@@ -193,9 +205,9 @@ class WritingSetController extends Controller
                 $p3Stem = $validated['part3_stem'] ?? "Respond to the messages in the group.";
                 $p3_min = (int)($validated['part3_min'] ?? 30);
                 $p3_max = (int)($validated['part3_max'] ?? 40);
-                $p3Metadata['questions'][0] = ['prompt' => $validated['part3_prompt_1'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max]];
-                $p3Metadata['questions'][1] = ['prompt' => $validated['part3_prompt_2'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max]];
-                $p3Metadata['questions'][2] = ['prompt' => $validated['part3_prompt_3'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max]];
+                $p3Metadata['questions'][0] = ['prompt' => $validated['part3_prompt_1'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max], 'sample_answer' => $validated['part3_sample_1'] ?? ''];
+                $p3Metadata['questions'][1] = ['prompt' => $validated['part3_prompt_2'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max], 'sample_answer' => $validated['part3_sample_2'] ?? ''];
+                $p3Metadata['questions'][2] = ['prompt' => $validated['part3_prompt_3'], 'word_limit' => ['min' => $p3_min, 'max' => $p3_max], 'sample_answer' => $validated['part3_sample_3'] ?? ''];
                 $p3->update(['stem' => $p3Stem, 'metadata' => $p3Metadata]);
 
                 // Update Part 4
@@ -208,9 +220,11 @@ class WritingSetController extends Controller
                 
                 $p4Metadata['task1']['instruction'] = $validated['part4_task1_instruction'];
                 $p4Metadata['task1']['word_limit'] = ['min' => (int)($validated['part4_task1_min'] ?? 40), 'max' => (int)($validated['part4_task1_max'] ?? 50)];
+                $p4Metadata['task1']['sample_answer'] = $validated['part4_task1_sample'] ?? '';
                 
                 $p4Metadata['task2']['instruction'] = $validated['part4_task2_instruction'];
                 $p4Metadata['task2']['word_limit'] = ['min' => (int)($validated['part4_task2_min'] ?? 120), 'max' => (int)($validated['part4_task2_max'] ?? 150)];
+                $p4Metadata['task2']['sample_answer'] = $validated['part4_task2_sample'] ?? '';
                 
                 $p4->update(['metadata' => $p4Metadata]);
             }
@@ -267,6 +281,7 @@ class WritingSetController extends Controller
                     ['label' => $validated['part1_f4_label'], 'placeholder' => $validated['part1_f4_placeholder'] ?? ''],
                     ['label' => $validated['part1_f5_label'], 'placeholder' => $validated['part1_f5_placeholder'] ?? ''],
                 ],
+                'sample_answer' => $validated['part1_sample_answer'] ?? '',
             ]
         ]);
         $set->questions()->attach($question->id);
@@ -287,6 +302,7 @@ class WritingSetController extends Controller
                 'scenario' => $validated['part2_scenario'],
                 'word_limit' => ['min' => (int)($validated['part2_min'] ?? 20), 'max' => (int)($validated['part2_max'] ?? 30)],
                 'hints' => $validated['part2_hints'] ?? '',
+                'sample_answer' => $validated['part2_sample_answer'] ?? '',
             ]
         ]);
         $set->questions()->attach($question->id);
@@ -305,9 +321,9 @@ class WritingSetController extends Controller
             'order' => 3, 
             'metadata' => [
                 'questions' => [
-                    ['prompt' => $validated['part3_prompt_1'], 'word_limit' => ['min' => (int)($validated['part3_min'] ?? 30), 'max' => (int)($validated['part3_max'] ?? 40)]],
-                    ['prompt' => $validated['part3_prompt_2'], 'word_limit' => ['min' => (int)($validated['part3_min'] ?? 30), 'max' => (int)($validated['part3_max'] ?? 40)]],
-                    ['prompt' => $validated['part3_prompt_3'], 'word_limit' => ['min' => (int)($validated['part3_min'] ?? 30), 'max' => (int)($validated['part3_max'] ?? 40)]],
+                    ['prompt' => $validated['part3_prompt_1'], 'word_limit' => ['min' => (int)($validated['part3_min'] ?? 30), 'max' => (int)($validated['part3_max'] ?? 40)], 'sample_answer' => $validated['part3_sample_1'] ?? ''],
+                    ['prompt' => $validated['part3_prompt_2'], 'word_limit' => ['min' => (int)($validated['part3_min'] ?? 30), 'max' => (int)($validated['part3_max'] ?? 40)], 'sample_answer' => $validated['part3_sample_2'] ?? ''],
+                    ['prompt' => $validated['part3_prompt_3'], 'word_limit' => ['min' => (int)($validated['part3_min'] ?? 30), 'max' => (int)($validated['part3_max'] ?? 40)], 'sample_answer' => $validated['part3_sample_3'] ?? ''],
                 ]
             ]
         ]);
@@ -335,10 +351,12 @@ class WritingSetController extends Controller
                 'task1' => [
                     'instruction' => $validated['part4_task1_instruction'],
                     'word_limit' => ['min' => (int)($validated['part4_task1_min'] ?? 40), 'max' => (int)($validated['part4_task1_max'] ?? 50)],
+                    'sample_answer' => $validated['part4_task1_sample'] ?? '',
                 ],
                 'task2' => [
                     'instruction' => $validated['part4_task2_instruction'],
                     'word_limit' => ['min' => (int)($validated['part4_task2_min'] ?? 120), 'max' => (int)($validated['part4_task2_max'] ?? 150)],
+                    'sample_answer' => $validated['part4_task2_sample'] ?? '',
                 ]
             ]
         ]);

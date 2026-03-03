@@ -41,7 +41,12 @@
                                 {{ $index + 1 }}
                             </span>
                             <div class="flex-1">
-                                @if($question->stem)
+                                @if($question->title)
+                                    <p class="text-gray-900 font-medium">{{ $question->title }}</p>
+                                    @if($question->stem && $question->stem !== $question->title)
+                                        <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ Str::limit(strip_tags($question->stem), 80) }}</p>
+                                    @endif
+                                @elseif($question->stem)
                                     <p class="text-gray-900 font-medium">{{ $question->stem }}</p>
                                 @else
                                     <p class="text-gray-900 font-medium">{{ $question->type }}</p>

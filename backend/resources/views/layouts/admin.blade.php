@@ -77,6 +77,7 @@
                                 @elseif(request()->routeIs('admin.speaking-sets.*', 'admin.speaking-reviews.*')) 'speaking'
                                 @elseif(request()->routeIs('admin.grammar-sets.*')) 'grammar'
                                 @elseif(request()->routeIs('admin.mock-tests.*', 'admin.reports.*')) 'reports'
+                                @elseif(request()->routeIs('admin.feedback.*', 'admin.high-scores.*')) 'interface'
                                 @else null @endif
                 }">
                     {{-- System Group --}}
@@ -93,6 +94,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                             </svg>
                             <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300" :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">Học viên</span>
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('admin.settings.index') }}" :active="request()->routeIs('admin.settings.*')" class="flex items-center mt-1" x-bind:class="{'justify-center px-0': (isDesktopCollapsed && !isMobile)}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span class="ml-3 font-medium whitespace-nowrap transition-opacity duration-300" :class="{'opacity-0 hidden': (isDesktopCollapsed && !isMobile), 'opacity-100 block': !(isDesktopCollapsed && !isMobile)}">Cài đặt</span>
                         </x-nav-link>
                     </div>
 
@@ -182,6 +190,25 @@
                             <x-nav-link href="{{ route('admin.reports.index') }}" :active="request()->routeIs('admin.reports.*')" class="text-sm py-1.5">Tổng quan</x-nav-link>
                         </div>
                     </div>
+
+                    {{-- Interface Group --}}
+                    <div class="mb-2 pt-4 border-t border-gray-100" x-data="{ open: activeMenu === 'interface' }">
+                        <button @click="open = !open; if(open) expandSidebar()" class="w-full flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors group" :class="{'justify-center px-0': (isDesktopCollapsed && !isMobile), 'bg-gray-50': activeMenu === 'interface'}">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 flex-shrink-0 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="ml-3 font-semibold whitespace-nowrap" x-show="!isDesktopCollapsed || isMobile">Giao diện</span>
+                            </div>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': open}" x-show="!isDesktopCollapsed || isMobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open && (!isDesktopCollapsed || isMobile)" x-transition class="mt-1 space-y-1 ml-4 border-l-2 border-pink-100 pl-2" x-cloak>
+                            <x-nav-link href="{{ route('admin.feedback.index') }}" :active="request()->routeIs('admin.feedback.*')" class="text-sm py-1.5">Feedback</x-nav-link>
+                            <x-nav-link href="{{ route('admin.high-scores.index') }}" :active="request()->routeIs('admin.high-scores.*')" class="text-sm py-1.5">Bảng vàng</x-nav-link>
+                        </div>
+                    </div>
                 </nav>
             </aside>
      
@@ -230,5 +257,81 @@
             </div>
         </div>
     </div>
+    <!-- Bulk Delete Script -->
+    <script>
+        function toggleSelectAll(source) {
+            const checkboxes = document.querySelectorAll('.bulk-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            toggleBulkDeleteBtn();
+        }
+
+        function toggleBulkDeleteBtn() {
+            const btn = document.getElementById('bulk-delete-btn');
+            if (!btn) return;
+            const checkedCount = document.querySelectorAll('.bulk-checkbox:checked').length;
+            if (checkedCount > 0) {
+                btn.style.display = 'inline-flex';
+                btn.querySelector('.count').innerText = checkedCount;
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        // Add event listeners to individual checkboxes
+        document.addEventListener('change', function(e) {
+            if(e.target && e.target.classList.contains('bulk-checkbox')) {
+                toggleBulkDeleteBtn();
+                
+                // Update Select All checkbox state
+                const selectAllCb = document.getElementById('selectAllCheckbox');
+                if(selectAllCb) {
+                    const total = document.querySelectorAll('.bulk-checkbox').length;
+                    const checked = document.querySelectorAll('.bulk-checkbox:checked').length;
+                    selectAllCb.checked = (total > 0 && total === checked);
+                }
+            }
+        });
+
+        async function bulkDelete() {
+            const checkboxes = document.querySelectorAll('.bulk-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Vui lòng chọn ít nhất một mục để xoá.');
+                return;
+            }
+
+            if (!confirm(`Bạn có chắc muốn xoá vĩnh viễn ${checkboxes.length} mục đã chọn? Hành động này không thể hoàn tác.`)) {
+                return;
+            }
+
+            const btn = document.getElementById('bulk-delete-btn');
+            if(btn) {
+                btn.disabled = true;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang xoá...`;
+            }
+
+            for (let cb of checkboxes) {
+                const id = cb.value;
+                const form = document.getElementById(`delete-form-${id}`);
+                if (form) {
+                    try {
+                        const formData = new FormData(form);
+                        await fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
+                    } catch (e) {
+                        console.error('Lỗi khi xoá ID ' + id, e);
+                    }
+                }
+            }
+            
+            window.location.reload();
+        }
+    </script>
 </body>
 </html>

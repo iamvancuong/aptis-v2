@@ -44,8 +44,14 @@ class SetController extends Controller
         ]);
 
         $validated['is_public'] = $request->has('is_public');
-        $validated['order'] = $request->input('order', 0);
+        $newOrder = (int) $request->input('order', 0);
 
+        // Shift existing sets at this order or above to make room
+        Set::where('quiz_id', $validated['quiz_id'])
+            ->where('order', '>=', $newOrder)
+            ->increment('order');
+
+        $validated['order'] = $newOrder;
         Set::create($validated);
 
         return redirect()->route('admin.sets.index')
@@ -69,8 +75,30 @@ class SetController extends Controller
         ]);
 
         $validated['is_public'] = $request->has('is_public');
+
         if ($request->has('order')) {
-            $validated['order'] = $request->input('order');
+            $newOrder = (int) $request->input('order');
+            $oldOrder = $set->order;
+            $quizId = $validated['quiz_id'];
+
+            if ($newOrder !== $oldOrder) {
+                // Temporarily move current set out of the way
+                $set->update(['order' => -1]);
+
+                if ($newOrder > $oldOrder) {
+                    // Moving down: shift items between oldOrder+1..newOrder up by -1
+                    Set::where('quiz_id', $quizId)
+                        ->whereBetween('order', [$oldOrder + 1, $newOrder])
+                        ->decrement('order');
+                } else {
+                    // Moving up: shift items between newOrder..oldOrder-1 down by +1
+                    Set::where('quiz_id', $quizId)
+                        ->whereBetween('order', [$newOrder, $oldOrder - 1])
+                        ->increment('order');
+                }
+            }
+
+            $validated['order'] = $newOrder;
         }
 
         $set->update($validated);

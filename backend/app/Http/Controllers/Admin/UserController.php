@@ -52,6 +52,15 @@ class UserController extends Controller
                         now()->addDays(7)
                     ]);
                     break;
+                case 'custom':
+                    if ($request->filled('expire_days')) {
+                        $days = (int) $request->expire_days;
+                        $query->whereBetween('expires_at', [
+                            now()->startOfDay(),
+                            now()->addDays($days)->endOfDay()
+                        ]);
+                    }
+                    break;
                 case 'active': // > 7 days
                     $query->where('expires_at', '>', now()->addDays(7));
                     break;
@@ -195,7 +204,14 @@ class UserController extends Controller
     {
         $user->increment('ai_reset_version');
 
-        return redirect()->back()->with('success', 'AI Usage limit has been reset successfully.');
+        return redirect()->back()->with('success', 'Writing AI Usage limit has been reset successfully.');
+    }
+
+    public function resetSpeakingAi(User $user)
+    {
+        $user->increment('speaking_ai_reset_version');
+
+        return redirect()->back()->with('success', 'Speaking AI Usage limit has been reset successfully.');
     }
 
     public function addAi(Request $request, User $user)

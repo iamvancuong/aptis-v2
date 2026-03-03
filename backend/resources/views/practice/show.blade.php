@@ -141,7 +141,7 @@
 
                                         <div class="flex-1 min-w-0">
                                             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Part <span x-text="q.part"></span></p>
-                                            <p class="text-sm text-gray-800 line-clamp-2" x-text="q.stem || 'Câu hỏi #' + (q.originalIndex + 1)"></p>
+                                            <p class="text-sm text-gray-800 line-clamp-2" x-text="q.title || q.stem || 'Câu hỏi #' + (q.originalIndex + 1)"></p>
                                         </div>
                                     </button>
                                 </template>
@@ -182,6 +182,7 @@
             feedback: {},
             showNavMenu: false,
             searchQuery: '', // Search text
+            redirectUrl: null,
 
             // Reading state
             part1Answers: {},
@@ -286,12 +287,18 @@
                     this.part3Answers = new Array(q.metadata.questions?.length || 0).fill('');
                     this.part4Answers = new Array(q.metadata.paragraphs?.length || 0).fill('');
 
-                    if (q.part === 2 && !this.part2Pool.length && !this.part2Slots.some(s => s !== null)) {
+                    if (q.part === 2) {
+                        // Always reset pool and slots when loading a new question to prevent stale data
                         const sentences = q.metadata.sentences.slice(1).map((text, idx) => ({
                             text, originalIndex: idx + 1
                         }));
-                        this.part2Pool = sentences.sort(() => Math.random() - 0.5);
+                        this.part2Pool = [...sentences].sort(() => Math.random() - 0.5);
                         this.part2Slots = new Array(sentences.length).fill(null);
+                        
+                        // Clear any previous feedback for this question
+                        if (this.feedback[q.id]) {
+                            delete this.feedback[q.id];
+                        }
                     }
                 }
 
@@ -347,7 +354,7 @@
                 
                 let isAllCorrect = true;
                 correctAns.forEach((correctIdx, idx) => {
-                    if (userAns[idx] !== correctIdx) isAllCorrect = false;
+                    if (userAns[idx] != correctIdx) isAllCorrect = false;
                 });
 
                 this.feedback = { ...this.feedback, [qId]: { correct: isAllCorrect } };
@@ -360,7 +367,8 @@
                 const userAns = this.part1Answers[qId][pIndex];
                 const correctAns = this.currentQuestion.metadata.correct_answers[pIndex];
 
-                if (userAns === correctAns) {
+                if (userAns == correctAns) {
+
                     return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;'; 
                 } else {
                     return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
@@ -429,7 +437,7 @@
                 const userAns = this.part3Answers[qIdx];
                 const correctAns = this.currentQuestion.metadata.correct_answers[qIdx];
 
-                if (userAns === correctAns) {
+                if (userAns == correctAns) {
                     return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;';
                 } else {
                     return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
@@ -439,7 +447,7 @@
             getPart3ContainerClass(qIdx) {
                 if (!this.feedback[this.currentQuestion.id]) return 'border-gray-200';
                 const correctIdx = this.currentQuestion.metadata.correct_answers[qIdx];
-                return this.part3Answers[qIdx] === correctIdx ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
+                return this.part3Answers[qIdx] == correctIdx ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
             },
 
             submitPart3() {
@@ -449,7 +457,7 @@
                 }
                 const qId = this.currentQuestion.id;
                 const correctAnswers = this.currentQuestion.metadata.correct_answers;
-                const correctCount = this.part3Answers.filter((ans, idx) => ans === correctAnswers[idx]).length;
+                const correctCount = this.part3Answers.filter((ans, idx) => ans == correctAnswers[idx]).length;
 
                 this.answers = { ...this.answers, [qId]: [...this.part3Answers] };
                 this.feedback = { ...this.feedback, [qId]: { correct: correctCount === correctAnswers.length } };
@@ -463,7 +471,7 @@
                 }
                 const qId = this.currentQuestion.id;
                 const correctAnswers = this.currentQuestion.metadata.correct_answers;
-                const correctCount = this.part4Answers.filter((ans, idx) => ans === correctAnswers[idx]).length;
+                const correctCount = this.part4Answers.filter((ans, idx) => ans == correctAnswers[idx]).length;
 
                 this.answers = { ...this.answers, [qId]: [...this.part4Answers] };
                 this.feedback = { ...this.feedback, [qId]: { correct: correctCount === correctAnswers.length } };
@@ -476,7 +484,7 @@
                 const userAns = this.part4Answers[pIdx];
                 const correctAns = this.currentQuestion.metadata.correct_answers[pIdx];
 
-                if (userAns === correctAns) {
+                if (userAns == correctAns) {
                     return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;';
                 } else {
                     return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
@@ -528,10 +536,33 @@
 
             playAllSpeakers() {
                 const items = this.currentQuestion.metadata.items || [];
+                const audios = [];
+                
+                // Collect and reset all audio elements
                 items.forEach((_, idx) => {
                     const el = document.getElementById('speaker_audio_' + idx);
-                    if (el) { el.currentTime = 0; el.play(); }
+                    if (el) {
+                        el.pause();
+                        el.currentTime = 0;
+                        el.onended = null;
+                        audios.push(el);
+                    }
                 });
+
+                if (audios.length === 0) return;
+
+                let current = 0;
+                const playNext = () => {
+                    if (current >= audios.length) return;
+                    const activeAudio = audios[current];
+                    activeAudio.onended = () => {
+                        current++;
+                        playNext();
+                    };
+                    activeAudio.play().catch(e => console.error("Error playing audio seq", e));
+                };
+                
+                playNext();
             },
 
             // --- Listening Part 3: Monologue (Shared Dropdown) ---
@@ -675,23 +706,28 @@
             },
 
             async setupRecording() {
+                console.log('--- Speaking: setupRecording START ---');
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     this.mediaRecorder = new MediaRecorder(stream);
+                    console.log('--- Speaking: MediaRecorder created ---', this.mediaRecorder.state);
                     
                     this.mediaRecorder.ondataavailable = (event) => {
+                        console.log('--- Speaking: dataavailable ---', event.data.size);
                         if (event.data.size > 0) this.audioChunks.push(event.data);
                     };
 
                     this.mediaRecorder.onstop = () => {
+                        console.log('--- Speaking: onstop fired ---', this.audioChunks.length, "chunks");
                         const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
                         const qId = this.currentQuestion.id;
                         this.speakingAnswers[qId] = this.speakingAnswers[qId] || [];
                         this.speakingAnswers[qId].push(blob);
+                        console.log('--- Speaking: Blob saved to speakingAnswers ---', qId, blob.size);
                     };
                 } catch (err) {
+                    console.error('--- Speaking: Microphone error ---', err);
                     alert('Không thể truy cập Microphone. Vui lòng cấp quyền.');
-                    console.error('Microphone error:', err);
                 }
             },
 
@@ -737,8 +773,8 @@
                     
                     this.speakingState = 'playing_audio';
                     this.playTTS(textToRead, () => {
-                        this.startTimerState('prep', prepTime, () => {
-                            this.playBeepAndRecord(meta.total_answer_time, () => {
+                        this.startTimerState('prep', 61, () => { // +1s offset
+                            this.playBeepAndRecord(121, () => { // +1s offset
                                 this.finishSpeakingQuestion();
                             });
                         });
@@ -747,15 +783,16 @@
                     // Part 1, 2, 3 run sequentially per question
                     this.speakingState = 'playing_audio';
                     this.playTTS(textToRead, () => {
-                        this.startTimerState('prep', prepTime, () => {
-                            this.playBeepAndRecord(meta.answer_time_per_question, () => {
-                                this.speakingSubIndex++;
-                                if (this.speakingSubIndex < totalQs) {
-                                    this.runSpeakingSubQuestion();
-                                } else {
-                                    this.finishSpeakingQuestion();
-                                }
-                            });
+                        const prepTime = 0; // standard speaking parts 1-3 usually have no individual prep unless specified
+                        const recordSeconds = q.part === 1 ? 31 : 46; // +1s offset
+                        
+                        this.playBeepAndRecord(recordSeconds, () => {
+                            this.speakingSubIndex++;
+                            if (this.speakingSubIndex < totalQs) {
+                                this.runSpeakingSubQuestion();
+                            } else {
+                                this.finishSpeakingQuestion();
+                            }
                         });
                     });
                 }
@@ -802,28 +839,33 @@
                     this.audioChunks = [];
                     this.speakingState = 'recording';
                     this.speakingTimer = recordSeconds;
+                    console.log('--- Speaking: Recording timer started ---', recordSeconds, 's');
                     
                     try {
                         if (this.mediaRecorder.state === 'inactive') {
                             this.mediaRecorder.start();
+                            console.log('--- Speaking: mediaRecorder.start() called ---');
                         }
-                    } catch(e) { console.error(e); }
+                    } catch(e) { console.error('--- Speaking: mediaRecorder.start() FAILED ---', e); }
 
                     clearInterval(this.speakingInterval);
                     this.speakingInterval = setInterval(() => {
                         this.speakingTimer--;
                         if (this.speakingTimer <= 0) {
                             clearInterval(this.speakingInterval);
+                            console.log('--- Speaking: Recording timer end ---');
                             try {
                                 if (this.mediaRecorder.state !== 'inactive') {
                                     this.mediaRecorder.stop();
+                                    console.log('--- Speaking: mediaRecorder.stop() called ---');
                                 }
-                            } catch(e) { console.error(e); }
+                            } catch(e) { console.error('--- Speaking: mediaRecorder.stop() FAILED ---', e); }
                             
                             // Give mediaRecorder.onstop a moment to fire and push chunks
                             setTimeout(() => {
+                                console.log('--- Speaking: Calling onComplete ---');
                                 onComplete();
-                            }, 300);
+                            }, 500); // Increased to 500ms
                         }
                     }, 1000);
                 }, 600);
@@ -833,10 +875,15 @@
                 this.speakingState = 'saving';
                 const qId = this.currentQuestion.id;
                 
-                // Marking as answered for navigation
-                // Actual blob upload happens in handleFooterAction or finish
-                this.answers = { ...this.answers, [qId]: 'recorded' };
-                this.feedback = { ...this.feedback, [qId]: { correct: null, pending: true } };
+                // Marking as answered for navigation only if blobs exist
+                const blobs = this.speakingAnswers[qId] || [];
+                if (blobs.length > 0) {
+                    this.answers = { ...this.answers, [qId]: 'recorded' };
+                    this.feedback = { ...this.feedback, [qId]: { correct: null, pending: true } };
+                } else {
+                    // Not recorded, leave it to footer action logic to show alert if needed
+                    // (Actually in finishSpeakingQuestion it would mean they completed but maybe with errors or short-circuit)
+                }
                 
                 setTimeout(() => {
                     this.speakingState = 'idle';
@@ -959,8 +1006,8 @@
                         // Check if query matches question number directly
                         if (!isNaN(query) && parseInt(query) === q.originalIndex + 1) return true;
 
-                        // Flexible multi-word search
-                        const searchTarget = ((q.stem || '') + ' ' + (q.title || '')).toLowerCase();
+                        // Flexible multi-word search (Title primary, fallback to stem)
+                        const searchTarget = ((q.title || '') + ' ' + (q.stem || '')).toLowerCase();
                         const searchWords = query.split(/\s+/);
                         return searchWords.every(word => searchTarget.includes(word));
                     });
@@ -1004,6 +1051,7 @@
                         const result = await response.json();
                         this.attemptId = result.attempt_id;
                         this.answerIds = result.answer_ids || {};
+                        this.redirectUrl = result.redirect;
                     } else {
                         // Standard JSON check
                         const response = await fetch(`{{ route('practice.store', $set->id) }}`, {
@@ -1022,6 +1070,7 @@
                         const result = await response.json();
                         this.attemptId = result.attempt_id;
                         this.answerIds = result.answer_ids || {};
+                        this.redirectUrl = result.redirect;
                     }
                 } catch (error) {
                     console.error("Submit error:", error);
@@ -1084,6 +1133,7 @@
                 this.answers = {};
                 this.feedback = {};
                 this.attemptId = null;
+                this.redirectUrl = null;
                 // Reading
                 this.part1Answers = {};
                 this.part2Slots = [];

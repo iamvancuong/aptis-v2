@@ -41,13 +41,12 @@
             :error="$errors->first('title')"
         />
 
-        <x-input 
-            label="Order (0-indexed)" 
-            name="order" 
-            type="number" 
-            :value="old('order', $set->order)"
-            :error="$errors->first('order')"
-        />
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Thứ tự hiển thị <span class="text-gray-400 font-normal text-xs">(0 = đầu tiên)</span></label>
+            <input type="number" name="order" value="{{ old('order', $set->order) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <p class="text-xs text-gray-400 mt-1">💡 Đổi vị trí sẽ tự động dịch các bộ đề khác trong cùng Quiz — không bị trùng.</p>
+            @error('order')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
 
         <div class="mb-4">
             <label class="flex items-center">

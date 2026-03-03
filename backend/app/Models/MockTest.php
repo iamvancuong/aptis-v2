@@ -79,10 +79,19 @@ class MockTest extends Model
                 $virtSet = $sets->get($section['set_id']);
             }
 
-            // Apply global part-specific question limit if exists (e.g. Listening Part 1 = 13 total)
+            // Apply global part-specific question limit if exists.
+            // IMPORTANT: sort DETERMINISTICALLY by (mockTestId, questionId) so that show(), submit(),
+            // and result() always pick the same questions for the same test instance.
+            // Using shuffle() was bugged — each call returned different questions → grading mismatch.
             $limit = config("aptis.exam_part_counts.{$this->skill}.{$section['part']}");
             if ($virtSet && $limit && $virtSet->questions->count() > $limit) {
-                $virtSet->setRelation('questions', $virtSet->questions->take($limit));
+                $mockId = $this->id;
+                $virtSet->setRelation('questions',
+                    $virtSet->questions
+                        ->sortBy(fn($q) => crc32($mockId . '_' . $q->id))
+                        ->take($limit)
+                        ->values()
+                );
             }
 
             return [

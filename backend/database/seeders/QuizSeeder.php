@@ -21,6 +21,21 @@ class QuizSeeder extends Seeder
             ['skill' => 'listening', 'part' => 2, 'title' => 'Listening Part 2: Conversation', 'duration_minutes' => 15],
             ['skill' => 'listening', 'part' => 3, 'title' => 'Listening Part 3: Monologue', 'duration_minutes' => 20],
             ['skill' => 'listening', 'part' => 4, 'title' => 'Listening Part 4: Complex Audio', 'duration_minutes' => 25],
+
+            // Writing (Cohesive Set)
+            ['skill' => 'writing', 'part' => 1, 'title' => 'Writing Part 1: Form Filling', 'duration_minutes' => 0],
+            ['skill' => 'writing', 'part' => 2, 'title' => 'Writing Part 2: Short Email', 'duration_minutes' => 0],
+            ['skill' => 'writing', 'part' => 3, 'title' => 'Writing Part 3: Social Media', 'duration_minutes' => 0],
+            ['skill' => 'writing', 'part' => 4, 'title' => 'Writing Part 4: Dual Email', 'duration_minutes' => 50],
+
+            // Speaking
+            ['skill' => 'speaking', 'part' => 1, 'title' => 'Speaking Part 1: Personal Questions', 'duration_minutes' => 5],
+            ['skill' => 'speaking', 'part' => 2, 'title' => 'Speaking Part 2: Describe Image', 'duration_minutes' => 5],
+            ['skill' => 'speaking', 'part' => 3, 'title' => 'Speaking Part 3: Compare Images', 'duration_minutes' => 5],
+            ['skill' => 'speaking', 'part' => 4, 'title' => 'Speaking Part 4: Long Turn', 'duration_minutes' => 5],
+
+            // Grammar
+            ['skill' => 'grammar', 'part' => 0, 'title' => 'Grammar and Vocabulary', 'duration_minutes' => 25],
         ];
 
         foreach ($quizzes as $quiz) {

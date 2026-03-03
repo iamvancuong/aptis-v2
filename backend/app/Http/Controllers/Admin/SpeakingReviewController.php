@@ -41,6 +41,39 @@ class SpeakingReviewController extends Controller
             });
         }
 
+        // Filter by user expiration
+        $expiration = $request->get('expiration');
+        if ($expiration) {
+            $query->whereHas('user', function ($q) use ($expiration, $request) {
+                switch ($expiration) {
+                    case 'expired':
+                        $q->where('expires_at', '<', now());
+                        break;
+                    case 'warning': // 1-7 days
+                        $q->whereBetween('expires_at', [
+                            now(),
+                            now()->addDays(7)
+                        ]);
+                        break;
+                    case 'custom':
+                        if ($request->filled('expire_days')) {
+                            $days = (int) $request->get('expire_days');
+                            $q->whereBetween('expires_at', [
+                                now()->startOfDay(),
+                                now()->addDays($days)->endOfDay()
+                            ]);
+                        }
+                        break;
+                    case 'active': // > 7 days
+                        $q->where('expires_at', '>', now()->addDays(7));
+                        break;
+                    case 'never':
+                        $q->whereNull('expires_at');
+                        break;
+                }
+            });
+        }
+
         $attempts = $query->latest('grading_requested_at')->paginate(15)->appends($request->all());
 
         return view('admin.speaking-reviews.index', compact('attempts', 'filter', 'search'));

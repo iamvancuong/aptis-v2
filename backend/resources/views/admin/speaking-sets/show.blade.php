@@ -45,6 +45,13 @@
                     <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-gray-800">{{ $q }}</div>
                 </div>
             @endforeach
+
+            @if(!empty($p1->metadata['sample_answer']))
+                <div class="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <label class="block text-xs font-bold text-emerald-600 uppercase mb-1">Đáp án tham khảo (P1)</label>
+                    <div class="text-sm text-emerald-800 italic whitespace-pre-wrap">{{ $p1->metadata['sample_answer'] }}</div>
+                </div>
+            @endif
         </div>
     </x-card>
 
@@ -68,6 +75,13 @@
                     </div>
                 @endforeach
             </div>
+
+            @if(!empty($p2->metadata['sample_answer']))
+                <div class="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <label class="block text-xs font-bold text-emerald-600 uppercase mb-1">Đáp án tham khảo (P2)</label>
+                    <div class="text-sm text-emerald-800 italic whitespace-pre-wrap">{{ $p2->metadata['sample_answer'] }}</div>
+                </div>
+            @endif
         </div>
     </x-card>
 
@@ -78,7 +92,7 @@
                 @foreach($p3->metadata['image_paths'] ?? [] as $idx => $path)
                     <div>
                         <label class="block text-xs font-bold text-amber-600 uppercase mb-2">Ảnh {{ $idx + 1 }}</label>
-                        <img src="{{ asset('storage/' . $path) }}" class="h-48 w-full object-cover rounded-lg shadow-sm border border-amber-100">
+                        <img src="{{ asset('storage/' . $path) }}" class="h-64 w-full object-contain mx-auto rounded-lg shadow-sm border border-amber-100">
                     </div>
                 @endforeach
             </div>
@@ -93,6 +107,13 @@
                     </div>
                 @endforeach
             </div>
+
+            @if(!empty($p3->metadata['sample_answer']))
+                <div class="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <label class="block text-xs font-bold text-emerald-600 uppercase mb-1">Đáp án tham khảo (P3)</label>
+                    <div class="text-sm text-emerald-800 italic whitespace-pre-wrap">{{ $p3->metadata['sample_answer'] }}</div>
+                </div>
+            @endif
         </div>
     </x-card>
 
@@ -114,6 +135,13 @@
                     </div>
                 @endforeach
             </div>
+
+            @if(!empty($p4->metadata['sample_answer']))
+                <div class="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <label class="block text-xs font-bold text-emerald-600 uppercase mb-1">Đáp án tham khảo (P4)</label>
+                    <div class="text-sm text-emerald-800 italic whitespace-pre-wrap">{{ $p4->metadata['sample_answer'] }}</div>
+                </div>
+            @endif
 
             <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div class="flex items-center gap-4 text-sm text-gray-600">

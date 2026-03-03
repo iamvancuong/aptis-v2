@@ -14,6 +14,34 @@
                               linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
             background-size: 40px 40px;
         }
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .tilt-card {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease-out;
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translateZ(0); /* Hardware acceleration for cleaner clipping */
+        }
+        .tilt-card:hover {
+            transform: rotateX(7deg) rotateY(7deg) scale(1.03) translateZ(10px);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.2);
+        }
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transform: translateZ(0);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased overflow-x-hidden selection:bg-blue-200 selection:text-blue-900">
@@ -300,8 +328,164 @@
         </div>
     </section>
 
+    <!-- High Scores Section (Bảng vàng) -->
+    <section class="py-24 bg-white relative overflow-hidden perspective-1000">
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-emerald-50 rounded-full blur-[100px] opacity-70"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="text-center max-w-3xl mx-auto mb-16" x-data="{ shown: false }" x-intersect="shown = true">
+                <h2 x-show="shown" x-transition:enter="transition ease-out duration-700" x-transition:enter-start="opacity-0 translate-y-4" class="text-base text-emerald-600 font-bold tracking-widest uppercase mb-3">Vinh danh chiến thần</h2>
+                <p x-show="shown" x-transition:enter="transition ease-out duration-700 delay-100" x-transition:enter-start="opacity-0 translate-y-4" class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+                    Bảng Vàng <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Thành Tích</span>
+                </p>
+                <div x-show="shown" x-transition:enter="transition ease-out duration-1000 delay-300" x-transition:enter-start="scale-x-0" class="h-1.5 w-24 bg-emerald-500 mx-auto mt-6 rounded-full"></div>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                @forelse($highScores as $score)
+                <div class="group perspective-1000">
+                    <!-- Ensure the actual animated card handles clipping explicitly -->
+                    <div class="tilt-card bg-white rounded-[2.5rem] p-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.1)] border border-slate-100 relative overflow-hidden isolate">
+                        <!-- Card Glow Layer -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-emerald-400/20 via-transparent to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                        
+                        <div class="relative z-10">
+                            <!-- Image Container with unique mask - Added overflow-hidden fix -->
+                            <div class="overflow-hidden rounded-[2rem] mb-5 aspect-[4/5] bg-slate-50 flex items-center justify-center relative shadow-inner isolate" style="transform: translateZ(1px);">
+                                @if($score->avatar)
+                                    <img src="{{ $score->avatar }}" alt="{{ $score->name }}" class="w-full h-full object-cover transform scale-[1.01] group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                                @else
+                                    <div class="w-full h-full flex flex-col items-center justify-center text-emerald-600 bg-emerald-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-100/50 to-emerald-50">
+                                        <span class="text-6xl font-black opacity-20 absolute select-none">GOLD</span>
+                                        <span class="text-5xl font-bold relative">{{ mb_substr($score->name, 0, 1) }}</span>
+                                    </div>
+                                @endif
+                                
+                                <!-- Floating Badge -->
+                                <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-2xl shadow-lg border border-white/50 flex items-center gap-1.5 transform translate-z-20 group-hover:translate-y-[-4px] transition-transform">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                    <span class="text-[10px] font-bold text-slate-800 uppercase tracking-tighter">Verified</span>
+                                </div>
+                            </div>
+
+                            <div class="text-center px-2" style="transform: translateZ(5px);">
+                                <h4 class="text-lg font-extrabold text-slate-900 mb-1 group-hover:text-emerald-700 transition-colors line-clamp-1">{{ $score->name }}</h4>
+                                <div class="inline-block">
+                                    <span class="px-5 py-2 rounded-full text-[11px] font-black bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-200 uppercase tracking-widest transform transition-all group-hover:shadow-emerald-300">
+                                        {{ $score->certificate }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="col-span-full py-20 text-center">
+                    <p class="text-slate-400 font-medium">Đang cập nhật danh sách học viên tiêu biểu...</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-24 bg-slate-50 relative overflow-hidden">
+        <!-- Floating 3D Elements background -->
+        <div class="absolute top-1/4 right-0 w-64 h-64 bg-blue-100 rounded-full blur-[120px] opacity-40 animate-pulse"></div>
+        <div class="absolute bottom-1/4 left-0 w-64 h-64 bg-indigo-100 rounded-full blur-[120px] opacity-40"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative" 
+             x-data="{ 
+                active: 0,
+                step: 420,
+                scroll(direction) {
+                    const container = this.$refs.slider;
+                    const scrollAmount = direction === 'next' ? this.step : -this.step;
+                    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                }
+             }">
+            
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                <div class="max-w-2xl">
+                    <h2 class="text-base text-blue-600 font-bold tracking-widest uppercase mb-3">Học viên nói về Milaedu</h2>
+                    <p class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+                        Chia sẻ từ <span class="relative">
+                            <span class="relative z-10">Người thật</span>
+                            <span class="absolute bottom-2 left-0 w-full h-4 bg-blue-200/50 -z-10 rounded-lg"></span>
+                        </span> việc thật
+                    </p>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <button @click="scroll('prev')" class="w-12 h-12 rounded-2xl bg-white shadow-lg border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-blue-600 hover:text-white transition-all transform active:scale-95 group">
+                        <svg class="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button @click="scroll('next')" class="w-12 h-12 rounded-2xl bg-white shadow-lg border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-blue-600 hover:text-white transition-all transform active:scale-95 group">
+                        <svg class="w-6 h-6 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Carousel Container -->
+            <div class="relative">
+                <div class="flex overflow-x-auto pb-12 gap-8 snap-x snap-mandatory no-scrollbar scroll-smooth -mx-4 px-4" x-ref="slider">
+                    @forelse($feedbacks as $feedback)
+                    <div class="flex-none w-[85vw] md:w-[400px] snap-center py-4">
+                        <div class="group h-full">
+                            <div class="glass-morphism h-full p-8 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.15)] hover:-translate-y-2 border border-white/50">
+                                <!-- Quote Icon Floating -->
+                                <div class="absolute -top-6 -right-2 w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-blue-500 transform rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 17.2091 21.2261 19 19.017 19H17.517C17.2409 19 17.017 19.2239 17.017 19.5V21H14.017ZM3.01697 21L3.01697 18C3.01697 16.8954 3.9124 16 5.01697 16H8.01697C8.56925 16 9.01697 15.5523 9.01697 15V9C9.01697 8.44772 8.56925 8 8.01697 8H5.01697C3.9124 8 3.01697 7.10457 3.01697 6V5C3.01697 3.89543 3.9124 3 5.01697 3H8.01697C10.2261 3 12.017 4.79086 12.017 7V15C12.017 17.2091 10.2261 19 8.01697 19H6.51697C6.24083 19 6.01697 19.2239 6.01697 19.5V21H3.01697Z"/></svg>
+                                </div>
+
+                                <div class="flex items-center gap-4 mb-8">
+                                    <div class="relative">
+                                        @isset($feedback->avatar)
+                                            <img src="{{ $feedback->avatar }}" alt="{{ $feedback->name }}" class="w-16 h-16 rounded-2xl object-cover shadow-lg ring-4 ring-white">
+                                        @else
+                                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg ring-4 ring-white">
+                                                {{ mb_substr($feedback->name, 0, 1) }}
+                                            </div>
+                                        @endisset
+                                        <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
+                                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{{ $feedback->name }}</h4>
+                                        <div class="flex text-amber-400 gap-0.5 mt-1">
+                                            @for($i = 0; $i < 5; $i++)
+                                                <svg class="w-4 h-4 {{ $i < ($feedback->rating ?? 5) ? 'fill-current' : 'text-slate-200 fill-current' }}" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="relative">
+                                    <span class="text-6xl font-serif text-blue-600/10 absolute -top-4 -left-4 select-none">“</span>
+                                    <p class="text-slate-600 leading-[1.8] font-medium italic relative z-10 text-lg line-clamp-4 group-hover:line-clamp-none transition-all duration-300">
+                                        {{ $feedback->content }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="col-span-full py-16 text-center italic text-slate-400">
+                        Cảm ơn sự tin tưởng của các bạn học viên...
+                    </div>
+                    @endforelse
+                </div>
+                
+                <!-- Fade Gradients for visual polish -->
+                <div class="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none"></div>
+                <div class="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+            </div>
+        </div>
+        </div>
+    </section>
+
     <!-- Pricing Section -->
-    <section id="pricing" class="py-24 bg-white">
+    <section id="pricing" class="py-24 bg-slate-50 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Bảng giá</h2>
@@ -312,7 +496,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 <!-- Free Plan -->
-                <div class="bg-slate-50 border border-slate-200 rounded-3xl p-8 shadow-sm flex flex-col items-center text-center">
+                <div class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm flex flex-col items-center text-center">
                     <h3 class="text-xl font-bold text-slate-900">Trải nghiệm Miễn phí</h3>
                     <p class="text-slate-500 mt-2 text-sm">Phù hợp để làm quen với format thi</p>
                     <div class="my-6">
@@ -321,15 +505,11 @@
                     <ul class="space-y-4 text-slate-600 text-left w-full mb-8">
                         <li class="flex items-start">
                             <svg class="h-6 w-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Truy cập 3 bộ đề cơ bản
-                        </li>
-                        <li class="flex items-start">
-                            <svg class="h-6 w-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Chấm điểm Reading & Listening
+                            Thi thử Reading, Listening & Grammar
                         </li>
                         <li class="flex items-start text-slate-400">
                             <svg class="h-6 w-6 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            Không bao gồm chấm Writing bằng AI
+                            Không bao gồm Writing & Speaking AI
                         </li>
                     </ul>
                     <a href="{{ route('register') }}" class="w-full mt-auto inline-block py-3 px-4 bg-white text-blue-600 font-semibold rounded-xl border border-blue-200 hover:bg-blue-50 transition-colors">
@@ -342,23 +522,19 @@
                     <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
                     <span class="absolute top-4 right-4 bg-emerald-400 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Phổ biến</span>
                     <h3 class="text-xl font-bold text-white">Gói Pro Aptis</h3>
-                    <p class="text-blue-100 mt-2 text-sm">Mở khóa toàn bộ sức mạnh của AI</p>
+                    <p class="text-blue-100 mt-2 text-sm">Trải nghiệm Full kỹ năng như thật</p>
                     <div class="my-6">
-                        <span class="text-5xl font-extrabold text-white">499k</span>
+                        <span class="text-5xl font-extrabold text-white">???</span>
                         <span class="text-blue-200">/ 3 tháng</span>
                     </div>
                     <ul class="space-y-4 text-blue-50 text-left w-full mb-8">
                         <li class="flex items-start">
                             <svg class="h-6 w-6 text-emerald-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            100+ Bộ đề chuẩn liên tục cập nhật
+                            Thi thử Full 4 kỹ năng & Grammar
                         </li>
                         <li class="flex items-start">
                             <svg class="h-6 w-6 text-emerald-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Thi thử Full 3 kỹ năng (R, L, W)
-                        </li>
-                        <li class="flex items-start">
-                            <svg class="h-6 w-6 text-emerald-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Chấm điểm Writing tự động & Feedback lỗi
+                            Chấm điểm Writing AI, Speaking chấm trực tiếp giáo viên & Feedback
                         </li>
                     </ul>
                     <a href="{{ route('register') }}" class="w-full mt-auto inline-block py-3 px-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-slate-50 shadow-lg transition-transform hover:-translate-y-0.5">

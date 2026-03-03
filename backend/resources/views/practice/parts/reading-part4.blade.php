@@ -29,12 +29,12 @@
                 <template x-if="hasAnswered(currentQuestion.id)">
                     <div class="mt-3 flex items-center gap-2 text-sm">
                         {{-- Correct --}}
-                        <div x-show="part4Answers[pIdx] === currentQuestion.metadata.correct_answers[pIdx]" class="flex items-center text-green-600 font-bold">
+                        <div x-show="part4Answers[pIdx] == currentQuestion.metadata.correct_answers[pIdx]" class="flex items-center text-green-600 font-bold">
                             <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                             Correct
                         </div>
                         {{-- Incorrect --}}
-                        <div x-show="part4Answers[pIdx] !== currentQuestion.metadata.correct_answers[pIdx]" class="flex items-center text-red-600">
+                        <div x-show="part4Answers[pIdx] != currentQuestion.metadata.correct_answers[pIdx]" class="flex items-center text-red-600">
                             <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             <span class="font-bold">Incorrect.</span>
                             <span class="ml-1 text-gray-600">Answer:</span>

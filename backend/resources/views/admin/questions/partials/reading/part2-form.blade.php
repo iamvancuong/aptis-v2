@@ -15,21 +15,28 @@
     </div>
 
     <template x-for="(sentence, index) in sentences" :key="sentence.id">
-        <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div class="flex items-start gap-4 p-4 rounded-lg border transition-all duration-200" 
+             :class="index === 0 ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200' : 'bg-gray-50 border-gray-200'">
             <div class="pt-3">
-                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-indigo-100 text-sm font-medium text-indigo-800" x-text="index + 1"></span>
+                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full text-sm font-medium" 
+                      :class="index === 0 ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-800'"
+                      x-text="index + 1"></span>
             </div>
             <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1" x-text="index === 0 ? 'Sentence 1 (Fixed Start)' : `Sentence ${index + 1}`"></label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-sm font-medium text-gray-700" x-text="index === 0 ? 'Sentence 1 (Fixed Start)' : `Sentence ${index + 1}`"></label>
+                    <template x-if="index === 0">
+                        <span class="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Fixed Starting Point</span>
+                    </template>
+                </div>
                 <textarea 
                     x-model="sentence.text"
                     rows="2"
                     class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    :placeholder="index === 0 ? 'Enter the first sentence...' : 'Enter sentence...'"
-                    required
+                    :placeholder="index === 0 ? 'This sentence will be shown first and fixed (Leave empty if no fixed start)' : 'Enter sentence...'"
+                    :required="index !== 0"
                 ></textarea>
             </div>
-            
         </div>
     </template>
     

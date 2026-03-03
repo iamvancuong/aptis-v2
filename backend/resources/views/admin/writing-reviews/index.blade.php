@@ -13,13 +13,37 @@
 
         {{-- Filter & Search --}}
         <div class="flex flex-col md:flex-row items-center gap-4">
-            <form action="{{ route('admin.writing-reviews.index') }}" method="GET" class="relative w-full md:w-64">
-                <input type="hidden" name="filter" value="{{ $filter }}">
-                <input type="text" name="search" value="{{ $search }}" placeholder="Tìm tên/email học sinh..."
-                       class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm text-sm">
-                <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+            <form action="{{ route('admin.writing-reviews.index') }}" method="GET" class="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                <div class="relative w-full md:w-64">
+                    <input type="hidden" name="filter" value="{{ $filter }}">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Tìm tên/email học sinh..."
+                           class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm text-sm">
+                    <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+
+                <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex items-center gap-2">
+                    <x-select name="expiration" x-model="exp">
+                        <option value="">Lọc ngày thi</option>
+                        <option value="expired">Đã quá hạn</option>
+                        <option value="warning">Sắp thi (7 ngày)</option>
+                        <option value="custom">Sắp thi (Tùy chỉnh ngày)</option>
+                        <option value="active">Chưa thi</option>
+                        <option value="never">Không giới hạn</option>
+                    </x-select>
+                    <input 
+                        x-show="exp === 'custom'"
+                        type="number" 
+                        name="expire_days" 
+                        value="{{ request('expire_days') }}"
+                        placeholder="Số ngày..." 
+                        class="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        min="1"
+                        x-cloak
+                    >
+                </div>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 whitespace-nowrap text-sm font-medium">Lọc</button>
             </form>
 
             <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">

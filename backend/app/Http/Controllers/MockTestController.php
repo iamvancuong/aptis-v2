@@ -8,6 +8,8 @@ use App\Models\Set;
 use App\Services\GradingService;
 use App\Jobs\ProcessWritingGrading;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class MockTestController extends Controller
 {
@@ -221,6 +223,23 @@ class MockTestController extends Controller
         }
         $data = $request->validate($rules);
 
+        // DEBUG LOGGING FOR SPEAKING AUDIO
+        if ($mockTest->skill === 'speaking') {
+            Log::info("=== MOCK TEST SUBMIT: SPEAKING ===");
+            $speakingAudioFiles = $request->file('speaking_audio');
+             Log::info("Request has 'speaking_audio' files: " . (!empty($speakingAudioFiles) ? 'YES' : 'NO'));
+            if (!empty($speakingAudioFiles)) {
+                Log::info("speaking_audio count: " . count($speakingAudioFiles));
+                foreach ($speakingAudioFiles as $qId => $qFiles) {
+                    $qFilesArray = is_array($qFiles) ? $qFiles : [$qFiles];
+                    Log::info("  - QID: {$qId}, file count: " . count($qFilesArray));
+                }
+            } else {
+                Log::warning("No speaking_audio files received by backend. Request content type: " . $request->header('Content-Type'));
+                Log::info("All request keys: " . implode(', ', array_keys($request->all())));
+            }
+        }
+
         $sectionsWithSets = $mockTest->getSectionsWithSets();
         $sectionScores = [];
         $totalEarned = 0;
@@ -246,21 +265,23 @@ class MockTestController extends Controller
             }
             $sectionAnswers = $request->input("answers.{$sectionIndex}") ?? [];
 
-            // Handle Speaking Audio uploads directly into structured answer payload
-            $sectionFiles = $request->file("answers.{$sectionIndex}");
-            if ($mockTest->skill === 'speaking' && is_array($sectionFiles)) {
-                foreach ($sectionFiles as $qId => $files) {
-                    $paths = [];
-                    // Ensure we always deal with an array
-                    if (!is_array($files)) {
-                        $files = [$files];
+            // Handle Speaking Audio uploads from global speaking_audio field
+            $speakingAudio = $request->file('speaking_audio');
+            if ($mockTest->skill === 'speaking' && !empty($speakingAudio)) {
+                Log::info("--- Speaking: Received global audio files for MockTest ---");
+                foreach ($questions as $q) {
+                    if (isset($speakingAudio[$q->id])) {
+                        $savedPaths = [];
+                        $files = is_array($speakingAudio[$q->id]) ? $speakingAudio[$q->id] : [$speakingAudio[$q->id]];
+                        
+                        foreach ($files as $file) {
+                            $path = $file->store('speaking_attempts', 'public');
+                            $savedPaths[] = $path;
+                            Log::info("--- Speaking MockTest: Saved audio for Q{$q->id} ---", ['path' => $path]);
+                        }
+                        
+                        $sectionAnswers[$q->id] = $savedPaths; // Always store array of paths in DB
                     }
-                    
-                    foreach ($files as $file) {
-                        $paths[] = $file->store('speaking_attempts', 'public');
-                    }
-                    
-                    $sectionAnswers[$qId] = $paths; // Always store array of paths in DB
                 }
             }
 
@@ -293,7 +314,7 @@ class MockTestController extends Controller
         $attempt = \App\Models\Attempt::create([
             'user_id' => auth()->id(),
             'skill' => $mockTest->skill,
-            'mode' => 'mock_test',
+            'mode' => 'mock',
             'set_id' => $firstSetId,
             'mock_test_id' => $mockTest->id,
             'started_at' => $mockTest->started_at,
@@ -353,7 +374,7 @@ class MockTestController extends Controller
         $sectionsWithSets = $mockTest->getSectionsWithSets();
 
         // Load attempts for this mock test
-        $attempts = $mockTest->attempts()->with('attemptAnswers')->get();
+        $attempts = $mockTest->attempts()->with('attemptAnswers.question')->get();
 
         // Calculate grading requests count for this skill
         $gradingRequestsCount = \App\Models\Attempt::where('user_id', auth()->id())

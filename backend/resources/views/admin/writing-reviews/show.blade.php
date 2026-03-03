@@ -60,6 +60,51 @@
                                 <p class="mt-2 text-gray-600">{{ $answer->question->metadata['instructions'] }}</p>
                             @endif
                         </div>
+
+                        {{-- Admin Sample Answer --}}
+                        @php
+                            $sampleAnswers = [];
+                            $q = $answer->question;
+                            if ($q->part == 1 || $q->part == 2) {
+                                if (!empty($q->metadata['sample_answer'])) {
+                                    $sampleAnswers[] = ['label' => 'Đáp án mẫu từ Admin', 'content' => $q->metadata['sample_answer']];
+                                }
+                            } elseif ($q->part == 3) {
+                                foreach ($q->metadata['questions'] ?? [] as $idx => $pq) {
+                                    if (!empty($pq['sample_answer'])) {
+                                        $sampleAnswers[] = ['label' => 'Đáp án mẫu Câu ' . ($idx + 1), 'content' => $pq['sample_answer']];
+                                    }
+                                }
+                            } elseif ($q->part == 4) {
+                                if (!empty($q->metadata['task1']['sample_answer'])) {
+                                    $sampleAnswers[] = ['label' => 'Đáp án mẫu Task 1 (Informal)', 'content' => $q->metadata['task1']['sample_answer']];
+                                }
+                                if (!empty($q->metadata['task2']['sample_answer'])) {
+                                    $sampleAnswers[] = ['label' => 'Đáp án mẫu Task 2 (Formal)', 'content' => $q->metadata['task2']['sample_answer']];
+                                }
+                            }
+                        @endphp
+
+                        @if(!empty($sampleAnswers))
+                            <div class="mt-4 border border-emerald-100 bg-emerald-50 rounded-lg overflow-hidden shadow-sm">
+                                <div class="bg-emerald-100/50 px-4 py-2 flex items-center gap-2 font-bold text-xs text-emerald-800 border-b border-emerald-100">
+                                    <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span>Đáp án tham khảo chuẩn từ Admin</span>
+                                </div>
+                                <div class="p-4 space-y-3">
+                                    @foreach($sampleAnswers as $sample)
+                                        <div>
+                                            <div class="text-[10px] font-bold text-gray-400 uppercase mb-1">{{ $sample['label'] }}</div>
+                                            <div class="text-xs text-emerald-900 leading-relaxed whitespace-pre-wrap font-medium">{{ trim($sample['content']) }}</div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <div class="mt-2 text-[10px] text-gray-400 italic">
+                                * Không có đáp án mẫu cho phần này.
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Student's Writing --}}

@@ -29,7 +29,11 @@ class QuestionRepository
         }
 
         if (!empty($filters['search'])) {
-            $query->where('title', 'like', '%' . $filters['search'] . '%');
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('stem', 'like', "%{$search}%");
+            });
         }
 
         return $query->orderBy('quiz_id')

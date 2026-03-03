@@ -159,12 +159,109 @@ class QuestionController extends Controller
         $sets = $this->questionService->getSetsByQuiz($quizId);
         $quiz = $this->questionService->getQuizDetails($quizId);
 
+        $maxOrder = \App\Models\Question::where('quiz_id', $quizId)->max('order');
+
         return response()->json([
-            'sets' => $sets,
-            'quiz' => [
+            'sets'      => $sets,
+            'max_order' => $maxOrder !== null ? (int)$maxOrder + 1 : 0,
+            'quiz'      => [
                 'skill' => $quiz->skill,
-                'part' => $quiz->part,
+                'part'  => $quiz->part,
             ]
         ]);
+    }
+
+    /**
+     * Import questions from JSON.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'quiz_id' => 'required|exists:quizzes,id',
+            'set_id' => 'required|exists:sets,id',
+            'file' => 'required|file', // Accepts .json from view
+        ]);
+
+        $quizId = $request->quiz_id;
+        $setId = $request->set_id;
+        $skill = $request->get('skill', 'reading');
+
+        $json = file_get_contents($request->file('file')->getRealPath());
+        $data = json_decode($json, true);
+
+        if (!$data) {
+            return back()->with('error', 'Invalid JSON format.');
+        }
+
+        // Support both single question object or array of questions (from export)
+        $questionsData = isset($data['questions']) ? $data['questions'] : [$data];
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            foreach ($questionsData as $qData) {
+                // Map metadata if it's from old export format (Listening)
+                $mappedMetadata = $qData['metadata'] ?? [];
+                $part = $qData['part'] ?? 1;
+
+                if ($skill === 'listening') {
+                    // Logic from ImportListeningJson command
+                    if ($part == 1) {
+                        if (isset($mappedMetadata['options'])) $mappedMetadata['choices'] = $mappedMetadata['options'];
+                        if (isset($mappedMetadata['correct_index'])) $mappedMetadata['correct_answer'] = (int) $mappedMetadata['correct_index'];
+                    } elseif ($part == 2) {
+                        if (isset($mappedMetadata['options'])) $mappedMetadata['choices'] = $mappedMetadata['options'];
+                        if (isset($mappedMetadata['answers'])) $mappedMetadata['correct_answers'] = array_map('intval', $mappedMetadata['answers']);
+                        if (isset($mappedMetadata['speakers'])) {
+                            $items = []; $audioFiles = [];
+                            foreach ($mappedMetadata['speakers'] as $speaker) {
+                                $items[] = $speaker['label'] ?? '';
+                                $audioFiles[] = $speaker['audio'] ?? null;
+                            }
+                            $mappedMetadata['items'] = $items;
+                            $mappedMetadata['audio_files'] = $audioFiles;
+                        }
+                    } elseif ($part == 3) {
+                        if (isset($mappedMetadata['options'])) $mappedMetadata['shared_choices'] = $mappedMetadata['options'];
+                        if (isset($mappedMetadata['items'])) $mappedMetadata['statements'] = $mappedMetadata['items'];
+                        if (isset($mappedMetadata['answers'])) $mappedMetadata['correct_answers'] = array_map('intval', $mappedMetadata['answers']);
+                    } elseif ($part == 4) {
+                        if (isset($mappedMetadata['questions'])) {
+                            $newQs = []; $corrects = [];
+                            foreach ($mappedMetadata['questions'] as $q) {
+                                $newQs[] = ['question' => $q['stem'] ?? '', 'choices' => $q['options'] ?? []];
+                                $corrects[] = isset($q['correct_index']) ? (int) $q['correct_index'] : 0;
+                            }
+                            $mappedMetadata['questions'] = $newQs;
+                            $mappedMetadata['correct_answers'] = $corrects;
+                        }
+                    }
+                }
+
+                $explanation = $qData['explanation'] ?? ($mappedMetadata['description'] ?? null);
+
+                $question = Question::create([
+                    'quiz_id' => $quizId,
+                    'title' => $qData['title'] ?? ($qData['stem'] ?? 'Imported Question'),
+                    'stem' => $qData['stem'] ?? null,
+                    'explanation' => $explanation,
+                    'skill' => $skill,
+                    'part' => $part,
+                    'type' => $qData['type'] ?? 'multiple_choice',
+                    'order' => $qData['order'] ?? 0,
+                    'point' => $qData['point'] ?? 1,
+                    'audio_path' => $qData['audio_path'] ?? null,
+                    'image_path' => $qData['image_path'] ?? null,
+                    'metadata' => $mappedMetadata,
+                ]);
+
+                $question->sets()->attach($setId);
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+            return back()->with('success', 'Import questions successfully!');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->with('error', 'Error importing: ' . $e->getMessage());
+        }
     }
 }

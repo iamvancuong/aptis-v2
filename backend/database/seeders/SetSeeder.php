@@ -19,7 +19,7 @@ class SetSeeder extends Seeder
                 continue;
             }
 
-            for ($i = 1; $i <= 3; $i++) {
+            for ($i = 1; $i <= 1; $i++) {
                 $set = Set::firstOrCreate(
                     [
                         'quiz_id' => $quiz->id,
@@ -32,9 +32,9 @@ class SetSeeder extends Seeder
                 );
 
                 // Create dummy questions based on skill/part
-                if ($set->questions()->count() === 0) {
-                    $this->createQuestionsForSet($set, $quiz);
-                }
+                // if ($set->questions()->count() === 0) {
+                //     $this->createQuestionsForSet($set, $quiz);
+                // }
             }
         }
     }

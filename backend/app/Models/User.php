@@ -23,10 +23,11 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
-        'max_devices',
         'violation_count',
-        'expires_at',
         'ai_reset_version',
+        'speaking_ai_reset_version',
+        'ai_extra_uses',
+        'expires_at',
     ];
 
     /**

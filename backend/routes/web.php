@@ -11,8 +11,14 @@ use App\Http\Controllers\SkillController;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
+use App\Models\Feedback;
+use App\Models\HighScore;
+
 Route::get('/', function () {
-    return view('welcome');
+    $feedbacks = Feedback::where('is_active', true)->latest()->take(6)->get();
+    $highScores = HighScore::where('is_active', true)->latest()->take(8)->get();
+    
+    return view('welcome', compact('feedbacks', 'highScores'));
 })->name('home');
 
 // Guest routes
@@ -109,12 +115,14 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::post('users/{user}/reset-violations', [UserController::class, 'resetViolations'])->name('users.reset-violations');
     Route::post('users/{user}/extend-expiration', [UserController::class, 'extendExpiration'])->name('users.extend-expiration');
     Route::post('users/{user}/reset-ai', [UserController::class, 'resetAi'])->name('users.reset-ai');
+    Route::post('users/{user}/reset-speaking-ai', [UserController::class, 'resetSpeakingAi'])->name('users.reset-speaking-ai');
     Route::post('users/{user}/add-ai', [UserController::class, 'addAi'])->name('users.add-ai');
     Route::resource('users', UserController::class);
 
     // Question Management (Phase 3)
     Route::get('quizzes/{quiz}/sets', [QuestionController::class, 'getSetsByQuiz'])->name('quizzes.sets');
     Route::get('questions', function () { return redirect()->route('admin.questions.reading'); });
+    Route::post('questions/import', [QuestionController::class, 'import'])->name('questions.import');
     Route::get('questions/reading', [QuestionController::class, 'readingIndex'])->name('questions.reading');
     Route::get('questions/listening', [QuestionController::class, 'listeningIndex'])->name('questions.listening');
     Route::get('questions/create', [QuestionController::class, 'create'])->name('questions.create');
@@ -134,4 +142,12 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::get('speaking-reviews', [\App\Http\Controllers\Admin\SpeakingReviewController::class, 'index'])->name('speaking-reviews.index');
     Route::get('speaking-reviews/{attempt}', [\App\Http\Controllers\Admin\SpeakingReviewController::class, 'show'])->name('speaking-reviews.show');
     Route::post('speaking-reviews/{attempt}/grade', [\App\Http\Controllers\Admin\SpeakingReviewController::class, 'grade'])->name('speaking-reviews.grade');
+
+    // Feedback & High Scores
+    Route::resource('feedback', \App\Http\Controllers\Admin\FeedbackController::class);
+    Route::resource('high-scores', \App\Http\Controllers\Admin\HighScoreController::class);
+
+    // Settings
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
 });

@@ -22,27 +22,40 @@
                 value="{{ request('search') }}"
                 class="flex- px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-            <select name="role" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <x-select name="role">
                 <option value="">All Roles</option>
                 <option value="user" {{ request('role') === 'user' ? 'selected' : '' }}>User</option>
                 <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-            </select>
-            <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </x-select>
+            <x-select name="status">
                 <option value="">All Status</option>
                 <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                 <option value="blocked" {{ request('status') === 'blocked' ? 'selected' : '' }}>Blocked</option>
-            </select>
-            <select name="expiration" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="">Lọc ngày thi</option>
-                <option value="expired" {{ request('expiration') === 'expired' ? 'selected' : '' }}>Đã quá hạn</option>
-                <option value="warning" {{ request('expiration') === 'warning' ? 'selected' : '' }}>Sắp thi (7 ngày)</option>
-                <option value="active" {{ request('expiration') === 'active' ? 'selected' : '' }}>Chưa thi</option>
-                <option value="never" {{request('expiration') === 'never' ? 'selected' : '' }}>Không giới hạn</option>
-            </select>
+            </x-select>
+            <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex items-center gap-2">
+                <x-select name="expiration" x-model="exp">
+                    <option value="">Lọc ngày thi</option>
+                    <option value="expired">Đã quá hạn</option>
+                    <option value="warning">Sắp thi (7 ngày)</option>
+                    <option value="custom">Sắp thi (Tùy chỉnh ngày)</option>
+                    <option value="active">Chưa thi</option>
+                    <option value="never">Không giới hạn</option>
+                </x-select>
+                <input 
+                    x-show="exp === 'custom'"
+                    type="number" 
+                    name="expire_days" 
+                    value="{{ request('expire_days') }}"
+                    placeholder="Số ngày..." 
+                    class="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="1"
+                    x-cloak
+                >
+            </div>
             <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap">
                 Filter
             </button>
-            @if(request()->hasAny(['search', 'role', 'status', 'expiration']))
+            @if(request()->hasAny(['search', 'role', 'status', 'expiration', 'expire_days']))
                 <a href="{{ route('admin.users.index') }}" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 whitespace-nowrap">
                     Clear
                 </a>
@@ -51,6 +64,10 @@
     </div>
 
     <div class="flex flex-wrap gap-3">
+        <button id="bulk-delete-btn" style="display: none;" onclick="bulkDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm shadow-sm transition-all items-center">
+            <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Xoá đã chọn (<span class="count">0</span>)
+        </button>
         <a href="{{ route('admin.users.export', request()->query()) }}" 
            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
             📥 Export Excel
@@ -70,6 +87,9 @@
 <x-datatable :data="$users" :per-page-options="[10, 20, 50]">
     <thead class="bg-gray-50">
         <tr>
+            <th class="px-6 py-3 w-10 text-left text-xs font-medium text-gray-500 uppercase">
+                <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">STT</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
@@ -84,6 +104,11 @@
     <tbody class="bg-white divide-y divide-gray-200">
         @forelse($users as $user)
             <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    @if(!$user->isAdmin() && $user->id !== auth()->id())
+                        <input type="checkbox" value="{{ $user->id }}" class="bulk-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                    @endif
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}</td>
                 <td class="px-6 py-4 text-sm">{{ $user->name }}</td>
                 <td class="px-6 py-4 text-sm">{{ $user->email }}</td>
@@ -170,11 +195,19 @@
                     <!-- Reset AI & Add AI -->
                     @if(!$user->isAdmin())
                         <div class="inline-flex gap-1 items-center bg-gray-50 p-1 rounded-md border border-gray-200 h-8">
-                            <form action="{{ route('admin.users.reset-ai', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Reset AI Usage (Làm mới số lần dùng AI) cho người dùng này?')">
+                            <form action="{{ route('admin.users.reset-ai', $user) }}" method="POST" class="inline-block" title="Reset lượt chấm Writing">
                                 @csrf
-                                <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-fuchsia-100 text-fuchsia-700 rounded hover:bg-fuchsia-200 font-medium text-xs" title="Reset lịch sử AI">
-                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                    Reset
+                                <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-fuchsia-100 text-fuchsia-700 rounded hover:bg-fuchsia-200 font-medium text-xs">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    RS-WR
+                                </button>
+                            </form>
+                            <!-- Reset Speaking AI Button -->
+                            <form action="{{ route('admin.users.reset-speaking-ai', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Reset lượt chấm Speaking cho người dùng này?')" title="Reset lượt chấm Speaking">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-teal-100 text-teal-700 rounded hover:bg-teal-200 font-medium text-xs">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                                    RS-SP
                                 </button>
                             </form>
                             <span class="text-gray-300 mx-0.5 text-xs">|</span>
@@ -207,7 +240,7 @@
                     
                     <!-- Delete -->
                     @if(!$user->isAdmin() && $user->id !== auth()->id())
-                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Xoá vĩnh viễn người dùng này?')">
+                        <form id="delete-form-{{ $user->id }}" action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Xoá vĩnh viễn người dùng này?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="inline-flex items-center px-3 py-1 bg-pink-100 text-pink-700 rounded-md hover:bg-pink-200 font-medium text-xs">
@@ -220,7 +253,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+                <td colspan="10" class="px-6 py-8 text-center text-gray-500">
                     No users found.
                 </td>
             </tr>

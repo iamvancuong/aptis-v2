@@ -338,6 +338,14 @@ function mockTestExam() {
             }
 
             this.loadQuestionState();
+
+            // Auto-skip empty sections (e.g., if Part 1 has no questions)
+            if (this.questions && this.questions.length === 0 && sectionIndex < this.sections.length - 1) {
+                console.log(`--- Mock Test: Section ${sectionIndex} is empty. Auto-skipping to next section. ---`);
+                setTimeout(() => {
+                    this.nextSection();
+                }, 50);
+            }
         },
 
         saveSectionState() {
@@ -735,23 +743,28 @@ function mockTestExam() {
         },
 
         async setupRecording() {
+            console.log('--- Speaking: setupRecording START ---');
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 this.mediaRecorder = new MediaRecorder(stream);
+                console.log('--- Speaking: MediaRecorder created ---', this.mediaRecorder.state);
                 
                 this.mediaRecorder.ondataavailable = (event) => {
+                    console.log('--- Speaking: dataavailable ---', event.data.size);
                     if (event.data.size > 0) this.audioChunks.push(event.data);
                 };
 
                 this.mediaRecorder.onstop = () => {
+                    console.log('--- Speaking: onstop fired ---', this.audioChunks.length, "chunks");
                     const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
                     const qId = this.currentQuestion.id;
                     this.speakingAnswers[qId] = this.speakingAnswers[qId] || [];
                     this.speakingAnswers[qId].push(blob);
+                    console.log('--- Speaking: Blob saved to speakingAnswers ---', qId, blob.size);
                 };
             } catch (err) {
+                console.error('--- Speaking: Microphone error ---', err);
                 alert('Không thể truy cập Microphone. Vui lòng cấp quyền.');
-                console.error('Microphone error:', err);
             }
         },
 
@@ -794,8 +807,8 @@ function mockTestExam() {
                 
                 this.speakingState = 'playing_audio';
                 this.playTTS(textToRead, () => {
-                    this.startTimerState('prep', prepTime, () => {
-                        this.playBeepAndRecord(meta.total_answer_time, () => {
+                    this.startTimerState('prep', 61, () => { // +1s offset
+                        this.playBeepAndRecord(121, () => { // +1s offset
                             this.finishSpeakingQuestion();
                         });
                     });
@@ -803,15 +816,16 @@ function mockTestExam() {
             } else {
                 this.speakingState = 'playing_audio';
                 this.playTTS(textToRead, () => {
-                    this.startTimerState('prep', prepTime, () => {
-                        this.playBeepAndRecord(meta.answer_time_per_question, () => {
-                            this.speakingSubIndex++;
-                            if (this.speakingSubIndex < totalQs) {
-                                this.runSpeakingSubQuestion();
-                            } else {
-                                this.finishSpeakingQuestion();
-                            }
-                        });
+                    const prepTime = 0; // standard speaking parts 1-3 usually have no individual prep unless specified
+                    const recordSeconds = q.part === 1 ? 31 : 46; // +1s offset
+                    
+                    this.playBeepAndRecord(recordSeconds, () => {
+                        this.speakingSubIndex++;
+                        if (this.speakingSubIndex < totalQs) {
+                            this.runSpeakingSubQuestion();
+                        } else {
+                            this.finishSpeakingQuestion();
+                        }
                     });
                 });
             }
@@ -857,27 +871,33 @@ function mockTestExam() {
                 this.audioChunks = [];
                 this.speakingState = 'recording';
                 this.speakingTimer = recordSeconds;
+                console.log('--- Speaking: Recording timer started ---', recordSeconds, 's');
                 
                 try {
                     if (this.mediaRecorder.state === 'inactive') {
                         this.mediaRecorder.start();
+                        console.log('--- Speaking: mediaRecorder.start() called ---');
                     }
-                } catch(e) { console.error(e); }
+                } catch(e) { console.error('--- Speaking: mediaRecorder.start() FAILED ---', e); }
 
                 clearInterval(this.speakingInterval);
                 this.speakingInterval = setInterval(() => {
                     this.speakingTimer--;
                     if (this.speakingTimer <= 0) {
                         clearInterval(this.speakingInterval);
+                        console.log('--- Speaking: Recording timer end ---');
                         try {
                             if (this.mediaRecorder.state !== 'inactive') {
                                 this.mediaRecorder.stop();
+                                console.log('--- Speaking: mediaRecorder.stop() called ---');
                             }
-                        } catch(e) { console.error(e); }
+                        } catch(e) { console.error('--- Speaking: mediaRecorder.stop() FAILED ---', e); }
                         
+                        // Give mediaRecorder.onstop a moment to fire and push chunks
                         setTimeout(() => {
+                            console.log('--- Speaking: Calling onComplete ---');
                             onComplete();
-                        }, 300);
+                        }, 500); // Increased to 500ms
                     }
                 }, 1000);
             }, 600);
@@ -887,7 +907,10 @@ function mockTestExam() {
             this.speakingState = 'saving';
             const qId = this.currentQuestion.id;
             
-            this.answers = { ...this.answers, [qId]: 'recorded' };
+            const blobs = this.speakingAnswers[qId] || [];
+            if (blobs.length > 0) {
+                this.answers = { ...this.answers, [qId]: 'recorded' };
+            }
             
             setTimeout(() => {
                 this.speakingState = 'idle';
@@ -940,36 +963,40 @@ function mockTestExam() {
 
             // Build answers per section: { sectionIndex: { questionId: answer } }
             // For speaking audio files, we need FormData
-            const isSpeaking = this.sections.length > 0 && this.sections[0].questions.length > 0 && this.sections[0].questions[0].skill === 'speaking';
+            const isSpeaking = this.sections.some(section => section.questions && section.questions.length > 0 && section.questions[0].skill === 'speaking');
             
             if (isSpeaking) {
                 const formData = new FormData();
                 formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                
-                // Build mapping from questionId to sectionIndex to know where to append
-                const qIdToSection = {};
-                for (let i = 0; i < this.sections.length; i++) {
-                    const sectionQs = this.sections[i].questions || [];
-                    for (const q of sectionQs) {
-                        qIdToSection[q.id] = i;
-                    }
-                }
 
-                // Pack speakingAnswers directly since MockTestController expects answers array
+                console.log('--- Speaking: submitTest INITIAL speakingAnswers state ---', this.speakingAnswers);
+
+                // Pack speaking audio blobs globally
                 for (const [qId, blobs] of Object.entries(this.speakingAnswers)) {
-                    const secIdx = qIdToSection[qId];
-                    if (secIdx === undefined) continue;
+                    console.log(`--- Speaking: submitTest packing qId ${qId}, blobs: ${blobs.length} ---`, blobs);
                     
                     if (Array.isArray(blobs)) {
                         for (let j = 0; j < blobs.length; j++) {
                             const blob = blobs[j];
                             if (blob instanceof Blob) {
-                                formData.append(`answers[${secIdx}][${qId}][]`, blob, `speaking_${qId}_${j}.webm`);
+                                formData.append(`speaking_audio[${qId}][${j}]`, blob, `speaking_${qId}_${j}.webm`);
+                                console.log(`----> Appended speaking_audio[${qId}][${j}] (size: ${blob.size})`);
+                            } else {
+                                console.warn(`----> blobs[${j}] is NOT a Blob!`, blob);
                             }
                         }
                     } else if (blobs instanceof Blob) {
-                        formData.append(`answers[${secIdx}][${qId}]`, blobs, `speaking_${qId}.webm`);
+                        formData.append(`speaking_audio[${qId}][0]`, blobs, `speaking_${qId}.webm`);
+                        console.log(`----> Appended speaking_audio[${qId}][0] (size: ${blobs.size})`);
+                    } else {
+                        console.warn(`----> blobs for ${qId} is neither Array nor Blob!`, blobs);
                     }
+                }
+
+                // Debug: Print ALL formData entries before fetch
+                console.log('--- Speaking: FormData Entries BEFORE Fetch ---');
+                for (let pair of formData.entries()) {
+                    console.log(`[FormData] ${pair[0]} :`, pair[1] instanceof Blob ? `Blob(${pair[1].size} bytes)` : pair[1]);
                 }
 
                 try {
@@ -1008,13 +1035,26 @@ function mockTestExam() {
         },
         
         async handleSubmitResponse(response) {
+            // Handle non-JSON responses (e.g. 500 HTML error pages)
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                alert('Có lỗi máy chủ xảy ra (HTTP ' + response.status + '). Vui lòng thử lại hoặc liên hệ quản trị viên.');
+                this.submitting = false;
+                return;
+            }
+
             const data = await response.json();
 
             if (data.success && data.redirect) {
                 this.clearStorage();
                 window.location.href = data.redirect;
+            } else if (!response.ok && data.errors) {
+                // Validation errors (422)
+                const messages = Object.values(data.errors).flat().join('\n');
+                alert('Lỗi xác thực:\n' + messages);
+                this.submitting = false;
             } else {
-                alert(data.message || 'Có lỗi xảy ra.');
+                alert(data.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
                 this.submitting = false;
             }
         }

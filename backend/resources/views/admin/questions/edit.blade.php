@@ -150,11 +150,28 @@
                             </div>
                             
                             <!-- Points -->
-                            <!-- Points -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Points</label>
-                                <input type="number" name="point" value="{{ $question->point }}" min="0" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200" required>
+                            <!-- Explanation / Transcript -->
+                            <div x-show="['reading', 'listening', 'grammar'].includes(quizMetadata.skill)">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Explanation / Transcript (Optional)</label>
+                                <textarea name="explanation" rows="3" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200" placeholder="Nhập giải thích đáp án hoặc transcript audio... (nếu có)">{{ old('explanation', $question->explanation ?? '') }}</textarea>
                             </div>
+                            
+                             <!-- Order -->
+                             <div>
+                                 <label class="block text-sm font-medium text-gray-700 mb-1">
+                                     Thứ tự hiển thị
+                                     <span class="text-gray-400 font-normal text-xs">(trong cùng skill)</span>
+                                 </label>
+                                 <input type="number" name="order" value="{{ old('order', $question->order) }}" min="0"
+                                        class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200">
+                                 <p class="text-xs text-gray-400 mt-1">Order riêng cho mỗi skill — 2 skill khác nhau có thể trùng số.</p>
+                             </div>
+
+                             <!-- Points -->
+                             <div>
+                                 <label class="block text-sm font-medium text-gray-700 mb-1">Points</label>
+                                 <input type="number" name="point" value="{{ $question->point }}" min="0" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200" required>
+                             </div>
                         </div>
                     </x-card>
 

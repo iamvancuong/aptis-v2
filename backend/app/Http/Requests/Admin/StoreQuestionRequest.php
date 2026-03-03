@@ -34,6 +34,7 @@ class StoreQuestionRequest extends FormRequest
             'speaker_audio.*' => 'nullable|file|mimes:mp3,wav,ogg,m4a|max:10240',
             'point' => 'required|integer|min:0',
             'order' => 'nullable|integer|min:0',
+            'explanation' => 'nullable|string',
             'metadata' => 'array',
         ];
 

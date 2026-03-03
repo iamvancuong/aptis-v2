@@ -68,7 +68,7 @@ class GradingService
 
             $attemptAnswers[] = [
                 'question_id'    => $question->id,
-                'answer'         => $userAnswer ?? '',
+                'answer'         => $userAnswer ?? null,
                 'is_correct'     => $result['is_correct'],
                 'score'          => $result['score'],
                 'feedback'       => null,

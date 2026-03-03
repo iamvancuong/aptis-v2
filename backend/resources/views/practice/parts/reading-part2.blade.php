@@ -9,10 +9,12 @@
                 <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-2">Your Order</h4>
                 
                 {{-- Fixed First Sentence --}}
-                <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-500 flex gap-3 cursor-not-allowed opacity-80">
-                    <span class="font-bold text-gray-400 w-6 text-center">1</span>
-                    <span class="text-sm" x-text="currentQuestion.metadata.sentences[0]"></span>
-                </div>
+                <template x-if="currentQuestion.metadata.sentences[0]">
+                    <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-500 flex gap-3 cursor-not-allowed opacity-80">
+                        <span class="font-bold text-gray-400 w-6 text-center">1</span>
+                        <span class="text-sm" x-text="currentQuestion.metadata.sentences[0]"></span>
+                    </div>
+                </template>
                 
                 {{-- Droppable Slots --}}
                 <template x-for="(slot, slotIdx) in part2Slots" :key="'slot-'+slotIdx">
@@ -87,23 +89,18 @@
                 </template>
                 
                 <div x-show="part2Pool.length === 0 && !hasAnswered(currentQuestion.id) && !isFullTest" class="p-4 text-center text-gray-400 text-sm italic border border-dashed border-gray-300 rounded-lg">
-                    All sentences placed! Click "Submit Order" to check.
+                    All sentences placed! Click "Kiểm tra" below to check your answer.
                 </div>
             </div>
         </div>
-        
-        <button x-show="!hasAnswered(currentQuestion.id) && !isFullTest" 
-                @click="submitPart2()" 
-                :disabled="part2Pool.length > 0"
-                class="mt-4 w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            Submit Order
-        </button>
 
         {{-- Correct Order Feedback --}}
         <div x-show="hasAnswered(currentQuestion.id) && feedback[currentQuestion.id] && !feedback[currentQuestion.id].correct" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h4 class="font-bold text-yellow-800 mb-2">✅ Correct Order:</h4>
             <ol class="list-decimal list-inside space-y-1 text-yellow-900 text-sm">
-                <li x-text="currentQuestion.metadata.sentences[0]"></li>
+                <template x-if="currentQuestion.metadata.sentences[0]">
+                    <li x-text="currentQuestion.metadata.sentences[0]"></li>
+                </template>
                 <template x-for="(sentence, sIdx) in currentQuestion.metadata.sentences.slice(1)" :key="sIdx">
                     <li x-text="sentence"></li>
                 </template>

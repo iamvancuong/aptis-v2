@@ -53,8 +53,8 @@
                             
                             @if($answer->question->part === 2 || $answer->question->part === 4)
                                 @if(!empty($answer->question->metadata['image_path']))
-                                    <div class="mb-4">
-                                        <img src="{{ asset('storage/' . $answer->question->metadata['image_path']) }}" alt="Speaking Image" class="max-h-48 rounded-lg shadow-sm border border-rose-200">
+                                    <div class="mb-4 text-center bg-white p-2 rounded-lg border border-gray-100">
+                                        <img src="{{ asset('storage/' . $answer->question->metadata['image_path']) }}" alt="Speaking Image" class="max-h-64 object-contain mx-auto rounded-lg shadow-sm">
                                     </div>
                                 @endif
                             @endif
@@ -62,7 +62,9 @@
                             @if($answer->question->part === 3)
                                 <div class="grid grid-cols-2 gap-4 mb-4">
                                     @foreach($answer->question->metadata['image_paths'] ?? [] as $path)
-                                        <img src="{{ asset('storage/' . $path) }}" alt="Speaking Image" class="h-32 w-full object-cover rounded-lg shadow-sm border border-rose-200">
+                                        <div class="bg-white p-2 rounded-lg border border-gray-100 flex items-center justify-center">
+                                            <img src="{{ asset('storage/' . $path) }}" alt="Speaking Image" class="h-48 md:h-56 object-contain mx-auto rounded-lg shadow-sm">
+                                        </div>
                                     @endforeach
                                 </div>
                             @endif
@@ -85,29 +87,45 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             @php
-                                $audioFiles = is_array($answer->answer) ? $answer->answer : json_decode($answer->answer, true);
+                                $audioFiles = $answer->answer;
+                                if (!is_array($audioFiles)) {
+                                    $audioFiles = json_decode($audioFiles, true) ?? [];
+                                }
+                                // Ensure we have a flat array of strings
+                                $flatAudioFiles = [];
+                                array_walk_recursive($audioFiles, function($a) use (&$flatAudioFiles) {
+                                    if (is_string($a) && !empty($a)) {
+                                        $flatAudioFiles[] = $a;
+                                    }
+                                });
                             @endphp
 
-                            @if(is_array($audioFiles))
-                                @foreach($audioFiles as $idx => $filePath)
-                                    <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2">
-                                        <span class="text-xs font-bold text-gray-400 uppercase tracking-tight">Bản ghi #{{ $idx + 1 }}</span>
-                                        <audio controls class="w-full h-10">
-                                            <source src="{{ asset('storage/' . $filePath) }}" type="audio/webm">
-                                            Browser không hỗ trợ audio.
-                                        </audio>
-                                    </div>
-                                @endforeach
-                            @else
+                            @forelse($flatAudioFiles as $idx => $filePath)
                                 <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-2">
+                                    <span class="text-xs font-bold text-gray-400 uppercase tracking-tight">Bản ghi #{{ $idx + 1 }}</span>
                                     <audio controls class="w-full h-10">
-                                        <source src="{{ asset('storage/' . $answer->answer) }}" type="audio/webm">
+                                        <source src="{{ asset('storage/' . $filePath) }}" type="audio/webm">
                                         Browser không hỗ trợ audio.
                                     </audio>
                                 </div>
-                            @endif
+                            @empty
+                                <div class="col-span-full py-4 text-center bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                    <p class="text-sm text-gray-500 italic">Không tìm thấy bản ghi âm cho phần này.</p>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
+
+                    {{-- Sample Answer (Reference Answer) --}}
+                    @if(!empty($answer->question->metadata['sample_answer']))
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <h3 class="text-xs font-bold text-rose-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Đáp án tham khảo từ Admin
+                            </h3>
+                            <div class="bg-gray-50 rounded-xl p-5 border border-gray-200 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap italic">{{ trim($answer->question->metadata['sample_answer']) }}</div>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Teacher Feedback (Bottom) --}}

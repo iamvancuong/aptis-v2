@@ -9,9 +9,11 @@
     </div>
 
     <!-- Image Display -->
-    <div class="bg-white p-4 rounded-xl border border-gray-200 text-center">
-        <img :src="`/storage/${currentQuestion.metadata.image_path}`" alt="Speaking Image" class="max-h-64 object-contain mx-auto rounded-lg shadow-sm">
-    </div>
+    <template x-if="currentQuestion.metadata.image_path">
+        <div class="bg-white p-4 rounded-xl border border-gray-200 text-center">
+            <img :src="`/storage/${currentQuestion.metadata.image_path}`" alt="Speaking Image" class="max-h-64 object-contain mx-auto rounded-lg shadow-sm">
+        </div>
+    </template>
 
     <!-- Active Question Display (All 3 questions shown together) -->
     <div class="bg-white p-6 md:p-8 rounded-xl border-2 border-red-100 relative overflow-hidden">

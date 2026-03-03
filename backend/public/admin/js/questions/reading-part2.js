@@ -9,8 +9,12 @@ document.addEventListener('alpine:init', () => {
                     id: i + 1,
                     text: text
                 }));
+                // Ensure at least 6 if less than 6 (protection for old data)
+                while (this.sentences.length < 6) {
+                    this.sentences.push({ id: this.sentences.length + 1, text: '' });
+                }
             } else {
-                this.sentences = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, text: '' }));
+                this.sentences = Array.from({ length: 6 }, (_, i) => ({ id: i + 1, text: '' }));
             }
             
             // Initial shuffle for preview
@@ -28,14 +32,19 @@ document.addEventListener('alpine:init', () => {
         },
 
         shuffleSentences() {
-            // Create shallow copy to preserve object references (so text updates sync)
-            this.shuffledSentences = [...this.sentences];
+            if (this.sentences.length === 0) return;
             
-            // Shuffle algorithm (Fisher-Yates)
-            for (let i = this.shuffledSentences.length - 1; i > 0; i--) {
+            // The first sentence is FIXED at the top.
+            const fixedSentence = this.sentences[0];
+            const otherSentences = [...this.sentences.slice(1)];
+            
+            // Shuffle algorithm (Fisher-Yates) for others
+            for (let i = otherSentences.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [this.shuffledSentences[i], this.shuffledSentences[j]] = [this.shuffledSentences[j], this.shuffledSentences[i]];
+                [otherSentences[i], otherSentences[j]] = [otherSentences[j], otherSentences[i]];
             }
+            
+            this.shuffledSentences = [fixedSentence, ...otherSentences];
         },
 
         // initSortable and reorderPreview removed as per user request to disable drag in preview

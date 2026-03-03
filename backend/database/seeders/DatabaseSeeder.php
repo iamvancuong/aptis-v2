@@ -16,8 +16,8 @@ class DatabaseSeeder extends Seeder
         // Create admin user
         User::create([
             'name' => 'Admin',
-            'email' => 'admin@aptis.com',
-            'password' => Hash::make('password'),
+            'email' => 'admin@aptis.local',
+            'password' => Hash::make('12345678'),
             'role' => 'admin',
             'status' => 'active',
             'max_devices' => 2,
@@ -29,6 +29,9 @@ class DatabaseSeeder extends Seeder
             QuizSeeder::class,
             SetSeeder::class,
             GrammarSetSeeder::class,
+            FeedbackSeeder::class,
+            HighScoreSeeder::class,
+            SettingSeeder::class,
         ]);
 
         // Create test user account

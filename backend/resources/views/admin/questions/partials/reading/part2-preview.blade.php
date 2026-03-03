@@ -16,7 +16,8 @@
     
     <ul class="space-y-2">
         <template x-for="(sentence, index) in shuffledSentences" :key="sentence.id">
-            <li class="bg-white p-3 rounded shadow-sm border border-gray-200 flex items-center gap-3">
+            <li class="bg-white p-3 rounded shadow-sm border flex items-center gap-3 transition-colors"
+                :class="index === 0 && sentence.id === sentences[0].id ? 'border-indigo-200 bg-indigo-50/30' : 'border-gray-200'">
                 <span class="text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -24,6 +25,9 @@
                 </span>
                 <span class="font-bold text-gray-400 select-none">::</span>
                 <span x-text="sentence.text || 'Empty sentence...'" class="text-sm text-gray-700 flex-1"></span>
+                <template x-if="index === 0 && sentence.id === sentences[0].id">
+                    <span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Fixed Start</span>
+                </template>
             </li>
         </template>
     </ul>

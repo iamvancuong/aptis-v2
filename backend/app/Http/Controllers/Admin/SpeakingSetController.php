@@ -170,32 +170,42 @@ class SpeakingSetController extends Controller
             'title' => 'required|string|max:255',
             'is_public' => 'boolean',
             
-            // Part 1
-            'part1_q1' => 'required|string',
-            'part1_q2' => 'required|string',
-            'part1_q3' => 'required|string',
+            // Part 1 - Optional
+            'part1_q1' => 'nullable|string',
+            'part1_q2' => 'nullable|string',
+            'part1_q3' => 'nullable|string',
+            'part1_sample_answer' => 'nullable|string',
             
             // Part 2
             'part2_q1' => 'required|string',
             'part2_q2' => 'required|string',
             'part2_q3' => 'required|string',
+            'part2_sample_answer' => 'nullable|string',
             
             // Part 3
             'part3_q1' => 'required|string',
             'part3_q2' => 'required|string',
             'part3_q3' => 'required|string',
+            'part3_sample_answer' => 'nullable|string',
             
             // Part 4
             'part4_q1' => 'required|string',
             'part4_q2' => 'required|string',
             'part4_q3' => 'required|string',
+            'part4_sample_answer' => 'nullable|string',
+
+            // Delete Flags
+            'delete_part2_image' => 'nullable|boolean',
+            'delete_part3_image1' => 'nullable|boolean',
+            'delete_part3_image2' => 'nullable|boolean',
+            'delete_part4_image' => 'nullable|boolean',
         ];
 
         if (!$isUpdate) {
-            $rules['part2_image'] = 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part3_image1'] = 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part3_image2'] = 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part4_image'] = 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part2_image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part3_image1'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part3_image2'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part4_image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
         } else {
             $rules['part2_image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
             $rules['part3_image1'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
@@ -208,12 +218,22 @@ class SpeakingSetController extends Controller
 
     private function createOrUpdatePart1(Set $set, Quiz $quiz, array $validated)
     {
+        // If Part 1 questions are all empty AND sample answer is empty, detach/remove from set
+        if (empty($validated['part1_q1']) && empty($validated['part1_q2']) && empty($validated['part1_q3']) && empty($validated['part1_sample_answer'])) {
+            $question = $set->questions()->where('part', 1)->first();
+            if ($question) {
+                $set->questions()->detach($question->id);
+            }
+            return;
+        }
+
         $metadata = [
             'questions' => [
-                $validated['part1_q1'],
-                $validated['part1_q2'],
-                $validated['part1_q3']
+                $validated['part1_q1'] ?? '',
+                $validated['part1_q2'] ?? '',
+                $validated['part1_q3'] ?? ''
             ],
+            'sample_answer' => $validated['part1_sample_answer'] ?? '',
             'prep_time' => 0,
             'answer_time_per_question' => 30
         ];
@@ -244,6 +264,9 @@ class SpeakingSetController extends Controller
         if ($request->hasFile('part2_image')) {
             if ($imagePath) Storage::disk('public')->delete($imagePath);
             $imagePath = $request->file('part2_image')->store('speaking_images', 'public');
+        } elseif ($request->boolean('delete_part2_image')) {
+            if ($imagePath) Storage::disk('public')->delete($imagePath);
+            $imagePath = null;
         }
 
         $metadata = [
@@ -253,6 +276,7 @@ class SpeakingSetController extends Controller
                 $validated['part2_q2'],
                 $validated['part2_q3']
             ],
+            'sample_answer' => $validated['part2_sample_answer'] ?? '',
             'prep_time' => 0,
             'answer_time_per_question' => 45
         ];
@@ -283,11 +307,17 @@ class SpeakingSetController extends Controller
         if ($request->hasFile('part3_image1')) {
             if ($imagePaths[0]) Storage::disk('public')->delete($imagePaths[0]);
             $imagePaths[0] = $request->file('part3_image1')->store('speaking_images', 'public');
+        } elseif ($request->boolean('delete_part3_image1')) {
+            if ($imagePaths[0]) Storage::disk('public')->delete($imagePaths[0]);
+            $imagePaths[0] = null;
         }
         
         if ($request->hasFile('part3_image2')) {
             if ($imagePaths[1]) Storage::disk('public')->delete($imagePaths[1]);
             $imagePaths[1] = $request->file('part3_image2')->store('speaking_images', 'public');
+        } elseif ($request->boolean('delete_part3_image2')) {
+            if ($imagePaths[1]) Storage::disk('public')->delete($imagePaths[1]);
+            $imagePaths[1] = null;
         }
 
         $metadata = [
@@ -297,6 +327,7 @@ class SpeakingSetController extends Controller
                 $validated['part3_q2'],
                 $validated['part3_q3']
             ],
+            'sample_answer' => $validated['part3_sample_answer'] ?? '',
             'prep_time' => 0,
             'answer_time_per_question' => 45
         ];
@@ -327,6 +358,9 @@ class SpeakingSetController extends Controller
         if ($request->hasFile('part4_image')) {
             if ($imagePath) Storage::disk('public')->delete($imagePath);
             $imagePath = $request->file('part4_image')->store('speaking_images', 'public');
+        } elseif ($request->boolean('delete_part4_image')) {
+            if ($imagePath) Storage::disk('public')->delete($imagePath);
+            $imagePath = null;
         }
 
         $metadata = [
@@ -336,6 +370,7 @@ class SpeakingSetController extends Controller
                 $validated['part4_q2'],
                 $validated['part4_q3']
             ],
+            'sample_answer' => $validated['part4_sample_answer'] ?? '',
             'prep_time' => 60,
             'total_answer_time' => 120
         ];

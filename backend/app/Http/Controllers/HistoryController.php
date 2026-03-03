@@ -53,7 +53,7 @@ class HistoryController extends Controller
             return $this->speakingShow($attempt);
         }
 
-        // For other skills (R/L/G), if it's a Mock Test, show the summary result page
+        // For other skills (R/L/G), if it's a Mock Test, always show the mock test result page (which has inline detail now)
         if ($attempt->mock_test_id) {
             return redirect()->route('mock-test.result', $attempt->mock_test_id);
         }
@@ -173,14 +173,16 @@ class HistoryController extends Controller
             return back()->with('info', 'Bài này đã được yêu cầu chấm điểm.');
         }
 
-        // Check limit of 2 per skill
-        $count = Attempt::where('user_id', auth()->id())
-            ->where('skill', $attempt->skill)
-            ->where('is_grading_requested', true)
-            ->count();
+        if (!auth()->user()->isAdmin()) {
+            // Check limit of 2 per skill
+            $count = Attempt::where('user_id', auth()->id())
+                ->where('skill', $attempt->skill)
+                ->where('is_grading_requested', true)
+                ->count();
 
-        if ($count >= 2) {
-            return back()->with('error', "Bạn đã dùng hết lượt yêu cầu chấm điểm cho kỹ năng " . ucfirst($attempt->skill) . " (Tối đa 2 lần).");
+            if ($count >= 2) {
+                return back()->with('error', "Bạn đã dùng hết lượt yêu cầu chấm điểm cho kỹ năng " . ucfirst($attempt->skill) . " (Tối đa 2 lần).");
+            }
         }
 
         $attempt->update([

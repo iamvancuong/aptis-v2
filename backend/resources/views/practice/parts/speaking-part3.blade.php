@@ -10,12 +10,16 @@
 
     <!-- Images Display -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white p-3 rounded-xl border border-gray-200 text-center">
-            <img :src="`/storage/${currentQuestion.metadata.image_paths[0]}`" alt="Image 1" class="h-48 md:h-56 object-contain mx-auto rounded-lg shadow-sm">
-        </div>
-        <div class="bg-white p-3 rounded-xl border border-gray-200 text-center">
-            <img :src="`/storage/${currentQuestion.metadata.image_paths[1]}`" alt="Image 2" class="h-48 md:h-56 object-contain mx-auto rounded-lg shadow-sm">
-        </div>
+        <template x-if="currentQuestion.metadata.image_paths && currentQuestion.metadata.image_paths[0]">
+            <div class="bg-white p-3 rounded-xl border border-gray-200 text-center">
+                <img :src="`/storage/${currentQuestion.metadata.image_paths[0]}`" alt="Image 1" class="h-48 md:h-56 object-contain mx-auto rounded-lg shadow-sm">
+            </div>
+        </template>
+        <template x-if="currentQuestion.metadata.image_paths && currentQuestion.metadata.image_paths[1]">
+            <div class="bg-white p-3 rounded-xl border border-gray-200 text-center">
+                <img :src="`/storage/${currentQuestion.metadata.image_paths[1]}`" alt="Image 2" class="h-48 md:h-56 object-contain mx-auto rounded-lg shadow-sm">
+            </div>
+        </template>
     </div>
 
     <!-- Active Question Display -->

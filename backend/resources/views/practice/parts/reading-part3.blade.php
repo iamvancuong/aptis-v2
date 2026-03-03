@@ -53,16 +53,16 @@
                         <template x-if="hasAnswered(currentQuestion.id)">
                             <div class="mt-2 flex items-center gap-2 text-sm">
                                 {{-- Correct --}}
-                                <div x-show="part3Answers[qIdx] === currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-green-600 font-bold">
+                                <div x-show="part3Answers[qIdx] == currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-green-600 font-bold">
                                     <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                                     Correct
                                 </div>
                                 {{-- Incorrect --}}
-                                <div x-show="part3Answers[qIdx] !== currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-red-600">
+                                <div x-show="part3Answers[qIdx] != currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-red-600">
                                     <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                     <span class="font-bold">Incorrect.</span>
                                     <span class="ml-1 text-gray-600">Answer:</span>
-                                    <span class="ml-1 font-bold text-green-600" x-text="'Person ' + String.fromCharCode(65 + currentQuestion.metadata.correct_answers[qIdx])"></span>
+                                    <span class="ml-1 font-bold text-green-600" x-text="'Person ' + String.fromCharCode(65 + Number(currentQuestion.metadata.correct_answers[qIdx]))"></span>
                                 </div>
                             </div>
                         </template>

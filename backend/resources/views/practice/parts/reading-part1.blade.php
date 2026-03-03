@@ -27,7 +27,7 @@
                 <template x-if="hasAnswered(currentQuestion.id)">
                     <div class="ml-auto flex items-center gap-2 flex-shrink-0">
                         {{-- Correct --}}
-                        <div x-show="part1Answers[currentQuestion.id][pIndex] === currentQuestion.metadata.correct_answers[pIndex]" class="flex items-center text-green-600 font-bold text-sm">
+                        <div x-show="part1Answers[currentQuestion.id][pIndex] == currentQuestion.metadata.correct_answers[pIndex]" class="flex items-center text-green-600 font-bold text-sm">
                             <svg class="w-6 h-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
@@ -35,7 +35,7 @@
                         </div>
 
                         {{-- Incorrect --}}
-                        <div x-show="part1Answers[currentQuestion.id][pIndex] !== currentQuestion.metadata.correct_answers[pIndex]" class="flex items-center text-red-600 text-sm">
+                        <div x-show="part1Answers[currentQuestion.id][pIndex] != currentQuestion.metadata.correct_answers[pIndex]" class="flex items-center text-red-600 text-sm">
                             <svg class="w-6 h-6 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>

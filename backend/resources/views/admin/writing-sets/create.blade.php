@@ -45,19 +45,24 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-input name="part1_f1_label" label="Field 1 Label" value="{{ old('part1_f1_label', 'Full Name') }}" required />
-                <x-input name="part1_f1_placeholder" label="Field 1 Placeholder" value="{{ old('part1_f1_placeholder', 'e.g. Nguyen Van A') }}" />
+                <x-input name="part1_f1_placeholder" label="Field 1 Placeholder" value="{{ old('part1_f1_placeholder', '') }}" />
                 
                 <x-input name="part1_f2_label" label="Field 2 Label" value="{{ old('part1_f2_label', 'Date of Birth') }}" required />
-                <x-input name="part1_f2_placeholder" label="Field 2 Placeholder" value="{{ old('part1_f2_placeholder', 'e.g. 01/01/1990') }}" />
+                <x-input name="part1_f2_placeholder" label="Field 2 Placeholder" value="{{ old('part1_f2_placeholder', '') }}" />
                 
                 <x-input name="part1_f3_label" label="Field 3 Label" value="{{ old('part1_f3_label', 'Interests') }}" required />
-                <x-input name="part1_f3_placeholder" label="Field 3 Placeholder" value="{{ old('part1_f3_placeholder', 'Briefly state your interests.') }}" />
+                <x-input name="part1_f3_placeholder" label="Field 3 Placeholder" value="{{ old('part1_f3_placeholder', '') }}" />
                 
                 <x-input name="part1_f4_label" label="Field 4 Label" value="{{ old('part1_f4_label', 'How often do you train?') }}" required />
-                <x-input name="part1_f4_placeholder" label="Field 4 Placeholder" value="{{ old('part1_f4_placeholder', 'e.g. Twice a week') }}" />
+                <x-input name="part1_f4_placeholder" label="Field 4 Placeholder" value="{{ old('part1_f4_placeholder', '') }}" />
                 
                 <x-input name="part1_f5_label" label="Field 5 Label" value="{{ old('part1_f5_label', 'Why do you want to join?') }}" required />
-                <x-input name="part1_f5_placeholder" label="Field 5 Placeholder" value="{{ old('part1_f5_placeholder', 'Maximum 5 words') }}" />
+                <x-input name="part1_f5_placeholder" label="Field 5 Placeholder" value="{{ old('part1_f5_placeholder', '') }}" />
+            </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Đáp án tham khảo (Sample Answer) - Tùy chọn</label>
+                <x-textarea name="part1_sample_answer" rows="2">{{ old('part1_sample_answer') }}</x-textarea>
             </div>
         </div>
     </x-card>
@@ -80,6 +85,11 @@
                 <x-input type="number" name="part2_min" label="Min words" value="{{ old('part2_min', 20) }}" />
                 <x-input type="number" name="part2_max" label="Max words" value="{{ old('part2_max', 30) }}" />
             </div>
+
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Đáp án tham khảo (Sample Answer)</label>
+                <x-textarea name="part2_sample_answer" rows="3">{{ old('part2_sample_answer') }}</x-textarea>
+            </div>
         </div>
     </x-card>
 
@@ -100,9 +110,29 @@
             </div>
 
             <div class="space-y-4 border-t border-gray-100 pt-4">
-                <x-input name="part3_prompt_1" label="Prompt 1 (Câu hỏi 1)" value="{{ old('part3_prompt_1') }}" required error="{{ $errors->first('part3_prompt_1') }}" />
-                <x-input name="part3_prompt_2" label="Prompt 2 (Câu hỏi 2)" value="{{ old('part3_prompt_2') }}" required error="{{ $errors->first('part3_prompt_2') }}" />
-                <x-input name="part3_prompt_3" label="Prompt 3 (Câu hỏi 3)" value="{{ old('part3_prompt_3') }}" required error="{{ $errors->first('part3_prompt_3') }}" />
+                <div>
+                    <x-input name="part3_prompt_1" label="Prompt 1 (Câu hỏi 1)" value="{{ old('part3_prompt_1') }}" required error="{{ $errors->first('part3_prompt_1') }}" />
+                    <div class="mt-2 pl-4 border-l-2 border-indigo-100">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Đáp án tham khảo cho Câu 1</label>
+                        <x-textarea name="part3_sample_1" rows="2">{{ old('part3_sample_1') }}</x-textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <x-input name="part3_prompt_2" label="Prompt 2 (Câu hỏi 2)" value="{{ old('part3_prompt_2') }}" required error="{{ $errors->first('part3_prompt_2') }}" />
+                    <div class="mt-2 pl-4 border-l-2 border-indigo-100">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Đáp án tham khảo cho Câu 2</label>
+                        <x-textarea name="part3_sample_2" rows="2">{{ old('part3_sample_2') }}</x-textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <x-input name="part3_prompt_3" label="Prompt 3 (Câu hỏi 3)" value="{{ old('part3_prompt_3') }}" required error="{{ $errors->first('part3_prompt_3') }}" />
+                    <div class="mt-2 pl-4 border-l-2 border-indigo-100">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Đáp án tham khảo cho Câu 3</label>
+                        <x-textarea name="part3_sample_3" rows="2">{{ old('part3_sample_3') }}</x-textarea>
+                    </div>
+                </div>
             </div>
         </div>
     </x-card>
@@ -144,6 +174,11 @@
                     <x-input type="number" name="part4_task1_min" label="Min words" value="{{ old('part4_task1_min', 40) }}" />
                     <x-input type="number" name="part4_task1_max" label="Max words" value="{{ old('part4_task1_max', 50) }}" />
                 </div>
+
+                <div class="mt-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Đáp án tham khảo (Informal)</label>
+                    <x-textarea name="part4_task1_sample" rows="3">{{ old('part4_task1_sample') }}</x-textarea>
+                </div>
             </div>
 
             <!-- Task 2 -->
@@ -154,6 +189,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <x-input type="number" name="part4_task2_min" label="Min words" value="{{ old('part4_task2_min', 120) }}" />
                     <x-input type="number" name="part4_task2_max" label="Max words" value="{{ old('part4_task2_max', 150) }}" />
+                </div>
+
+                <div class="mt-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Đáp án tham khảo (Formal)</label>
+                    <x-textarea name="part4_task2_sample" rows="5">{{ old('part4_task2_sample') }}</x-textarea>
                 </div>
             </div>
         </div>

@@ -39,7 +39,27 @@
                 @php
                     $q = $ans->question;
                     $meta = $q->metadata ?? [];
+                    
+                    // Robust flattening of audio file paths
+                    $audioUrls = [];
+                    $rawAnswer = $ans->answer;
+                    if (is_string($rawAnswer)) {
+                        $rawAnswer = json_decode($rawAnswer, true) ?: ($rawAnswer === 'recorded' ? [] : [$rawAnswer]);
+                    }
+                    
+                    if (is_array($rawAnswer)) {
+                        array_walk_recursive($rawAnswer, function($a) use (&$audioUrls) {
+                            if (is_string($a) && !empty($a) && $a !== 'recorded') {
+                                $audioUrls[] = $a;
+                            }
+                        });
+                    }
                 @endphp
+                
+                @if(count($audioUrls) === 0 && ($q->part === 1))
+                     @continue
+                @endif
+
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div class="border-b border-gray-100 bg-gray-50 px-6 py-4 flex justify-between items-center">
                         <h2 class="text-lg font-bold text-gray-800">Part {{ $q->part }}</h2>
@@ -57,11 +77,11 @@
                                     @if(isset($meta['image_path']) || isset($meta['image_paths']))
                                         <div class="mt-3 flex gap-2 flex-wrap">
                                             @if(isset($meta['image_path']))
-                                                <img src="{{ Storage::url($meta['image_path']) }}" class="h-32 rounded border border-gray-200 shadow-sm" alt="Prompt Image">
+                                                <img src="{{ Storage::url($meta['image_path']) }}" class="h-48 rounded border border-gray-200 shadow-sm object-contain" alt="Prompt Image">
                                             @endif
                                             @if(isset($meta['image_paths']))
                                                 @foreach($meta['image_paths'] as $imgPath)
-                                                    <img src="{{ Storage::url($imgPath) }}" class="h-32 rounded border border-gray-200 shadow-sm" alt="Prompt Image">
+                                                    <img src="{{ Storage::url($imgPath) }}" class="h-48 rounded border border-gray-200 shadow-sm object-contain" alt="Prompt Image">
                                                 @endforeach
                                             @endif
                                         </div>
@@ -69,7 +89,7 @@
                                     
                                     @if(isset($meta['questions']) && is_array($meta['questions']))
                                         <div class="mt-4 pt-3 border-t border-gray-200">
-                                            <p class="text-sm text-gray-500 mb-2">Các câu hỏi phụ:</p>
+                                            <p class="text-sm text-gray-500 mb-2 font-bold uppercase tracking-tight">Các câu hỏi phụ:</p>
                                             <ul class="list-disc pl-5 space-y-1">
                                                 @foreach($meta['questions'] as $subQ)
                                                     <li class="text-gray-800 text-sm italic">{{ $subQ }}</li>
@@ -77,24 +97,22 @@
                                             </ul>
                                         </div>
                                     @endif
+
+                                    @if(!empty($meta['sample_answer']))
+                                        <div class="mt-4 pt-3 border-t border-emerald-100 bg-emerald-50/30 p-3 rounded-lg">
+                                            <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                Đáp án tham khảo (Admin):
+                                            </p>
+                                            <div class="text-sm text-emerald-900 leading-relaxed whitespace-pre-wrap font-medium">{{ trim($meta['sample_answer']) }}</div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                             
                             <div>
                                 <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-widest border-b pb-2 mb-3">Bản ghi âm 🎤</h4>
-                                @php
-                                    $audioUrls = [];
-                                    if (is_array($ans->answer)) {
-                                        $audioUrls = $ans->answer;
-                                    } elseif (is_string($ans->answer)) {
-                                        $decoded = json_decode($ans->answer, true);
-                                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                            $audioUrls = $decoded;
-                                        } elseif (!empty($ans->answer)) {
-                                            $audioUrls = [$ans->answer];
-                                        }
-                                    }
-                                @endphp
+                                {{-- Already handled in loop top --}}
 
                                 @if(count($audioUrls) > 0)
                                     <div class="space-y-3">
