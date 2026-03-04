@@ -55,6 +55,48 @@
                 @enderror
             </div>
 
+            <!-- Grading Limits Section -->
+            <div class="px-6 py-4 bg-gray-50 border-y border-gray-200 -mx-6 mb-6 mt-8">
+                <h2 class="text-lg font-bold text-gray-800">Giới hạn Yêu cầu Chấm điểm</h2>
+                <p class="text-sm text-gray-500 mt-1">Cấu hình số lần tối đa học viên được gửi bài cho Giáo viên chấm điểm đối với từng Kỹ năng.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Writing Limit -->
+                <div>
+                    <label for="writing_grading_limit" class="block text-sm font-semibold text-gray-700 mb-2">Giới hạn gửi bài Writing (lần) <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </div>
+                        <input type="number" id="writing_grading_limit" name="writing_grading_limit" 
+                            value="{{ old('writing_grading_limit', $writingLimitSetting->value ?? 2) }}" min="1" max="100"
+                            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required>
+                    </div>
+                    @error('writing_grading_limit')
+                        <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Speaking Limit -->
+                <div>
+                    <label for="speaking_grading_limit" class="block text-sm font-semibold text-gray-700 mb-2">Giới hạn gửi bài Speaking (lần) <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        </div>
+                        <input type="number" id="speaking_grading_limit" name="speaking_grading_limit" 
+                            value="{{ old('speaking_grading_limit', $speakingLimitSetting->value ?? 2) }}" min="1" max="100"
+                            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required>
+                    </div>
+                    @error('speaking_grading_limit')
+                        <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
             <div class="flex justify-end pt-4 border-t border-gray-100">
                 <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-sm transition-colors cursor-pointer">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>

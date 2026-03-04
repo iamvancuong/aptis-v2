@@ -174,14 +174,17 @@ class HistoryController extends Controller
         }
 
         if (!auth()->user()->isAdmin()) {
-            // Check limit of 2 per skill
+            // Check limit of configured key per skill
+            $limitKey = $attempt->skill . '_grading_limit';
+            $maxLimit = \App\Models\Setting::where('key', $limitKey)->value('value') ?? 2;
+
             $count = Attempt::where('user_id', auth()->id())
                 ->where('skill', $attempt->skill)
                 ->where('is_grading_requested', true)
                 ->count();
 
-            if ($count >= 2) {
-                return back()->with('error', "Bạn đã dùng hết lượt yêu cầu chấm điểm cho kỹ năng " . ucfirst($attempt->skill) . " (Tối đa 2 lần).");
+            if ($count >= $maxLimit) {
+                return back()->with('error', "Bạn đã dùng hết lượt yêu cầu chấm điểm cho kỹ năng " . ucfirst($attempt->skill) . " (Tối đa {$maxLimit} lần).");
             }
         }
 

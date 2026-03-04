@@ -66,6 +66,10 @@
 
         {{-- Grading Request Section (writing/speaking) --}}
         @if(($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') && $attempts->first())
+            @php
+                $limitKey = $mockTest->skill . '_grading_limit';
+                $maxLimit = \App\Models\Setting::where('key', $limitKey)->value('value') ?? 2;
+            @endphp
             <div class="mt-8 pt-8 border-t border-gray-100 bg-indigo-50/30 -mx-8 -mb-8 px-8 pb-8 rounded-b-2xl">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div class="flex-1">
@@ -78,8 +82,8 @@
                                 Tài khoản Admin có thể gửi yêu cầu chấm điểm <strong>không giới hạn</strong>.
                                 Hiện tại bạn đã gửi <strong>{{ $gradingRequestsCount }}</strong> lượt.
                             @else
-                                Bạn có tối đa <strong>2 lần</strong> yêu cầu giáo viên chấm điểm chi tiết cho kỹ năng này.
-                                Hiện tại bạn đã dùng <strong>{{ $gradingRequestsCount }}/2</strong> lượt.
+                                Bạn có tối đa <strong>{{ $maxLimit }} lần</strong> yêu cầu giáo viên chấm điểm chi tiết cho kỹ năng này.
+                                Hiện tại bạn đã dùng <strong>{{ $gradingRequestsCount }}/{{ $maxLimit }}</strong> lượt.
                             @endif
                         </p>
                     </div>
@@ -88,7 +92,7 @@
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                             Đã gởi yêu cầu
                         </div>
-                    @elseif(auth()->user()->isAdmin() || $gradingRequestsCount < 2)
+                    @elseif(auth()->user()->isAdmin() || $gradingRequestsCount < $maxLimit)
                         <form action="{{ route('attempts.request-grading', $attempts->first()->id) }}" method="POST">
                             @csrf
                             <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2 transform active:scale-95">

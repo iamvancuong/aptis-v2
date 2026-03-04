@@ -170,22 +170,27 @@ class SpeakingSetController extends Controller
             'title' => 'required|string|max:255',
             'is_public' => 'boolean',
             
-            // Part 1 - Optional
+            // Flags
+            'has_part_1' => 'nullable|boolean',
+            'has_part_2' => 'nullable|boolean',
+            'has_part_3' => 'nullable|boolean',
+            
+            // Part 1
             'part1_q1' => 'nullable|string',
             'part1_q2' => 'nullable|string',
             'part1_q3' => 'nullable|string',
             'part1_sample_answer' => 'nullable|string',
             
             // Part 2
-            'part2_q1' => 'required|string',
-            'part2_q2' => 'required|string',
-            'part2_q3' => 'required|string',
+            'part2_q1' => 'nullable|string',
+            'part2_q2' => 'nullable|string',
+            'part2_q3' => 'nullable|string',
             'part2_sample_answer' => 'nullable|string',
             
             // Part 3
-            'part3_q1' => 'required|string',
-            'part3_q2' => 'required|string',
-            'part3_q3' => 'required|string',
+            'part3_q1' => 'nullable|string',
+            'part3_q2' => 'nullable|string',
+            'part3_q3' => 'nullable|string',
             'part3_sample_answer' => 'nullable|string',
             
             // Part 4
@@ -218,11 +223,11 @@ class SpeakingSetController extends Controller
 
     private function createOrUpdatePart1(Set $set, Quiz $quiz, array $validated)
     {
-        // If Part 1 questions are all empty AND sample answer is empty, detach/remove from set
-        if (empty($validated['part1_q1']) && empty($validated['part1_q2']) && empty($validated['part1_q3']) && empty($validated['part1_sample_answer'])) {
+        if (empty($validated['has_part_1'])) {
             $question = $set->questions()->where('part', 1)->first();
             if ($question) {
                 $set->questions()->detach($question->id);
+                $question->delete();
             }
             return;
         }
@@ -259,6 +264,18 @@ class SpeakingSetController extends Controller
     private function createOrUpdatePart2(Set $set, Quiz $quiz, array $validated, Request $request)
     {
         $question = $set->questions()->where('part', 2)->first();
+
+        if (empty($validated['has_part_2'])) {
+            if ($question) {
+                if (!empty($question->metadata['image_path'])) {
+                    Storage::disk('public')->delete($question->metadata['image_path']);
+                }
+                $set->questions()->detach($question->id);
+                $question->delete();
+            }
+            return;
+        }
+
         $imagePath = $question->metadata['image_path'] ?? null;
 
         if ($request->hasFile('part2_image')) {
@@ -302,6 +319,20 @@ class SpeakingSetController extends Controller
     private function createOrUpdatePart3(Set $set, Quiz $quiz, array $validated, Request $request)
     {
         $question = $set->questions()->where('part', 3)->first();
+
+        if (empty($validated['has_part_3'])) {
+            if ($question) {
+                if (!empty($question->metadata['image_paths'])) {
+                    foreach ($question->metadata['image_paths'] as $path) {
+                        if ($path) Storage::disk('public')->delete($path);
+                    }
+                }
+                $set->questions()->detach($question->id);
+                $question->delete();
+            }
+            return;
+        }
+
         $imagePaths = $question->metadata['image_paths'] ?? [null, null];
 
         if ($request->hasFile('part3_image1')) {

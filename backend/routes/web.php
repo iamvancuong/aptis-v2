@@ -43,6 +43,10 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     Route::get('/skills/{skill}/part/{part}/sets', [SetController::class, 'index'])->name('sets.index');
     Route::get('/sets/{set}', [SetController::class, 'show'])->name('sets.show');
 
+    // Instructions
+    Route::get('/instructions', [\App\Http\Controllers\InstructionController::class, 'index'])->name('instructions.index');
+    Route::get('/instructions/{slug}', [\App\Http\Controllers\InstructionController::class, 'show'])->name('instructions.show');
+
     // Practice
     Route::get('/practice/{set}', [App\Http\Controllers\PracticeController::class, 'show'])->name('practice.show');
     Route::post('/practice/{set}/attempt', [App\Http\Controllers\PracticeController::class, 'store'])
@@ -146,6 +150,9 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     // Feedback & High Scores
     Route::resource('feedback', \App\Http\Controllers\Admin\FeedbackController::class);
     Route::resource('high-scores', \App\Http\Controllers\Admin\HighScoreController::class);
+
+    // Instructions Module
+    Route::resource('instructions', \App\Http\Controllers\Admin\InstructionController::class);
 
     // Settings
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
