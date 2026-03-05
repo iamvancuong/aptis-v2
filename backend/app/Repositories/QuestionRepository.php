@@ -36,8 +36,8 @@ class QuestionRepository
             });
         }
 
-        return $query->orderBy('quiz_id')
-            ->orderBy('part')
+        return $query->orderBy('part')
+            ->orderBy('quiz_id')
             ->orderBy('order')
             ->paginate($perPage)
             ->withQueryString();

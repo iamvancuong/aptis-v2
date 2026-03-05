@@ -56,7 +56,8 @@
                                     @foreach($quizzes as $quiz)
                                         <option value="{{ $quiz->id }}" 
                                                 data-skill="{{ $quiz->skill }}" 
-                                                data-part="{{ $quiz->part }}">
+                                                data-part="{{ $quiz->part }}"
+                                                {{ (request('part') == $quiz->part && request('skill') == $quiz->skill) ? 'selected' : '' }}>
                                             {{ $quiz->title }} ({{ ucfirst($quiz->skill) }} - Part {{ $quiz->part }})
                                         </option>
                                     @endforeach

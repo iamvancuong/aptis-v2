@@ -204,7 +204,7 @@
                                 @csrf
                                 <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-fuchsia-100 text-fuchsia-700 rounded hover:bg-fuchsia-200 font-medium text-xs">
                                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    RS-WR
+                                    Reset Writing
                                 </button>
                             </form>
                             <!-- Reset Speaking AI Button -->
@@ -212,14 +212,15 @@
                                 @csrf
                                 <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-teal-100 text-teal-700 rounded hover:bg-teal-200 font-medium text-xs">
                                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                                    RS-SP
+                                    Reset Speaking
                                 </button>
                             </form>
-                            <span class="text-gray-300 mx-0.5 text-xs">|</span>
-                            <form action="{{ route('admin.users.add-ai', $user) }}" method="POST" class="inline-flex items-center gap-1">
-                                    @csrf
-                                    <input type="number" name="amount" value="10" min="1" max="100" class="w-12 h-5 text-xs px-1 border-gray-300 rounded" required title="Số lượt muốn cộng thêm (mặc định gốc là 10, đang cộng thêm {{ $user->ai_extra_uses }})">
-                                    <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 font-medium text-xs" title="Thêm lượt AI">+</button>
+                            <form action="{{ route('admin.users.reset-all-ai', $user) }}" method="POST" class="inline-block" onsubmit="return confirm('Reset toàn bộ lượt chấm AI (Writing & Speaking) cho người dùng này?')" title="Reset toàn bộ lượt AI">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 font-medium text-xs">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path></svg>
+                                    Reset All AI
+                                </button>
                             </form>
                         </div>
                     @endif

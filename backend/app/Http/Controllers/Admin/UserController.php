@@ -216,16 +216,33 @@ class UserController extends Controller
 
     public function resetAi(User $user)
     {
-        $user->increment('ai_reset_version');
+        $user->update([
+            'ai_reset_version' => ($user->ai_reset_version ?? 0) + 1,
+            'ai_extra_uses' => 0
+        ]);
 
-        return redirect()->back()->with('success', 'Writing AI Usage limit has been reset successfully.');
+        return redirect()->back()->with('success', 'Writing AI Usage limit has been reset to default.');
     }
 
     public function resetSpeakingAi(User $user)
     {
-        $user->increment('speaking_ai_reset_version');
+        $user->update([
+            'speaking_ai_reset_version' => ($user->speaking_ai_reset_version ?? 0) + 1,
+            'ai_extra_uses' => 0
+        ]);
 
-        return redirect()->back()->with('success', 'Speaking AI Usage limit has been reset successfully.');
+        return redirect()->back()->with('success', 'Speaking AI Usage limit has been reset to default.');
+    }
+
+    public function resetAllAi(User $user)
+    {
+        $user->update([
+            'ai_reset_version' => ($user->ai_reset_version ?? 0) + 1,
+            'speaking_ai_reset_version' => ($user->speaking_ai_reset_version ?? 0) + 1,
+            'ai_extra_uses' => 0
+        ]);
+
+        return redirect()->back()->with('success', 'All AI Usage limits have been reset to default.');
     }
 
     public function addAi(Request $request, User $user)

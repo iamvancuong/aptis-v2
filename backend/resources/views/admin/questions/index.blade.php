@@ -8,13 +8,13 @@
     <div class="flex justify-between items-center sm:flex-row flex-col gap-4">
         <h1 class="text-2xl font-bold text-gray-900">{{ ucfirst($currentSkill) }} Questions Management</h1>
         <div class="flex gap-2">
-            @if(in_array($currentSkill, ['reading', 'listening']))
+            <!-- @if(in_array($currentSkill, ['reading', 'listening']))
             <button onclick="document.getElementById('import-listening-modal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-sm">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 Import {{ ucfirst($currentSkill) }}
             </button>
-            @endif
-            <a href="{{ route('admin.questions.create', ['skill' => $currentSkill]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm">
+            @endif -->
+            <a href="{{ route('admin.questions.create', ['skill' => $currentSkill, 'part' => request('part')]) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>

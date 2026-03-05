@@ -60,19 +60,18 @@ class QuestionController extends Controller
         return view('admin.questions.index', compact('questions', 'quizzes', 'currentSkill'));
     }
 
-    /**
-     * Show the form for creating a new question.
-     */
     public function create()
     {
         $skill = request('skill');
+        $part = request('part');
+
         $quizzesQuery = Quiz::where('skill', '!=', 'writing')->orderBy('title');
         if ($skill) {
             $quizzesQuery->where('skill', $skill);
         }
         $quizzes = $quizzesQuery->get();
 
-        return view('admin.questions.create', compact('quizzes', 'skill'));
+        return view('admin.questions.create', compact('quizzes', 'skill', 'part'));
     }
 
     /**
@@ -88,7 +87,7 @@ class QuestionController extends Controller
         );
 
         $skill = $request->input('skill', 'reading');
-        return redirect()->route("admin.questions.{$skill}")
+        return redirect()->route("admin.questions.{$skill}", ['part' => $request->input('part')])
             ->with('success', 'Question created successfully.');
     }
 
@@ -128,7 +127,7 @@ class QuestionController extends Controller
         );
 
         $skill = $request->input('skill', 'reading');
-        return redirect()->route("admin.questions.{$skill}")
+        return redirect()->route("admin.questions.{$skill}", ['part' => $request->input('part')])
             ->with('success', 'Question updated successfully.');
     }
 
@@ -138,6 +137,7 @@ class QuestionController extends Controller
     public function destroy(Question $question)
     {
         $skill = $question->quiz->skill ?? 'reading';
+        $part = $question->part;
         $this->questionService->deleteQuestion($question);
 
         if (request()->wantsJson()) {
@@ -147,7 +147,7 @@ class QuestionController extends Controller
             ]);
         }
 
-        return redirect()->route("admin.questions.{$skill}")
+        return redirect()->route("admin.questions.{$skill}", ['part' => $part])
             ->with('success', 'Question deleted successfully.');
     }
 

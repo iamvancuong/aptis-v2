@@ -120,6 +120,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::post('users/{user}/extend-expiration', [UserController::class, 'extendExpiration'])->name('users.extend-expiration');
     Route::post('users/{user}/reset-ai', [UserController::class, 'resetAi'])->name('users.reset-ai');
     Route::post('users/{user}/reset-speaking-ai', [UserController::class, 'resetSpeakingAi'])->name('users.reset-speaking-ai');
+    Route::post('users/{user}/reset-all-ai', [UserController::class, 'resetAllAi'])->name('users.reset-all-ai');
     Route::post('users/{user}/add-ai', [UserController::class, 'addAi'])->name('users.add-ai');
     Route::resource('users', UserController::class);
 
