@@ -11,8 +11,8 @@ class UsersTemplateExport implements FromArray, WithHeadings
     {
         // Return empty array with just headings
         return [
-            ['John Doe', 'john@example.com', 'password123', 'user', 2],
-            ['Jane Smith', 'jane@example.com', 'password123', 'user', 2],
+            ['Nguyen Van A', 'vana@example.com', 'password123', 'user', 'B1', 30],
+            ['Tran Anh B', 'anhb@example.com', '12345678', 'user', 'B2', ''],
         ];
     }
 
@@ -22,8 +22,9 @@ class UsersTemplateExport implements FromArray, WithHeadings
             'Name',
             'Email',
             'Password',
-            'Role (user/admin)',
-            'Max Devices',
+            'Role',
+            'Target Level',
+            'Expires Days',
         ];
     }
 }

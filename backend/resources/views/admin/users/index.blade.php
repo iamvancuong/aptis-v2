@@ -32,6 +32,11 @@
                 <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                 <option value="blocked" {{ request('status') === 'blocked' ? 'selected' : '' }}>Blocked</option>
             </x-select>
+            <x-select name="account_type">
+                <option value="">Loại tài khoản</option>
+                <option value="unlimited" {{ request('account_type') === 'unlimited' ? 'selected' : '' }}>Vô hạn</option>
+                <option value="limited" {{ request('account_type') === 'limited' ? 'selected' : '' }}>Có thời hạn</option>
+            </x-select>
             <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex items-center gap-2">
                 <x-select name="expiration" x-model="exp">
                     <option value="">Lọc ngày thi</option>
@@ -55,7 +60,7 @@
             <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap">
                 Filter
             </button>
-            @if(request()->hasAny(['search', 'role', 'status', 'expiration', 'expire_days']))
+            @if(request()->hasAny(['search', 'role', 'status', 'account_type', 'expiration', 'expire_days']))
                 <a href="{{ route('admin.users.index') }}" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 whitespace-nowrap">
                     Clear
                 </a>
@@ -123,8 +128,8 @@
                     </x-badge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <span class="{{ $user->violation_count >= 3 ? 'text-red-600 font-bold' : '' }}">
-                        {{ $user->violation_count }}/3
+                    <span class="{{ $user->violation_count >= $user->max_devices ? 'text-red-600 font-bold' : '' }}">
+                        {{ $user->violation_count }}/{{ $user->max_devices }}
                     </span>
                 </td>
                 <td class="px-6 py-4">
@@ -262,25 +267,35 @@
 </x-datatable>
 
 <!-- Import Modal -->
-<div id="importModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
-        <h3 class="text-lg font-bold mb-4">Import Users from Excel</h3>
-        <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Select Excel File</label>
-                <input type="file" name="file" accept=".xlsx,.xls,.csv" required 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-            </div>
-            <div class="flex gap-3">
-                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Import
-                </button>
-                <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" 
-                        class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-                    Cancel
-                </button>
-            </div>
+<div id="importModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative mx-auto border w-[400px] shadow-lg rounded-xl bg-white">
+        <div class="p-5">
+            <h3 class="text-xl font-bold mb-2 text-gray-900">Nhập Danh Sách Người Dùng</h3>
+            <p class="text-sm text-gray-500 mb-5">
+                Vui lòng tải <a href="{{ route('admin.users.template') }}" class="text-blue-600 hover:underline font-medium">file mẫu (Template)</a> về máy, điền dữ liệu theo đúng định dạng các cột và tải lên.
+            </p>
+
+            <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="mb-5 bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Chọn file Excel (.xlsx, .xls, .csv)</label>
+                    <input type="file" name="file" accept=".xlsx,.xls,.csv" required 
+                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')" 
+                            class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                        Tải Lên
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
         </form>
     </div>
 </div>

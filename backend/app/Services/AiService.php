@@ -15,13 +15,23 @@ class AiService
         $this->apiKey = config('services.openai.key', env('OPENAI_API_KEY'));
     }
 
-    /**
-     * Grade writing response using OpenAI.
-     */
-    public function gradeWriting(array $data): array
+    public function gradeWriting(array $data, ?string $targetLevel = 'B2'): array
     {
-        $systemPrompt = $this->getSystemPrompt();
-        $userPrompt = $this->getUserPrompt($data);
+        $part = $data['part'];
+        $wordLimit = $data['word_limit'] ?? 'N/A';
+        if (is_array($wordLimit)) {
+            $wordLimit = ($wordLimit['min'] ?? 0) . ' - ' . ($wordLimit['max'] ?? 'N/A') . ' words';
+        }
+        $question = $data['question_stem'];
+        $metadata = $data['metadata'] ?? [];
+        
+        $studentText = is_array($data['student_answer']) ? json_encode($data['student_answer'], JSON_UNESCAPED_UNICODE) : (string) $data['student_answer'];
+        if (mb_strlen($studentText) > 1000) {
+            $studentText = mb_substr($studentText, 0, 1000) . '... [truncated]';
+        }
+
+        $systemPrompt = view('prompts.writing_system', compact('part', 'targetLevel'))->render();
+        $userPrompt = view('prompts.writing_user', compact('part', 'wordLimit', 'question', 'metadata', 'studentText'))->render();
 
         if (empty($this->apiKey)) {
             Log::info('AiService: No API key found, returning mock success response.');
@@ -30,9 +40,11 @@ class AiService
 
         try {
             $response = Http::withToken($this->apiKey)
-                ->timeout(20)
-                ->retry(1, 1000, function ($exception, $request) {
-                    return $exception->getCode() === 429;
+                ->timeout(90)
+                ->retry(2, 2000, function ($exception, $request) {
+                    // Retry on rate limit (429) or timeout (ConnectException)
+                    return $exception->getCode() === 429
+                        || $exception instanceof \GuzzleHttp\Exception\ConnectException;
                 })
                 ->post('https://api.openai.com/v1/chat/completions', [
                     'model' => $this->model,
@@ -42,7 +54,7 @@ class AiService
                     ],
                     'response_format' => ['type' => 'json_object'],
                     'temperature' => 0.3,
-                    'max_tokens' => 800,
+                    'max_tokens' => 2500,
                 ]);
 
             if ($response->failed()) {
@@ -54,7 +66,17 @@ class AiService
             }
 
             $result = $response->json();
-            $feedback = json_decode($result['choices'][0]['message']['content'], true);
+            $content = $result['choices'][0]['message']['content'] ?? '{}';
+            Log::info('AiService raw content:', ['content' => $content]);
+            $feedback = json_decode($content, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('AiService JSON Decode Error', [
+                    'error' => json_last_error_msg(),
+                    'content_snippet' => mb_substr($content, -200) // Log the end of the content to see if it was truncated
+                ]);
+                throw new \Exception('AI returned invalid JSON.');
+            }
 
             return [
                 'feedback' => $feedback,
@@ -71,113 +93,7 @@ class AiService
         }
     }
 
-    protected function getSystemPrompt(): string
-    {
-        return <<<PROMPT
-You are an official APTIS Writing examiner.
-
-You MUST return a valid JSON object.
-Return JSON only.
-Do NOT use markdown.
-Do NOT include explanations outside JSON.
-
-All scores must be integers from 0 to 5.
-
-CRITICAL INSTRUCTION:
-Depending on the Part, the "part_responses" array MUST contain exactly the number of objects corresponding to the number of questions/inputs:
-- Part 1: Exactly 5 objects.
-- Part 2: Exactly 1 object.
-- Part 3: Exactly 3 objects.
-- Part 4: Exactly 2 objects (Informal Email, then Formal Email).
-
-Follow exactly this structure:
-
-{
-  "schema_version": 3,
-  "part": number,
-  "scores": {
-    "grammar": integer,
-    "vocabulary": integer,
-    "coherence": integer,
-    "task_fulfillment": integer
-  },
-  "overall_score": integer,
-  "feedback": {
-    "grammar": string,
-    "vocabulary": string,
-    "coherence": string,
-    "task_fulfillment": string
-  },
-  "part_responses": [
-    {
-      "input_index": 0,
-       "label": "string (e.g., 'Câu 1', 'Informal Email')",
-       "improved_sample": "string",
-       "detailed_corrections": [
-         {
-           "original": "string",
-           "corrected": "string",
-           "explanation": "string"
-         }
-       ]
-    }
-  ],
-  "key_mistakes": ["string"],
-  "suggestions": ["string"]
-}
-PROMPT;
-    }
-
-    protected function getPartRequirements(int $part): string
-    {
-        switch ($part) {
-            case 1: 
-                return "Part 1 involves 5 very short personal questions. Focus on simple grammatical accuracy and relevance. Answers should be 1-5 words each.";
-            case 2:
-                return "Part 2 is a single personal information question (joining a club/activity). Focus on sentence structure and word count (20-30 words).";
-            case 3:
-                return "Part 3 involves 3 social network interaction questions. Focus on conversational tone, coherence, and word count (30-40 words each). Respond naturally to the prompts.";
-            case 4:
-                return "Part 4 involves TWO emails:
-                1. Informal email to a friend (approx 50 words). Tone: Casual, friendly.
-                2. Formal email to an authority (120-150 words). Tone: Professional, structured, polite.
-                Evaluate if the student successfully changed the register/tone between the two emails. This is CRITICAL for Part 4.";
-            default:
-                return "";
-        }
-    }
-
-    protected function getUserPrompt(array $data): string
-    {
-        $part = $data['part'];
-        $wordLimit = $data['word_limit'] ?? 'N/A';
-        if (is_array($wordLimit)) {
-            $wordLimit = ($wordLimit['min'] ?? 0) . ' - ' . ($wordLimit['max'] ?? 'N/A') . ' words';
-        }
-        $question = $data['question_stem'];
-        
-        $studentText = is_array($data['student_answer']) ? json_encode($data['student_answer'], JSON_UNESCAPED_UNICODE) : (string) $data['student_answer'];
-        if (mb_strlen($studentText) > 1000) {
-            $studentText = mb_substr($studentText, 0, 1000) . '... [truncated]';
-        }
-        
-        $partRequirements = $this->getPartRequirements($part);
-
-        return <<<PROMPT
-Evaluate this APTIS Writing response for Part {$part}.
-
-Part Context:
-{$partRequirements}
-
-Word limit: {$wordLimit}
-
-Task (Question):
-{$question}
-
-Student Response:
-{$studentText}
-PROMPT;
-    }
+    // Prompts now loaded from resources/views/prompts/
 
     protected function getMockResponse(int $part = 1): array
     {

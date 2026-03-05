@@ -281,8 +281,6 @@
                                             @endif
                                         </div>
                                     </div>
-                                        </div>
-                                    </div>
                                 </div>
                             @else
                                 <div class="bg-gray-50 border border-gray-200 border-dashed rounded-xl p-5 mt-3 text-center">
@@ -297,7 +295,7 @@
                     <div class="p-6 flex flex-col gap-6 bg-white">
 
                         {{-- Student Answer Section --}}
-                        <div class="flex-1">
+                        <div class="">
                             <h3 class="font-bold text-gray-900 text-sm tracking-wide mb-3 flex items-center gap-2">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                 BÀI LÀM CỦA HỌC SINH
@@ -307,20 +305,34 @@
                                 @php
                                     $t1Txt = is_array($ans) ? (is_string($ans['task1'] ?? null) ? $ans['task1'] : (is_string($ans[0] ?? null) ? $ans[0] : '')) : '';
                                     $t2Txt = is_array($ans) ? (is_string($ans['task2'] ?? null) ? $ans['task2'] : (is_string($ans[1] ?? null) ? $ans[1] : '')) : (is_string($ans) ? $ans : '');
+                                    $t1Prompt = $q->metadata['task1']['prompt'] ?? $q->metadata['task1']['instruction'] ?? '';
+                                    $t2Prompt = $q->metadata['task2']['prompt'] ?? $q->metadata['task2']['instruction'] ?? '';
                                 @endphp
                                 <div class="space-y-4">
                                     {{-- Task 1 --}}
                                     <div class="rounded-xl border border-gray-200 overflow-hidden">
+                                        @if($t1Prompt)
+                                        <div class="bg-blue-50 px-4 py-3 border-b border-blue-100">
+                                            <span class="text-sm font-semibold text-blue-900 block mb-1">Task 1 (Informal):</span>
+                                            <span class="text-sm text-blue-800 italic leading-snug">{{ $t1Prompt }}</span>
+                                        </div>
+                                        @endif
                                         <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-                                            <span class="text-sm font-semibold text-gray-700">Task 1 (Informal)</span>
+                                            <span class="text-sm font-semibold text-gray-700">{{ $t1Prompt ? 'Bài làm:' : 'Task 1 (Informal)' }}</span>
                                             <span class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">{{ str_word_count($t1Txt) }} từ</span>
                                         </div>
                                         <div class="p-4 text-sm text-gray-800 whitespace-pre-wrap min-h-[120px]">{{ $t1Txt ? trim($t1Txt) : '(Bỏ trống)' }}</div>
                                     </div>
                                     {{-- Task 2 --}}
                                     <div class="rounded-xl border border-gray-200 overflow-hidden">
+                                        @if($t2Prompt)
+                                        <div class="bg-indigo-50 px-4 py-3 border-b border-indigo-100">
+                                            <span class="text-sm font-semibold text-indigo-900 block mb-1">Task 2 (Formal):</span>
+                                            <span class="text-sm text-indigo-800 italic leading-snug">{{ $t2Prompt }}</span>
+                                        </div>
+                                        @endif
                                         <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-                                            <span class="text-sm font-semibold text-gray-700">Task 2 (Formal)</span>
+                                            <span class="text-sm font-semibold text-gray-700">{{ $t2Prompt ? 'Bài làm:' : 'Task 2 (Formal)' }}</span>
                                             <span class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">{{ str_word_count($t2Txt) }} từ</span>
                                         </div>
                                         <div class="p-4 text-sm text-gray-800 whitespace-pre-wrap min-h-[120px]">{{ $t2Txt ? trim($t2Txt) : '(Bỏ trống)' }}</div>
@@ -342,7 +354,7 @@
                                     @foreach($subQs as $sqIdx => $sq)
                                         @php
                                             $sqAns  = is_array($ans) ? (is_string($ans[$sqIdx] ?? null) ? $ans[$sqIdx] : '') : '';
-                                            $sqQTxt = is_array($sq) ? ($sq['question'] ?? '') : (is_string($sq) ? $sq : '');
+                                            $sqQTxt = is_array($sq) ? ($sq['prompt'] ?? $sq['question'] ?? '') : (is_string($sq) ? $sq : '');
                                             $cm     = $colMap[$sqIdx % count($colMap)];
                                         @endphp
                                         <div class="rounded-xl border border-gray-200 overflow-hidden">
@@ -356,19 +368,47 @@
                                     @endforeach
                                 </div>
 
-                            @else
-                                @php $text = is_string($ans) ? $ans : (is_array($ans) ? implode("\n\n", array_filter($ans, 'is_string')) : ''); @endphp
+                            @elseif($partNum == 2)
+                                @php 
+                                    $p2Text = is_string($ans) ? $ans : (is_array($ans) ? implode("\n", array_filter($ans, 'is_string')) : ''); 
+                                    $scenario = $q->metadata['scenario'] ?? $q->stem ?? '';
+                                @endphp
                                 <div class="rounded-xl border border-gray-200 overflow-hidden">
-                                    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-end">
-                                        <span class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">{{ str_word_count($text ?? '') }} từ</span>
+                                    @if($scenario)
+                                    <div class="bg-indigo-50 px-4 py-3 border-b border-indigo-100">
+                                        <span class="text-sm font-semibold text-indigo-900 block mb-1">Yêu cầu / Tình huống:</span>
+                                        <span class="text-sm text-indigo-800 italic leading-snug">{{ $scenario }}</span>
                                     </div>
-                                    <div class="p-4 text-sm text-gray-800 whitespace-pre-wrap min-h-[160px]">{{ $text ? trim($text) : '(Bỏ trống)' }}</div>
+                                    @endif
+                                    <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+                                        <span class="text-sm font-semibold text-gray-700">Bài làm:</span>
+                                        <span class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">{{ str_word_count($p2Text ?? '') }} từ</span>
+                                    </div>
+                                    <div class="p-4 text-sm text-gray-800 whitespace-pre-wrap min-h-[120px]">{{ $p2Text ? trim($p2Text) : '(Bỏ trống)' }}</div>
+                                </div>
+
+                            @elseif($partNum == 1)
+                                @php $fields = $q->metadata['fields'] ?? []; @endphp
+                                <div class="space-y-4">
+                                    @for($i = 0; $i < 5; $i++)
+                                        @php
+                                            $fieldAns = is_array($ans) ? ($ans[$i] ?? '') : '';
+                                            $fieldLabel = $fields[$i]['label'] ?? 'Câu ' . ($i + 1);
+                                        @endphp
+                                        <div class="rounded-xl border border-gray-200 overflow-hidden">
+                                            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-3">
+                                                <span class="text-sm font-medium text-gray-800 flex-1 leading-snug"><span class="font-bold text-gray-500 mr-1">{{ $i+1 }}.</span> {{ $fieldLabel }}</span>
+                                                <span class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200 shrink-0">{{ str_word_count($fieldAns) }} từ</span>
+                                            </div>
+                                            <div class="p-3 text-sm text-gray-800 whitespace-pre-wrap font-medium">{{ $fieldAns ? trim($fieldAns) : '(Bỏ trống)' }}</div>
+                                        </div>
+                                    @endfor
                                 </div>
                             @endif
                         </div>
 
                         {{-- Grading Form Area --}}
-                        <div class="bg-indigo-50/30 rounded-xl border border-indigo-100 p-5"
+                        <div class="bg-indigo-50/30 rounded-xl border border-indigo-100 p-5 shrink-0"
                              x-data="{ score: {{ $answer->writingReview->total_score ?? 0 }} }">
                              
                             <div class="space-y-4">

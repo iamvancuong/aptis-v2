@@ -12,11 +12,6 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -28,6 +23,8 @@ class User extends Authenticatable
         'speaking_ai_reset_version',
         'ai_extra_uses',
         'expires_at',
+        'target_level',
+        'max_devices',
     ];
 
     /**
@@ -104,5 +101,40 @@ class User extends Authenticatable
     {
         if (!$this->expires_at) return null;
         return now()->diffInDays($this->expires_at, false);
+    }
+
+    /**
+     * AI Writing Credit Helpers
+     */
+    public function getRemainingWritingAiCredits(): int|string
+    {
+        if ($this->isAdmin()) {
+            return 'unlimited';
+        }
+
+        $resetVersion = $this->ai_reset_version ?? 0;
+        $used = $this->writingAiUsages()
+            ->where('reset_version', $resetVersion)
+            ->sum('usage_count');
+
+        $defaultLimit = (int)(\App\Models\Setting::where('key', 'default_ai_limit')->value('value') ?? 10);
+        $totalLimit = $defaultLimit + ($this->ai_extra_uses ?? 0);
+
+        return max(0, $totalLimit - (int)$used);
+    }
+
+    public function recordWritingAiUsage(int $part): void
+    {
+        if ($this->isAdmin()) {
+            return;
+        }
+
+        $resetVersion = $this->ai_reset_version ?? 0;
+        $usage = $this->writingAiUsages()->firstOrCreate([
+            'writing_part' => $part,
+            'reset_version' => $resetVersion
+        ]);
+
+        $usage->increment('usage_count');
     }
 }

@@ -13,7 +13,11 @@ class SettingController extends Controller
         $zaloSetting = Setting::where('key', 'zalo_contact_number')->first();
         $writingLimitSetting = Setting::where('key', 'writing_grading_limit')->first();
         $speakingLimitSetting = Setting::where('key', 'speaking_grading_limit')->first();
-        return view('admin.settings.index', compact('zaloSetting', 'writingLimitSetting', 'speakingLimitSetting'));
+        $defaultMaxDevices = Setting::where('key', 'default_max_devices')->first();
+        $defaultAiLimit = Setting::where('key', 'default_ai_limit')->first();
+        return view('admin.settings.index', compact(
+            'zaloSetting', 'writingLimitSetting', 'speakingLimitSetting', 'defaultMaxDevices', 'defaultAiLimit'
+        ));
     }
 
     public function update(Request $request)
@@ -22,6 +26,8 @@ class SettingController extends Controller
             'zalo_contact_number' => 'required|string|max:20',
             'writing_grading_limit' => 'required|integer|min:1',
             'speaking_grading_limit' => 'required|integer|min:1',
+            'default_max_devices' => 'required|integer|min:1|max:10',
+            'default_ai_limit' => 'required|integer|min:1',
         ]);
 
         Setting::updateOrCreate(
@@ -47,6 +53,26 @@ class SettingController extends Controller
                 'label' => 'Giới hạn gửi bài Speaking (lần)'
             ]
         );
+
+        Setting::updateOrCreate(
+            ['key' => 'default_max_devices'],
+            [
+                'value' => $request->default_max_devices,
+                'label' => 'Số lượng thiết bị tối đa mặc định'
+            ]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'default_ai_limit'],
+            [
+                'value' => $request->default_ai_limit,
+                'label' => 'Số lượt dùng AI tối đa mặc định'
+            ]
+        );
+
+        if ($request->has('sync_max_devices')) {
+             \App\Models\User::query()->update(['max_devices' => $request->default_max_devices]);
+        }
 
         return redirect()->route('admin.settings.index')->with('success', 'Đã cập nhật cài đặt thành công!');
     }

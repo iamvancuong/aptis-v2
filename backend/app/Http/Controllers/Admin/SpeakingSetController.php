@@ -207,15 +207,15 @@ class SpeakingSetController extends Controller
         ];
 
         if (!$isUpdate) {
-            $rules['part2_image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part3_image1'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part3_image2'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part4_image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part2_image'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part3_image1'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part3_image2'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part4_image'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
         } else {
-            $rules['part2_image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part3_image1'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part3_image2'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
-            $rules['part4_image'] = 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part2_image'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part3_image1'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part3_image2'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
+            $rules['part4_image'] = 'nullable|mimes:jpeg,png,jpg,gif,svg,webp|max:2048';
         }
 
         return $request->validate($rules);

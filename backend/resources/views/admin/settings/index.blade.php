@@ -57,8 +57,8 @@
 
             <!-- Grading Limits Section -->
             <div class="px-6 py-4 bg-gray-50 border-y border-gray-200 -mx-6 mb-6 mt-8">
-                <h2 class="text-lg font-bold text-gray-800">Giới hạn Yêu cầu Chấm điểm</h2>
-                <p class="text-sm text-gray-500 mt-1">Cấu hình số lần tối đa học viên được gửi bài cho Giáo viên chấm điểm đối với từng Kỹ năng.</p>
+                <h2 class="text-lg font-bold text-gray-800">Giới hạn Yêu cầu Chấm điểm & Mặc định</h2>
+                <p class="text-sm text-gray-500 mt-1">Cấu hình các giới hạn chấm điểm và các thông số mặc định khi tạo mới người dùng.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -92,6 +92,49 @@
                             required>
                     </div>
                     @error('speaking_grading_limit')
+                        <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <!-- Default AI Limit -->
+                <div>
+                    <label for="default_ai_limit" class="block text-sm font-semibold text-gray-700 mb-2">Số lượt AI chấm điểm mặc định (lần) <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <input type="number" id="default_ai_limit" name="default_ai_limit" 
+                            value="{{ old('default_ai_limit', $defaultAiLimit->value ?? 10) }}" min="1" max="1000"
+                            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required>
+                    </div>
+                    @error('default_ai_limit')
+                        <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Default Max Devices -->
+                <div>
+                    <label for="default_max_devices" class="block text-sm font-semibold text-gray-700 mb-2">Số lượng Đăng nhập Thiết bị (Mặc định) <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <input type="number" id="default_max_devices" name="default_max_devices" 
+                            value="{{ old('default_max_devices', $defaultMaxDevices->value ?? 2) }}" min="1" max="10"
+                            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required>
+                    </div>
+                    <div class="mt-2 flex items-start gap-2">
+                        <div class="flex items-center h-5">
+                            <input id="sync_max_devices" name="sync_max_devices" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        </div>
+                        <div class="text-xs text-gray-500 leading-snug">
+                            <label for="sync_max_devices" class="font-medium text-gray-700 cursor-pointer">Cập nhật ngay cho toàn bộ hệ thống hiện tại</label>
+                            <p>Nếu không chọn, máy chủ chỉ tạo giá trị giới hạn này cho các tài khoản tạo mới.</p>
+                        </div>
+                    </div>
+                    @error('default_max_devices')
                         <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
                     @enderror
                 </div>

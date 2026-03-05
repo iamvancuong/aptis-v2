@@ -139,7 +139,7 @@ class WritingReviewController extends Controller
         $totalPossible = $writingAnswers->sum(fn($a) => $a->question->point ?? 10);
         $finalScore = $totalPossible > 0 ? ($totalEarned / $totalPossible) * 100 : 0;
 
-        $attempt->update(['score' => $finalScore]);
+        $attempt->update(['score' => $finalScore, 'is_seen' => false]);
 
         return redirect()->route('admin.writing-reviews.index')->with('success', 'Đã chấm bài Writing thành công!');
     }
@@ -172,7 +172,7 @@ class WritingReviewController extends Controller
                 $attempt->refresh()->load('attemptAnswers.question');
                 $totalEarned   = $attempt->attemptAnswers->sum('score');
                 $totalPossible = $attempt->attemptAnswers->sum(fn($a) => $a->question->point ?? 10);
-                $attempt->update(['score' => $totalPossible > 0 ? round($totalEarned / $totalPossible * 100, 2) : 0]);
+                $attempt->update(['score' => $totalPossible > 0 ? round($totalEarned / $totalPossible * 100, 2) : 0, 'is_seen' => false]);
                 $count++;
             }
         }

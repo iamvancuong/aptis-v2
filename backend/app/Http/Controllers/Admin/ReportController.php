@@ -32,7 +32,11 @@ class ReportController extends Controller
 
             $bySkill = function (string $sk, ?string $mode = null) use ($attempts) {
                 $q = $attempts->where('skill', $sk);
-                if ($mode) $q = $q->where('mode', $mode);
+                if ($mode === 'mock_test') {
+                    $q = $q->whereIn('mode', ['mock', 'mock_test']);
+                } elseif ($mode) {
+                    $q = $q->where('mode', $mode);
+                }
                 return $q;
             };
 
@@ -81,9 +85,10 @@ class ReportController extends Controller
             fputcsv($h, ['Tên', 'Email', 'Tổng bài', 'Avg Reading', 'Avg Listening', 'Avg Grammar', 'Avg Writing (mock)', 'Mock Tests', 'AI dùng', 'Hết hạn']);
             foreach ($users as $user) {
                 $attempts = $user->attempts->whereNotNull('score');
-                $avg = fn($sk, $m = null) => ($m
-                    ? $attempts->where('skill', $sk)->where('mode', $m)
-                    : $attempts->where('skill', $sk))->avg('score');
+                $avg = fn($sk, $m = null) => ($m === 'mock_test'
+                    ? $attempts->where('skill', $sk)->whereIn('mode', ['mock', 'mock_test'])
+                    : ($m ? $attempts->where('skill', $sk)->where('mode', $m) : $attempts->where('skill', $sk))
+                )->avg('score');
 
                 fputcsv($h, [
                     $user->name,

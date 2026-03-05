@@ -110,6 +110,10 @@ class HistoryController extends Controller
 
         $attempt->load(['attemptAnswers.question', 'attemptAnswers.writingReview.reviewer']);
 
+        if (!$attempt->is_seen && $attempt->score !== null) {
+            $attempt->update(['is_seen' => true]);
+        }
+
         return view('history.show', compact('attempt'));
     }
 
@@ -155,6 +159,10 @@ class HistoryController extends Controller
         }
 
         $attempt->load(['attemptAnswers.question']);
+
+        if (!$attempt->is_seen && $attempt->score !== null) {
+            $attempt->update(['is_seen' => true]);
+        }
 
         return view('history.speaking-show', compact('attempt'));
     }

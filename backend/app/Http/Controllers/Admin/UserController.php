@@ -39,6 +39,15 @@ class UserController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+
+        // Filter by account type (unlimited vs limited)
+        if ($request->filled('account_type')) {
+            if ($request->account_type === 'unlimited') {
+                $query->whereNull('expires_at');
+            } elseif ($request->account_type === 'limited') {
+                $query->whereNotNull('expires_at');
+            }
+        }
         
         // Filter by expiration status
         if ($request->filled('expiration')) {
@@ -104,6 +113,11 @@ class UserController extends Controller
             $data['password'] = bcrypt($data['password']);
         }
         
+        // Assign Default Max Devices
+        if (!isset($data['max_devices'])) {
+            $data['max_devices'] = (int)(\App\Models\Setting::where('key', 'default_max_devices')->value('value') ?? 2);
+        }
+
         $user = User::create($data);
         
         $message = 'User created successfully.';

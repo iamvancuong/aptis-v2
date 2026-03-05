@@ -72,7 +72,7 @@
         </div>
 
         <!-- Status -->
-        <div class="mb-6">
+        <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">
                 Status <span class="text-red-500">*</span>
             </label>
@@ -81,6 +81,23 @@
                 <option value="blocked" {{ old('status', $user->status) == 'blocked' ? 'selected' : '' }}>Blocked</option>
             </select>
             @error('status')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <!-- Target Level -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Target Level (Mục tiêu)</label>
+            <select name="target_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Không bắt buộc (Mặc định B2)</option>
+                <option value="A1" {{ old('target_level', $user->target_level) == 'A1' ? 'selected' : '' }}>A1</option>
+                <option value="A2" {{ old('target_level', $user->target_level) == 'A2' ? 'selected' : '' }}>A2</option>
+                <option value="B1" {{ old('target_level', $user->target_level) == 'B1' ? 'selected' : '' }}>B1</option>
+                <option value="B2" {{ old('target_level', $user->target_level) == 'B2' ? 'selected' : '' }}>B2</option>
+                <option value="C1" {{ old('target_level', $user->target_level) == 'C1' ? 'selected' : '' }}>C1</option>
+                <option value="C2" {{ old('target_level', $user->target_level) == 'C2' ? 'selected' : '' }}>C2</option>
+            </select>
+            @error('target_level')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
         </div>

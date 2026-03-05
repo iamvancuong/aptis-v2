@@ -43,7 +43,7 @@ class DashboardController extends Controller
                 }
             }
 
-            $skillKey = $attempt->mode === 'mock_test' ? 'mock_test' : $attempt->skill;
+            $skillKey = in_array($attempt->mode, ['mock', 'mock_test']) ? 'mock_test' : $attempt->skill;
 
             if (isset($groupedStats[$skillKey])) {
                 if (!isset($groupedStats[$skillKey][$dateLabel])) {
@@ -97,29 +97,28 @@ class DashboardController extends Controller
         $avgScore      = $totalAttempts > 0 ? round($attempts->avg('score'), 1) : null;
 
         // AI usage: check against current reset_version (overall usage)
-        $resetVersion = $user->ai_reset_version ?? 0;
-        $aiUsagesCount = WritingAiUsage::where('user_id', $user->id)
-            ->where('reset_version', $resetVersion)
-            ->sum('usage_count');
-            
-        $totalAiLimit = 10 + ($user->ai_extra_uses ?? 0);
-        $aiRemaining  = max(0, $totalAiLimit - $aiUsagesCount);
+        $aiRemaining = $user->getRemainingWritingAiCredits();
+        
+        $defaultAiLimit = (int)(\App\Models\Setting::where('key', 'default_ai_limit')->value('value') ?? 10);
+        $totalAiLimit = $user->isAdmin() ? -1 : ($defaultAiLimit + ($user->ai_extra_uses ?? 0));
 
-        if ($user->isAdmin()) {
-            $totalAiLimit = -1; // -1 represents unlimited
-            $aiRemaining  = -1;
-        }
 
         // Account expiry
         $expiresAt          = $user->expires_at;
         $daysUntilExpiry    = $user->daysUntilExpiration();
         $expirationStatus   = $user->expirationStatus();
 
-        // Writing graded notification: attempts with at least one answer graded since last visit
-        $newlyGraded = \App\Models\Attempt::where('user_id', $user->id)
+        // Unseen graded attempts
+        $unseenWriting = \App\Models\Attempt::where('user_id', $user->id)
             ->where('skill', 'writing')
-            ->whereHas('attemptAnswers', fn($q) => $q->where('grading_status', 'graded'))
-            ->whereDate('updated_at', '>=', now()->subDays(7))
+            ->where('is_seen', false)
+            ->whereNotNull('score')
+            ->count();
+
+        $unseenSpeaking = \App\Models\Attempt::where('user_id', $user->id)
+            ->where('skill', 'speaking')
+            ->where('is_seen', false)
+            ->whereNotNull('score')
             ->count();
 
         return view('dashboard', compact(
@@ -131,7 +130,8 @@ class DashboardController extends Controller
             'expiresAt',
             'daysUntilExpiry',
             'expirationStatus',
-            'newlyGraded'
+            'unseenWriting',
+            'unseenSpeaking'
         ));
     }
 }

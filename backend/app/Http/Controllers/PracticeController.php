@@ -149,13 +149,28 @@ class PracticeController extends Controller
             // For writing practice: dispatch AI grading jobs asynchronously
             if ($set->quiz->skill === 'writing') {
                 $attempt->load(['attemptAnswers.question']);
+                $remainingCredits = $user->getRemainingWritingAiCredits();
+                
                 foreach ($attempt->attemptAnswers as $aa) {
                     if ($aa->grading_status === 'pending' && $aa->question) {
+                        // Check credits
+                        if ($remainingCredits !== 'unlimited' && $remainingCredits <= 0) {
+                            Log::info("AI Limit reached for user {$user->id}, skipping auto-grading for answer {$aa->id}");
+                            $aa->update(['grading_status' => 'limit_reached']);
+                            continue;
+                        }
+
                         ProcessWritingGrading::dispatch($aa->id, [
                             'part'       => $aa->question->part,
                             'word_limit' => $aa->question->metadata['word_limit'] ?? null,
                             'stem'       => $aa->question->stem,
                         ]);
+
+                        // Record usage and decrement local counter
+                        $user->recordWritingAiUsage($aa->question->part);
+                        if ($remainingCredits !== 'unlimited') {
+                            $remainingCredits--;
+                        }
                     }
                 }
             }
@@ -191,24 +206,21 @@ class PracticeController extends Controller
         $user = $request->user();
         if (!$user) return response()->json(['error' => 'Unauthorized'], 401);
 
+        $remaining = $user->getRemainingWritingAiCredits();
+        
         $resetVersion = $user->ai_reset_version ?? 0;
-        $aiUsagesCount = WritingAiUsage::where('user_id', $user->id)
+        $used = WritingAiUsage::where('user_id', $user->id)
             ->where('reset_version', $resetVersion)
             ->sum('usage_count');
 
-        $limit = 10 + ($user->ai_extra_uses ?? 0);
-        $remaining = max(0, $limit - $aiUsagesCount);
-
-        if ($user->isAdmin()) {
-            $limit = '∞';
-            $remaining = 'unlimited';
-        }
+        $defaultAiLimit = (int)(\App\Models\Setting::where('key', 'default_ai_limit')->value('value') ?? 10);
+        $limit = $user->isAdmin() ? '∞' : ($defaultAiLimit + ($user->ai_extra_uses ?? 0));
 
         // Return same structure for all parts
         $status = [];
         for ($i = 1; $i <= 4; $i++) {
              $status[$i] = [
-                 'used' => $user->isAdmin() ? '∞' : $aiUsagesCount,
+                 'used' => $user->isAdmin() ? '∞' : (int)$used,
                  'limit' => $limit,
                  'remaining' => $remaining
              ];
@@ -230,14 +242,9 @@ class PracticeController extends Controller
             return response()->json(['message' => 'Invalid question type.'], 400);
         }
 
-        $resetVersion = $user->ai_reset_version ?? 0;
-        $aiUsagesCount = WritingAiUsage::where('user_id', $user->id)
-            ->where('reset_version', $resetVersion)
-            ->sum('usage_count');
-
-        $limit = 10 + ($user->ai_extra_uses ?? 0);
+        $remaining = $user->getRemainingWritingAiCredits();
         
-        if (!$user->isAdmin() && $aiUsagesCount >= $limit) {
+        if ($remaining !== 'unlimited' && $remaining <= 0) {
             return response()->json(['message' => 'Bạn đã hết lượt chấm AI. Vui lòng liên hệ Admin để thêm lượt.'], 403);
         }
 
@@ -254,9 +261,10 @@ class PracticeController extends Controller
                 'answer' => $answer->answer
             ];
 
-            $result = $this->aiService->gradeWriting($data);
+            $targetLevel = $user->target_level ?? 'B2';
+            $result = $this->aiService->gradeWriting($data, $targetLevel);
 
-            DB::transaction(function () use ($answer, $result, $user, $resetVersion) {
+            DB::transaction(function () use ($answer, $result, $user) {
                 // Update answer
                 $answer->update([
                     'ai_metadata' => $result,
@@ -270,14 +278,7 @@ class PracticeController extends Controller
                 }
 
                 // Record usage
-                if (!$user->isAdmin()) {
-                    $usage = WritingAiUsage::firstOrCreate([
-                        'user_id' => $user->id,
-                        'writing_part' => $answer->question->part,
-                        'reset_version' => $resetVersion
-                    ]);
-                    $usage->increment('usage_count');
-                }
+                $user->recordWritingAiUsage($answer->question->part);
             });
 
             // Update attempt score locally

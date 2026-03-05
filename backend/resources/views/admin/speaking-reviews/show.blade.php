@@ -3,32 +3,58 @@
 @section('title', 'Chấm Điểm Speaking - ' . ($attempt->user->name ?? 'User'))
 
 @section('content')
-<div class="max-w-5xl mx-auto pb-12">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <a href="{{ route('admin.speaking-reviews.index') }}" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-2">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Quay lại danh sách
-            </a>
-            <h1 class="text-2xl font-bold text-gray-800">
-                Chấm Bài Sinh Viên: <span class="text-blue-600">{{ $attempt->user->name ?? 'Unknown' }}</span>
-            </h1>
-            <p class="text-sm text-gray-500 mt-1">Đề thi: {{ $attempt->set->title ?? 'Không rõ' }} | Ngày nộp: {{ $attempt->finished_at ? $attempt->finished_at->format('d/m/Y H:i') : '' }}</p>
-        </div>
-    </div>
+<div class="space-y-6 pb-24 max-w-7xl mx-auto">
 
-    <!-- Instructions -->
-    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-8 shadow-sm">
-        <h3 class="text-blue-800 font-semibold mb-1 flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Hướng dẫn chấm điểm
-        </h3>
-        <p class="text-blue-700 text-sm">Vui lòng nghe lại file thu âm của sinh viên ở từng phần. Nhập điểm và phản hồi của Giám khảo tương ứng trước khi lưu.</p>
+    {{-- Top Header Area --}}
+    <div>
+        <a href="{{ route('admin.speaking-reviews.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-4">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Quay lại danh sách
+        </a>
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                    Chấm bài: <span class="text-indigo-600">{{ $attempt->user->name ?? 'Student' }}</span>
+                </h1>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
+                    <div class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        Set đề: <strong class="text-gray-900">{{ $attempt->set->title ?? '—' }}</strong>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Nộp lúc: <span class="text-gray-900">{{ $attempt->finished_at ? $attempt->finished_at->format('H:i - d/m/Y') : '—' }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {{-- Progress Badge --}}
+            <div class="shrink-0">
+                @php
+                    $allGraded = $answers->every(fn($a) => $a->grading_status === 'graded');
+                    $gradedCount = $answers->where('grading_status', 'graded')->count();
+                    $totalCount = $answers->count();
+                @endphp
+                @if($allGraded && $totalCount > 0)
+                    <div class="inline-flex items-center gap-2 bg-green-50 border border-green-200 px-4 py-2 rounded-lg">
+                        <span class="text-green-600">✅</span>
+                        <span class="text-sm font-semibold text-green-700">Đã chấm xong</span>
+                    </div>
+                @else
+                    <div class="inline-flex items-center gap-3 bg-amber-50 border border-amber-200 px-4 py-2 rounded-lg">
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                        </span>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-amber-600 font-medium">Tiến độ chấm</span>
+                            <span class="text-sm font-bold text-amber-800">{{ $gradedCount }} / {{ $totalCount }} phần</span>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
     </div>
 
     <form action="{{ route('admin.speaking-reviews.grade', $attempt) }}" method="POST">
@@ -61,18 +87,44 @@
                 @endif
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="border-b border-gray-100 bg-gray-50 px-6 py-4 flex justify-between items-center">
-                        <h2 class="text-lg font-bold text-gray-800">Part {{ $q->part }}</h2>
-                        <span class="text-sm font-medium text-gray-500">Max Score: {{ $q->point }} PTS</span>
+                    {{-- Header of the Part --}}
+                    <div class="px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4 bg-gray-50">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-indigo-600 text-white font-bold text-lg flex items-center justify-center shadow-sm">
+                                {{ $q->part }}
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-gray-900">{{ $q->title ?? 'Speaking Part ' . $q->part }}</h2>
+                                <p class="text-sm text-gray-500">Max Score: 10 PTS</p>
+                            </div>
+                        </div>
+                        <div>
+                            @if($ans->grading_status === 'graded')
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-green-100/50 border border-green-200 rounded-lg">
+                                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                    <span class="text-sm font-semibold text-green-700">Điểm: {{ $ans->score ?? 0 }}/10</span>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-lg">
+                                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                                    <span class="text-sm font-medium text-gray-600">Chờ chấm</span>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                     
-                    <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {{-- 2-Column Layout --}}
+                    <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
                         
-                        <!-- Left: Prompt & Audio -->
-                        <div>
-                            <div class="mb-4">
-                                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-widest border-b pb-2 mb-3">Tình huống / Đề bài</h4>
-                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        {{-- ================= LEFT COLUMN ================= --}}
+                        <div class="p-6 space-y-6">
+                            {{-- Prompt --}}
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-sm tracking-wide mb-3 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    NỘI DUNG ĐỀ BÀI
+                                </h3>
+                                <div class="bg-gray-50 rounded-xl p-5 text-sm text-gray-800 space-y-3 border border-gray-100">
                                     <p class="text-gray-800 font-medium whitespace-pre-line">{{ $q->stem }}</p>
                                     @if(isset($meta['image_path']) || isset($meta['image_paths']))
                                         <div class="mt-3 flex gap-2 flex-wrap">
@@ -99,19 +151,113 @@
                                     @endif
 
                                     @if(!empty($meta['sample_answer']))
-                                        <div class="mt-4 pt-3 border-t border-emerald-100 bg-emerald-50/30 p-3 rounded-lg">
-                                            <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
-                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                Đáp án tham khảo (Admin):
-                                            </p>
-                                            <div class="text-sm text-emerald-900 leading-relaxed whitespace-pre-wrap font-medium">{{ trim($meta['sample_answer']) }}</div>
+                                        <div class="mt-4 pt-4 border-t border-emerald-100" x-data="{ open: false }">
+                                            <button type="button" @click="open = !open" class="flex items-center justify-between w-full text-left focus:outline-none group">
+                                                <span class="text-xs text-emerald-700 font-bold uppercase tracking-wider flex items-center gap-2">
+                                                    <span class="p-1 rounded bg-emerald-100/50 group-hover:bg-emerald-200/50 transition-colors">
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    </span>
+                                                    Đáp án tham khảo (Admin)
+                                                </span>
+                                                <svg class="w-4 h-4 text-emerald-500 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </button>
+                                            <div x-show="open" x-collapse x-cloak class="mt-3 bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl">
+                                                <div class="text-sm text-emerald-900 leading-relaxed whitespace-pre-wrap font-medium">{{ trim($meta['sample_answer']) }}</div>
+                                            </div>
                                         </div>
                                     @endif
                                 </div>
                             </div>
                             
+                            {{-- AI Feedback --}}
+                            @php
+                                $hasAiFeedback = !empty($ans->ai_metadata['feedback']);
+                                $aiFeedback = $ans->ai_metadata['feedback'] ?? null;
+                                $schemaVersion = $aiFeedback['schema_version'] ?? 3;
+                            @endphp
+
+                            @if($hasAiFeedback)
+                                <div x-data="{ openAi: false }" class="bg-white border border-indigo-200 rounded-xl overflow-hidden shadow-sm mt-3">
+                                    <button type="button" @click="openAi = !openAi" class="w-full bg-indigo-50/80 px-4 py-3 flex items-center justify-between text-indigo-900 hover:bg-indigo-100 transition-colors border-b border-indigo-100/50">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                            <span class="font-bold text-indigo-900 text-sm">Góp ý tự động từ AI</span>
+                                        </div>
+                                        <svg class="w-4 h-4 text-indigo-500 transition-transform duration-200" :class="{ 'rotate-180': openAi }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+                                    <div x-show="openAi" x-collapse x-cloak>
+                                        <div class="p-4 bg-white space-y-5 text-sm">
+                                            {{-- Scores grid --}}
+                                            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                                @foreach(['grammar', 'vocabulary', 'coherence', 'task_fulfillment'] as $c)
+                                                    @if(isset($aiFeedback['scores'][$c]))
+                                                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 text-center">
+                                                            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{{ str_replace('_', ' ', $c) }}</div>
+                                                            <div class="text-base font-black text-indigo-600">{{ $aiFeedback['scores'][$c] }}/5</div>
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                            
+                                            {{-- Detailed Feedback --}}
+                                            @if($schemaVersion >= 3 && !empty($aiFeedback['part_responses']))
+                                                <div class="space-y-4">
+                                                    @foreach($aiFeedback['part_responses'] as $idx => $response)
+                                                        <div class="relative bg-white rounded-lg p-4 border border-indigo-100 shadow-sm mt-2">
+                                                            <div class="absolute -top-3 left-4 bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded-md">
+                                                                {{ $response['label'] ?? 'Phần ' . ($idx + 1) }}
+                                                            </div>
+                                                            
+                                                            <div class="mt-2 text-sm">
+                                                                @if(!empty($response['detailed_corrections']))
+                                                                    <div class="space-y-3 mb-4">
+                                                                        <div class="text-xs font-bold text-gray-500 uppercase">Sửa lỗi:</div>
+                                                                        @foreach($response['detailed_corrections'] as $correction)
+                                                                            <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                                                                                <div class="line-through text-red-400 font-medium mb-1">{{ $correction['original'] ?? '' }}</div>
+                                                                                <div class="text-green-600 font-bold mb-1">{{ $correction['corrected'] ?? '' }}</div>
+                                                                                <div class="text-xs text-slate-500 italic bg-white p-2 border border-slate-100 rounded">{{ $correction['explanation'] ?? '' }}</div>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                @endif
+
+                                                                @if(!empty($response['improved_sample']))
+                                                                    <div>
+                                                                        <div class="text-xs font-bold text-gray-500 uppercase mb-2 mt-4 pt-4 border-t border-gray-100">Bài mẫu tham khảo (*Speech):</div>
+                                                                        <div class="text-sm text-indigo-900 bg-indigo-50 p-4 rounded-lg font-medium leading-relaxed whitespace-pre-wrap">{{ $response['improved_sample'] }}</div>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                            
+                                            {{-- General Suggestions --}}
+                                            @if(!empty($aiFeedback['suggestions']))
+                                                <div class="mt-4 bg-amber-50 p-4 rounded-lg border border-amber-100">
+                                                    <div class="text-sm font-bold text-amber-800 mb-2 flex items-center gap-2">
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        Lời khuyên chung
+                                                    </div>
+                                                    <ul class="list-disc pl-5 text-amber-900 space-y-1 text-xs">
+                                                        @foreach($aiFeedback['suggestions'] as $suggestion)
+                                                            <li>{{ $suggestion }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            
                             <div>
-                                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-widest border-b pb-2 mb-3">Bản ghi âm 🎤</h4>
+                                <h3 class="font-bold text-gray-900 text-sm tracking-wide mb-3 mt-6 border-t pt-4 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                    BẢN GHI ÂM CỦA HỌC SINH
+                                </h3>
                                 {{-- Already handled in loop top --}}
 
                                 @if(count($audioUrls) > 0)
@@ -135,21 +281,62 @@
                             </div>
                         </div>
                         
-                        <!-- Right: Grading Form -->
-                        <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                            <h4 class="text-sm font-semibold text-indigo-700 uppercase tracking-widest border-b border-indigo-100 pb-2 mb-4 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                Kết Quả Chấm Điểm
-                            </h4>
+                        {{-- ================= RIGHT COLUMN ================= --}}
+                        <div class="p-6 flex flex-col gap-6 bg-white">
                             
-                            <div class="mb-5">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Điểm số (Tối đa: {{ $q->point }}) <span class="text-red-500">*</span></label>
-                                <input type="number" step="0.1" min="0" max="{{ $q->point }}" name="grades[{{ $ans->id }}][score]" value="{{ old('grades.'.$ans->id.'.score', $ans->score) }}" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg font-bold text-gray-900 transition-colors" required>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nhận xét của Giám khảo (Tùy chọn)</label>
-                                <textarea name="grades[{{ $ans->id }}][feedback]" rows="5" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 transition-colors" placeholder="VD: Pronunciation is clear, but fluency needs improvement...">{{ old('grades.'.$ans->id.'.feedback', $ans->feedback) }}</textarea>
+                            {{-- Form Container --}}
+                            <div class="bg-indigo-50/30 rounded-xl border border-indigo-100 p-5 shrink-0"
+                                 x-data="{ score: {{ $ans->score ?? 0 }} }">
+                                 
+                                <div class="space-y-4">
+                                    {{-- Score Input --}}
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <label class="text-sm font-bold text-gray-900">Điểm số</label>
+                                            <div class="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-gray-200 shadow-sm">
+                                                <input type="number" step="0.5" min="0" max="10" x-model="score"
+                                                    class="w-14 px-1 text-center bg-transparent border-none focus:ring-0 font-bold text-indigo-600 text-lg p-0 h-auto">
+                                                <span class="text-sm text-gray-400">/10</span>
+                                            </div>
+                                        </div>
+                                        <input type="range" name="grades[{{ $ans->id }}][score]" min="0" max="10" step="0.5"
+                                            x-model="score"
+                                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                                    </div>
+
+                                    {{-- Quick Preset Buttons --}}
+                                    <div>
+                                        <div class="flex flex-wrap gap-2">
+                                            @php
+                                                $presets = [0, 2, 4, 5, 6, 7, 8, 9, 10];
+                                            @endphp
+                                            
+                                            @foreach($presets as $preset)
+                                                <button type="button" @click="score = {{ $preset }}"
+                                                    :class="score == {{ $preset }} ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'"
+                                                    class="w-8 h-8 rounded-md border text-sm font-medium transition-colors flex items-center justify-center">
+                                                    {{ $preset }}
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    {{-- Feedback TextBox --}}
+                                    <div>
+                                        <label class="text-sm font-bold text-gray-900 mb-2 block">Nhận xét của giáo viên</label>
+                                        <textarea name="grades[{{ $ans->id }}][feedback]" rows="3" id="comment-{{ $ans->id }}"
+                                            class="ckeditor w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 resize-y bg-white"
+                                            placeholder="Ghi chú lỗi sai, khen ngợi...">{{ old('grades.'.$ans->id.'.feedback', $ans->feedback) }}</textarea>
+                                    </div>
+                                    
+                                    @if($ans->grading_status === 'graded')
+                                        <div class="pt-2">
+                                            <p class="text-xs text-gray-500 text-right">
+                                                Cập nhật lần cuối: <strong class="text-gray-700">{{ $ans->updated_at->format('d/m/Y H:i') }}</strong>
+                                            </p>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         
@@ -171,3 +358,43 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<style>
+    /* Restore Tailwind's reset styles for CKEditor content */
+    .ck-content strong { font-weight: bold; }
+    .ck-content em { font-style: italic; }
+    .ck-content u { text-decoration: underline; }
+    .ck-content s { text-decoration: line-through; }
+    .ck-content ul { list-style-type: disc; padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+    .ck-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+    .ck-content h1 { font-size: 2em; font-weight: bold; margin-top: 0.67em; margin-bottom: 0.67em; }
+    .ck-content h2 { font-size: 1.5em; font-weight: bold; margin-top: 0.83em; margin-bottom: 0.83em; }
+    .ck-content h3 { font-size: 1.17em; font-weight: bold; margin-top: 1em; margin-bottom: 1em; }
+    .ck-content p { margin-bottom: 0.5em; }
+    .ck-editor__editable_inline { min-height: 120px; }
+</style>
+
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof ClassicEditor !== 'undefined') {
+            document.querySelectorAll('textarea.ckeditor').forEach((textarea) => {
+                ClassicEditor.create(textarea, {
+                    toolbar: [
+                        'heading', '|',
+                        'bold', 'italic', 'strikethrough', '|',
+                        'bulletedList', 'numberedList', '|',
+                        'undo', 'redo'
+                    ],
+                    language: 'vi'
+                }).catch(error => {
+                    console.error(error);
+                });
+            });
+        } else {
+            console.error('CKEditor is not loaded!');
+        }
+    });
+</script>
+@endpush

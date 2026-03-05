@@ -9,19 +9,46 @@
 </div>
 
 {{-- Writing Graded Notification Banner --}}
-@if(($newlyGraded ?? 0) > 0)
-<div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+@if(($unseenWriting ?? 0) > 0)
+<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
     <div class="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-        <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="relative flex h-3 w-3 absolute -top-1 -right-1">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+        </span>
+        <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
     </div>
     <div class="flex-1">
         <p class="text-sm font-semibold text-green-800">
-            🎉 {{ $newlyGraded }} bài Writing của bạn đã được chấm trong 7 ngày qua!
+            🎉 Bạn có {{ $unseenWriting }} bài Writing vừa có điểm!
         </p>
-        <p class="text-xs text-green-600">Xem kết quả chi tiết trong lịch sử Writing</p>
+        <p class="text-xs text-green-600">Xem ngay kết quả và nhận xét từ giảng viên</p>
     </div>
     <a href="{{ route('writingHistory.index') }}"
        class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+        Xem ngay →
+    </a>
+</div>
+@endif
+
+{{-- Speaking Graded Notification Banner --}}
+@if(($unseenSpeaking ?? 0) > 0)
+<div class="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
+    <div class="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+        <span class="relative flex h-3 w-3 absolute -top-1 -right-1">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+        </span>
+        <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+    </div>
+    <div class="flex-1">
+        <p class="text-sm font-semibold text-orange-800">
+            🎉 Bạn có {{ $unseenSpeaking }} bài Speaking vừa có điểm!
+        </p>
+        <p class="text-xs text-orange-600">Xem ngay kết quả và nhận xét từ giảng viên</p>
+    </div>
+    <a href="{{ route('speakingHistory.index') }}"
+       class="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors">
         Xem ngay →
     </a>
 </div>

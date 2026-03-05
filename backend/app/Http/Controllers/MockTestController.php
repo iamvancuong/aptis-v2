@@ -332,14 +332,30 @@ class MockTestController extends Controller
 
         // For writing mock test: dispatch AI grading jobs asynchronously
         if ($mockTest->skill === 'writing') {
+            $user = auth()->user();
+            $remainingCredits = $user->getRemainingWritingAiCredits();
+            
             $attempt->load(['attemptAnswers.question']);
             foreach ($attempt->attemptAnswers as $aa) {
                 if ($aa->grading_status === 'pending' && $aa->question) {
-                    ProcessWritingGrading::dispatch($aa->id, [
-                        'part'       => $aa->question->part,
-                        'word_limit' => $aa->question->metadata['word_limit'] ?? null,
-                        'stem'       => $aa->question->stem,
-                    ]);
+                    if ($remainingCredits > 0) {
+                        ProcessWritingGrading::dispatch($aa->id, [
+                            'part'       => $aa->question->part,
+                            'word_limit' => $aa->question->metadata['word_limit'] ?? null,
+                            'stem'       => $aa->question->stem,
+                        ]);
+                        
+                        // Record usage and decrement local counter
+                        $user->recordWritingAiUsage($aa->question->part);
+                        $remainingCredits--;
+                    } else {
+                        Log::info('AI Limit reached during Mock Test submission', [
+                            'user_id' => $user->id,
+                            'attempt_id' => $attempt->id,
+                            'answer_id' => $aa->id
+                        ]);
+                        $aa->update(['grading_status' => 'limit_reached']);
+                    }
                 }
             }
         }

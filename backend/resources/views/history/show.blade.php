@@ -38,6 +38,10 @@
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
                             🤖 AI Đã Chấm (Đợi duyệt)
                         </span>
+                    @elseif($answer->grading_status === 'limit_reached')
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                            🚫 Hết lượt AI
+                        </span>
                     @else
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
                             ⏳ Chờ giảng viên chấm
@@ -73,8 +77,47 @@
                         </h3>
                         <div class="bg-gray-50 rounded-lg p-5 text-sm text-gray-800 leading-relaxed border border-gray-200 min-h-[120px] shadow-inner font-medium">
                             @if(is_array($answer->answer))
+                                @php
+                                    $part = $answer->question->part ?? 1;
+                                    $metadata = $answer->question->metadata ?? [];
+                                @endphp
                                 @foreach($answer->answer as $key => $value)
+                                    @php
+                                        // Determine label based on part
+                                        $label = '';
+                                        $promptHtml = '';
+                                        if ($part == 1 || $part == 3) {
+                                            if (is_numeric($key)) {
+                                                $label = 'Câu ' . ($key + 1);
+                                                if ($part == 1) {
+                                                    $f = $metadata['fields'][$key] ?? [];
+                                                    $promptHtml = ($f['label'] ?? '');
+                                                } else {
+                                                    $promptHtml = $metadata['questions'][$key]['prompt'] ?? '';
+                                                }
+                                            } else {
+                                                $label = $key;
+                                            }
+                                        } elseif ($part == 2) {
+                                            // Part 2 may just have one block of text, no array loop technically but if it is an array
+                                            $label = 'Part 2';
+                                            $promptHtml = $metadata['scenario'] ?? '';
+                                        } elseif ($part == 4) {
+                                            $idx = is_numeric($key) ? $key : $loop->index;
+                                            $label = $idx == 0 ? 'Email Informal (Cho bạn bè)' : 'Email Formal (Cho quản lý/phòng ban)';
+                                            $promptHtml = $idx == 0 ? ($metadata['task1']['instruction'] ?? '') : ($metadata['task2']['instruction'] ?? '');
+                                        } else {
+                                            $label = is_numeric($key) ? null : $key;
+                                        }
+                                    @endphp
+
                                     @if(is_array($value))
+                                        @if($label)
+                                            <div class="text-xs font-bold text-indigo-600 uppercase mb-1 mt-4 first:mt-0">{{ $label }}</div>
+                                            @if($promptHtml)
+                                                <div class="text-sm italic text-gray-500 mb-2">{{ $promptHtml }}</div>
+                                            @endif
+                                        @endif
                                         @foreach($value as $k => $v)
                                             <div class="mb-3 bg-white p-3 rounded border border-gray-100">
                                                 <span class="font-semibold text-gray-600 block mb-1">{{ $k }}:</span>
@@ -82,11 +125,19 @@
                                             </div>
                                         @endforeach
                                     @else
+                                        @if($label)
+                                            <div class="text-xs font-bold text-indigo-600 uppercase mb-1 mt-4 first:mt-0">{{ $label }}</div>
+                                            @if($promptHtml)
+                                                <div class="text-sm italic text-gray-500 mb-2">{{ $promptHtml }}</div>
+                                            @endif
+                                        @endif
                                         <div class="mb-3 bg-white p-3 rounded border border-gray-100">
-                                            @if(is_numeric($key))
+                                            @if(is_numeric($key) && empty($label))
                                                 <p class="text-gray-900">{{ $value }}</p>
-                                            @else
+                                            @elseif(!is_numeric($key) && empty($label))
                                                 <p><span class="font-semibold text-gray-600 block mb-1">{{ $key }}:</span> <span class="text-gray-900">{{ $value }}</span></p>
+                                            @else
+                                                <p class="text-gray-900">{{ $value }}</p>
                                             @endif
                                         </div>
                                     @endif
@@ -96,8 +147,158 @@
                             @endif
                         </div>
                     </div>
+                    {{-- AI Feedback Schema V3 (Read Only for Student) --}}
+                    @php
+                        $hasAiFeedback = !empty($answer->ai_metadata['feedback']);
+                        $isWriting = ($answer->question->skill === 'writing');
+                    @endphp
 
-                    {{-- Admin Sample Answer --}}
+                    @if($hasAiFeedback || $isWriting)
+                        @php
+                            $aiFeedback = $answer->ai_metadata['feedback'] ?? null;
+                            $schemaVersion = $aiFeedback['schema_version'] ?? 3;
+                            $gradingStatus = $answer->grading_status ?? 'pending';
+                        @endphp
+                        <div class="mt-6 border border-indigo-200 rounded-xl overflow-hidden shadow-sm" x-data="{ openAiNotes: false }">
+                            {{-- Header --}}
+                            <button type="button" @click="openAiNotes = !openAiNotes" class="w-full bg-indigo-50/80 px-5 py-3 flex items-center justify-between text-indigo-900 hover:bg-indigo-100 transition-colors border-b border-indigo-100/50">
+                                <div class="flex items-center gap-2 font-bold text-sm">
+                                    <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                    <span>Góp ý tự động từ AI</span>
+                                    @if(!$hasAiFeedback)
+                                        <span class="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] uppercase tracking-wider rounded-full">Đang xử lý</span>
+                                    @endif
+                                </div>
+                                <svg class="w-4 h-4 transition-transform text-indigo-500" :class="{'rotate-180': openAiNotes}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+
+                            <div x-show="openAiNotes" x-transition class="p-5 bg-white space-y-4 text-sm">
+                                @if($hasAiFeedback)
+                                    {{-- Criteria Summary --}}
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        @foreach(['grammar', 'vocabulary', 'coherence', 'task_fulfillment'] as $criteria)
+                                            @if(isset($aiFeedback['scores'][$criteria]))
+                                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 text-center">
+                                                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{{ str_replace('_', ' ', $criteria) }}</div>
+                                                    <div class="text-lg font-black text-indigo-600">{{ $aiFeedback['scores'][$criteria] }}/5</div>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                    {{-- Schema V3 Part Responses & Corrections --}}
+                                    @if($schemaVersion >= 3 && !empty($aiFeedback['part_responses']))
+                                        <div class="space-y-4 mt-5">
+                                            @foreach($aiFeedback['part_responses'] as $idx => $response)
+                                                @php
+                                                    $part = $answer->question->part ?? 1;
+                                                    $metadata = $answer->question->metadata ?? [];
+                                                    $promptHtml = '';
+                                                    if ($part == 1) {
+                                                        $f = $metadata['fields'][$idx] ?? [];
+                                                        $promptHtml = ($f['label'] ?? '');
+                                                    } elseif ($part == 2) {
+                                                        $promptHtml = $metadata['scenario'] ?? '';
+                                                    } elseif ($part == 3) {
+                                                        $promptHtml = $metadata['questions'][$idx]['prompt'] ?? '';
+                                                    } elseif ($part == 4) {
+                                                        $promptHtml = $idx == 0 ? ($metadata['task1']['instruction'] ?? '') : ($metadata['task2']['instruction'] ?? '');
+                                                    }
+                                                @endphp
+                                                <div class="relative bg-white rounded-lg p-4 border border-indigo-100 shadow-sm">
+                                                    <div class="absolute -top-3 left-4 bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded-md">
+                                                        {{ $response['label'] ?? 'Phần ' . ($idx + 1) }}
+                                                    </div>
+                                                    
+                                                    @if($promptHtml)
+                                                        <div class="mt-2 text-sm italic text-gray-600 border-l-2 border-indigo-200 pl-2">
+                                                            Đề bài: {{ $promptHtml }}
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <div class="mt-3">
+                                                        @if(!empty($response['detailed_corrections']))
+                                                            @php
+                                                                $meaningfulCorrections = collect($response['detailed_corrections'])->filter(function($c) {
+                                                                    $orig = trim(strtolower($c['original'] ?? ''));
+                                                                    $corr = trim(strtolower($c['corrected'] ?? ''));
+                                                                    return $orig !== $corr && !empty($orig);
+                                                                });
+                                                            @endphp
+                                                            @if($meaningfulCorrections->isNotEmpty())
+                                                                <div class="space-y-3 mb-4">
+                                                                    <div class="text-xs font-bold text-gray-500 uppercase">Sửa lỗi:</div>
+                                                                    @foreach($meaningfulCorrections as $correction)
+                                                                        <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                                                                            <div class="flex items-start gap-3">
+                                                                                <div class="flex-1">
+                                                                                    <div class="line-through text-red-400 font-medium mb-1">{{ $correction['original'] ?? '' }}</div>
+                                                                                    <div class="text-green-600 font-bold mb-1">{{ $correction['corrected'] ?? '' }}</div>
+                                                                                    <div class="text-xs text-slate-500 italic bg-white p-2 border border-slate-100 rounded">{{ $correction['explanation'] ?? '' }}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        @endif
+
+                                                        @if(!empty($response['improved_sample']))
+                                                            <div>
+                                                                <div class="text-xs font-bold text-gray-500 uppercase mb-2 mt-4 pt-4 border-t border-gray-100">Bài mẫu tham khảo:</div>
+                                                                <div class="text-sm text-indigo-900 bg-indigo-50 p-4 rounded-lg font-medium leading-relaxed whitespace-pre-wrap">{{ $response['improved_sample'] }}</div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                    
+                                    {{-- General Suggestions --}}
+                                    @if(!empty($aiFeedback['suggestions']))
+                                        <div class="mt-4 bg-amber-50 p-4 rounded-lg border border-amber-100">
+                                            <div class="text-sm font-bold text-amber-800 mb-2 flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                Lời khuyên chung
+                                            </div>
+                                            <ul class="list-disc pl-5 text-amber-900 space-y-1 text-sm">
+                                                @foreach($aiFeedback['suggestions'] as $suggestion)
+                                                    <li>{{ $suggestion }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
+                                @else
+                                    {{-- Empty State / Pending --}}
+                                    <div class="py-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                        @if($gradingStatus === 'limit_reached')
+                                            <div class="mb-4">
+                                                <svg class="w-12 h-12 text-gray-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                            </div>
+                                            <h4 class="text-base font-bold text-gray-700 mb-1">Đã hết lượt chấm AI</h4>
+                                            <p class="text-xs text-gray-500 max-w-xs mx-auto">Tài khoản của bạn đã đạt giới hạn sử dụng AI cho bài thi này. Hãy liên hệ admin để nạp thêm lượt.</p>
+                                        @else
+                                            <div class="mb-4 relative inline-block">
+                                                <div class="absolute inset-0 bg-indigo-200 blur-xl opacity-30 animate-pulse"></div>
+                                                <svg class="w-12 h-12 text-indigo-300 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                            </div>
+                                            <h4 class="text-base font-bold text-gray-700 mb-1">AI đang xử lý chấm điểm...</h4>
+                                            <p class="text-xs text-gray-500 max-w-xs mx-auto">Vui lòng quay lại sau ít phút để xem nhận xét chi tiết và chấm điểm tự động từ AI.</p>
+                                        @endif
+                                        
+                                        @if(empty(config('services.openai.key')) && $gradingStatus !== 'limit_reached')
+                                            <div class="mt-4 px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs inline-block border border-red-100">
+                                                <span class="font-bold">Lưu ý:</span> AI API Key (OpenAI) chưa được cài đặt trong hệ thống.
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Admin Sample Answers (If available) --}}
                     @php
                         $sampleAnswers = [];
                         $q = $answer->question;
@@ -136,118 +337,7 @@
                                 @endforeach
                             </div>
                         </div>
-                    @endif
 
-                    {{-- AI Feedback Schema V3 (Read Only for Student) --}}
-                    @php
-                        $hasAiFeedback = !empty($answer->ai_metadata['feedback']);
-                        $isWriting = ($answer->question->skill === 'writing');
-                    @endphp
-
-                    @if($hasAiFeedback || $isWriting)
-                        @php
-                            $aiFeedback = $answer->ai_metadata['feedback'] ?? null;
-                            $schemaVersion = $aiFeedback['schema_version'] ?? 3;
-                            $gradingStatus = $answer->grading_status ?? 'pending';
-                        @endphp
-                        <div class="mt-6 border border-indigo-200 rounded-xl overflow-hidden shadow-sm" x-data="{ openAiNotes: true }">
-                            {{-- Header --}}
-                            <button type="button" @click="openAiNotes = !openAiNotes" class="w-full bg-indigo-50/80 px-5 py-3 flex items-center justify-between text-indigo-900 hover:bg-indigo-100 transition-colors border-b border-indigo-100/50">
-                                <div class="flex items-center gap-2 font-bold text-sm">
-                                    <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                    <span>Góp ý tự động từ AI</span>
-                                    @if(!$hasAiFeedback)
-                                        <span class="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] uppercase tracking-wider rounded-full">Đang xử lý</span>
-                                    @endif
-                                </div>
-                                <svg class="w-4 h-4 transition-transform text-indigo-500" :class="{'rotate-180': openAiNotes}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                            </button>
-
-                            <div x-show="openAiNotes" x-transition class="p-5 bg-white space-y-4 text-sm">
-                                @if($hasAiFeedback)
-                                    {{-- Criteria Summary --}}
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        @foreach(['grammar', 'vocabulary', 'coherence', 'task_fulfillment'] as $criteria)
-                                            @if(isset($aiFeedback['scores'][$criteria]))
-                                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 text-center">
-                                                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{{ str_replace('_', ' ', $criteria) }}</div>
-                                                    <div class="text-lg font-black text-indigo-600">{{ $aiFeedback['scores'][$criteria] }}/5</div>
-                                                </div>
-                                            @endif
-                                        @endforeach
-                                    </div>
-
-                                    {{-- Schema V3 Part Responses & Corrections --}}
-                                    @if($schemaVersion >= 3 && !empty($aiFeedback['part_responses']))
-                                        <div class="space-y-4 mt-5">
-                                            @foreach($aiFeedback['part_responses'] as $idx => $response)
-                                                <div class="relative bg-white rounded-lg p-4 border border-indigo-100 shadow-sm">
-                                                    <div class="absolute -top-3 left-4 bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded-md">
-                                                        {{ $response['label'] ?? 'Phần ' . ($idx + 1) }}
-                                                    </div>
-                                                    
-                                                    <div class="mt-3">
-                                                        @if(!empty($response['detailed_corrections']))
-                                                            <div class="space-y-3 mb-4">
-                                                                <div class="text-xs font-bold text-gray-500 uppercase">Sửa lỗi:</div>
-                                                                @foreach($response['detailed_corrections'] as $correction)
-                                                                    <div class="bg-gray-50 rounded p-3 border border-gray-200">
-                                                                        <div class="flex items-start gap-3">
-                                                                            <div class="flex-1">
-                                                                                <div class="line-through text-red-400 font-medium mb-1">{{ $correction['original'] ?? '' }}</div>
-                                                                                <div class="text-green-600 font-bold mb-1">{{ $correction['corrected'] ?? '' }}</div>
-                                                                                <div class="text-xs text-slate-500 italic bg-white p-2 border border-slate-100 rounded">{{ $correction['explanation'] ?? '' }}</div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
-                                                        @endif
-
-                                                        @if(!empty($response['improved_sample']))
-                                                            <div>
-                                                                <div class="text-xs font-bold text-gray-500 uppercase mb-2 mt-4 pt-4 border-t border-gray-100">Bài mẫu tham khảo:</div>
-                                                                <div class="text-sm text-indigo-900 bg-indigo-50 p-4 rounded-lg font-medium leading-relaxed whitespace-pre-wrap">{{ $response['improved_sample'] }}</div>
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                    
-                                    {{-- General Suggestions --}}
-                                    @if(!empty($aiFeedback['suggestions']))
-                                        <div class="mt-4 bg-amber-50 p-4 rounded-lg border border-amber-100">
-                                            <div class="text-sm font-bold text-amber-800 mb-2 flex items-center gap-2">
-                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                Lời khuyên chung
-                                            </div>
-                                            <ul class="list-disc pl-5 text-amber-900 space-y-1 text-sm">
-                                                @foreach($aiFeedback['suggestions'] as $suggestion)
-                                                    <li>{{ $suggestion }}</li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    @endif
-                                @else
-                                    {{-- Empty State / Pending --}}
-                                    <div class="py-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                                        <div class="mb-4 relative inline-block">
-                                            <div class="absolute inset-0 bg-indigo-200 blur-xl opacity-30 animate-pulse"></div>
-                                            <svg class="w-12 h-12 text-indigo-300 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                                        </div>
-                                        <h4 class="text-base font-bold text-gray-700 mb-1">AI đang xử lý chấm điểm...</h4>
-                                        <p class="text-xs text-gray-500 max-w-xs mx-auto">Vui lòng quay lại sau ít phút để xem nhận xét chi tiết và chấm điểm tự động từ AI.</p>
-                                        @if(empty(config('services.openai.key')))
-                                            <div class="mt-4 px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs inline-block border border-red-100">
-                                                <span class="font-bold">Lưu ý:</span> AI API Key (OpenAI) chưa được cài đặt trong hệ thống.
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
                     @endif
                 </div>
 

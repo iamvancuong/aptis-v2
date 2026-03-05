@@ -331,7 +331,7 @@ class WritingSetController extends Controller
             'part' => 2,
             'type' => 'writing-part-2',
             'title' => "{$validated['title']} - Part 2",
-            'stem' => "Write a short email.",
+            'stem' => "Write a short text (20-30 words).",
             'point' => 5,
             'order' => 2,
             'metadata' => [

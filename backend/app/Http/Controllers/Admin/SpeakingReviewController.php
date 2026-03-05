@@ -21,7 +21,7 @@ class SpeakingReviewController extends Controller
 
         $query = Attempt::with(['user', 'set'])
             ->where('skill', 'speaking')
-            ->where('mode', 'mock_test')
+            ->whereIn('mode', ['mock', 'mock_test'])
             ->where('is_grading_requested', true);
 
         if ($search) {
@@ -108,7 +108,7 @@ class SpeakingReviewController extends Controller
 
         $request->validate([
             'grades' => 'required|array',
-            'grades.*.score' => 'required|numeric|min:0',
+            'grades.*.score' => 'required|numeric|min:0|max:10',
             'grades.*.feedback' => 'nullable|string',
         ]);
 
@@ -120,7 +120,7 @@ class SpeakingReviewController extends Controller
                 $answer = AttemptAnswer::where('attempt_id', $attempt->id)->where('id', $answerId)->first();
                 if (!$answer) continue;
 
-                $maxPoint = $answer->question->point;
+                $maxPoint = 10; // Hardcoded to 10 per user request
                 $totalPossible += $maxPoint;
 
                 $score = min((float)$gradeData['score'], $maxPoint);
@@ -139,6 +139,7 @@ class SpeakingReviewController extends Controller
 
             $attempt->update([
                 'score' => round($percentage, 2),
+                'is_seen' => false,
             ]);
         });
 

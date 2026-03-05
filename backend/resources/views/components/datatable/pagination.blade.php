@@ -1,34 +1,68 @@
 @props(['paginator'])
 
-@if($paginator->hasPages())
-    <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center space-x-2">
-        {{-- Previous Page Link --}}
-        @if($paginator->onFirstPage())
+@php
+    use Illuminate\Pagination\UrlWindow;
+
+    $window = UrlWindow::make($paginator);
+
+    $elements = array_filter([
+        $window['first'],
+        is_array($window['slider']) ? '...' : null,
+        $window['slider'],
+        is_array($window['last']) ? '...' : null,
+        $window['last'],
+    ]);
+@endphp
+
+@if ($paginator->hasPages())
+    <nav role="navigation"
+         aria-label="Pagination Navigation"
+         class="flex items-center space-x-2 overflow-x-auto whitespace-nowrap">
+
+        {{-- Previous --}}
+        @if ($paginator->onFirstPage())
             <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded cursor-not-allowed">
                 ← Previous
             </span>
         @else
-            <a href="{{$paginator->previousPageUrl()}}" class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
+            <a href="{{ $paginator->previousPageUrl() }}"
+               class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
                 ← Previous
             </a>
         @endif
 
-        {{-- Pagination Elements --}}
-        @foreach($paginator->getUrlRange(1, $paginator->lastPage()) as $page => $url)
-            @if($page == $paginator->currentPage())
-                <span class="px-3 py-2 text-sm text-white bg-blue-600 rounded">
-                    {{$page}}
+        {{-- Page Numbers --}}
+        @foreach ($elements as $element)
+
+            {{-- Dots --}}
+            @if (is_string($element))
+                <span class="px-3 py-2 text-sm text-gray-400">
+                    {{ $element }}
                 </span>
-            @else
-                <a href="{{$url}}" class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
-                    {{$page}}
-                </a>
             @endif
+
+            {{-- Links --}}
+            @if (is_array($element))
+                @foreach ($element as $page => $url)
+                    @if ($page == $paginator->currentPage())
+                        <span class="px-3 py-2 text-sm text-white bg-blue-600 rounded">
+                            {{ $page }}
+                        </span>
+                    @else
+                        <a href="{{ $url }}"
+                           class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
+                            {{ $page }}
+                        </a>
+                    @endif
+                @endforeach
+            @endif
+
         @endforeach
 
-        {{-- Next Page Link --}}
-        @if($paginator->hasMorePages())
-            <a href="{{$paginator->nextPageUrl()}}" class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
+        {{-- Next --}}
+        @if ($paginator->hasMorePages())
+            <a href="{{ $paginator->nextPageUrl() }}"
+               class="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
                 Next →
             </a>
         @else
@@ -36,5 +70,6 @@
                 Next →
             </span>
         @endif
+
     </nav>
 @endif
