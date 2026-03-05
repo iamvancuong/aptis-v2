@@ -67,8 +67,8 @@
     </div>
     
     @if($writing_set->questions->count() < 4)
-        <div class="px-4 py-2 bg-red-100 text-red-800 rounded">
-            ⚠️ Chú ý: Bộ đề này hiện không đủ 4 phần (chỉ có {{ $writing_set->questions->count() }}). Thao tác cập nhật sẽ bị vô hiệu để bảo vệ dữ liệu.
+        <div class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded">
+            ⚠️ Chú ý: Bộ đề này hiện không đủ 4 phần (chỉ có {{ $writing_set->questions->count() }}).
         </div>
     @endif
 </div>
@@ -275,11 +275,7 @@
     </x-card>
 
     <div class="flex items-center justify-end">
-        @if($writing_set->questions->count() == 4)
-            <x-button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">Lưu Cập Nhật</x-button>
-        @else
-            <x-button type="button" class="bg-gray-400 cursor-not-allowed" disabled>Vô hiệu hoá cập nhật do không đủ 4 câu hỏi gốc</x-button>
-        @endif
+        <x-button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">Lưu Cập Nhật</x-button>
     </div>
 </form>
 @endsection
