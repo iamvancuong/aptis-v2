@@ -25,24 +25,30 @@ class DashboardController extends Controller
             'total' => $totalMockTests,
         ];
 
-        // 3. Writing Reviews needing attention
-        $pendingWritings = AttemptAnswer::whereHas('question', function ($q) {
-                $q->where('skill', 'writing');
+        // 3. Writing Reviews (Attempts waiting for grading)
+        $pendingWritings = Attempt::where('skill', 'writing')
+            ->whereIn('mode', ['mock', 'mock_test'])
+            ->where('is_grading_requested', true)
+            ->whereHas('attemptAnswers', function ($q) {
+                $q->whereIn('grading_status', ['pending', 'ai_graded']);
             })
-            ->where('grading_status', 'pending')
             ->count();
 
-        $aiGradedWritings = AttemptAnswer::whereHas('question', function ($q) {
-                $q->where('skill', 'writing');
+        $aiGradedWritings = Attempt::where('skill', 'writing')
+            ->whereIn('mode', ['mock', 'mock_test'])
+            ->where('is_grading_requested', true)
+            ->whereHas('attemptAnswers', function ($q) {
+                $q->where('grading_status', 'ai_graded');
             })
-            ->where('grading_status', 'ai_graded')
             ->count();
             
-        // 3.5. Speaking Reviews needing attention
-        $pendingSpeaking = AttemptAnswer::whereHas('question', function ($q) {
-                $q->where('skill', 'speaking');
+        // 3.5. Speaking Reviews (Attempts waiting for grading)
+        $pendingSpeaking = Attempt::where('skill', 'speaking')
+            ->whereIn('mode', ['mock', 'mock_test'])
+            ->where('is_grading_requested', true)
+            ->whereHas('attemptAnswers', function ($q) {
+                $q->whereIn('grading_status', ['pending']);
             })
-            ->where('grading_status', 'pending')
             ->count();
             
         // 4. Recent completed mock tests (Last 5)
