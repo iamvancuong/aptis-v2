@@ -3,8 +3,8 @@
     <div class="space-y-6">
         {{-- Scenario --}}
         <div class="bg-blue-50 rounded-lg p-4">
-            <h4 class="font-bold text-blue-800 mb-1">✉️ Email Writing</h4>
-            <p class="text-sm text-blue-700" x-text="currentQuestion.metadata?.scenario || currentQuestion.stem"></p>
+            <h4 class="font-bold text-blue-800 mb-1">✉️ Viết câu trả lời của bạn vào đây</h4>
+            <p class="text-blue-700" x-text="currentQuestion.metadata?.scenario || currentQuestion.stem"></p>
         </div>
 
         {{-- Hints --}}

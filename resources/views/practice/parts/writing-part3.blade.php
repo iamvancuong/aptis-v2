@@ -3,8 +3,8 @@
     <div class="space-y-6">
         {{-- Instructions --}}
         <div class="bg-blue-50 rounded-lg p-4">
-            <h4 class="font-bold text-blue-800 mb-1">💬 Social Response</h4>
-            <p class="text-sm text-blue-700" x-text="currentQuestion.stem || 'Read each social media post and write a response.'"></p>
+            <h4 class="font-bold text-blue-800 mb-1">💬 Viết câu trả lời của bạn vào đây</h4>
+            <p class="text-blue-700" x-text="currentQuestion.stem || 'Read each social media post and write a response.'"></p>
         </div>
 
         {{-- Prompts --}}

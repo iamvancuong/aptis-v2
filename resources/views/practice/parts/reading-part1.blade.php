@@ -14,7 +14,7 @@
                                 :class="[hasAnswered(currentQuestion.id) ? 'pointer-events-none font-bold' : 'bg-white border-gray-300 hover:border-blue-400']"
                                 :style="getPart1SelectStyle(pIndex)"
                             >
-                                <option value="" disabled selected>???</option>
+                                <option value="" disabled selected></option>
                                 <template x-for="(opt, optIndex) in currentQuestion.metadata.choices[pIndex]" :key="optIndex">
                                     <option :value="optIndex" x-text="opt"></option>
                                 </template>
