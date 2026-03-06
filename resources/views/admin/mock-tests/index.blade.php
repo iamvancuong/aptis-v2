@@ -59,98 +59,92 @@
     </div>
 
     {{-- Table --}}
-    <x-card>
-        <x-table>
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kỹ năng</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Điểm</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày thi</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Hành động</th>
+    <x-datatable :data="$mockTests">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Học sinh</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kỹ năng</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Điểm</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày thi</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Hành động</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            @forelse($mockTests as $mt)
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 text-sm text-gray-400">{{ $mt->id }}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold">
+                                {{ strtoupper(substr($mt->user->name ?? '?', 0, 1)) }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $mt->user->name ?? 'N/A' }}</p>
+                                <p class="text-xs text-gray-400">{{ $mt->user->email ?? '' }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        @php
+                            $skillColors = ['reading' => 'bg-blue-100 text-blue-700', 'listening' => 'bg-green-100 text-green-700', 'writing' => 'bg-purple-100 text-purple-700'];
+                        @endphp
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $skillColors[$mt->skill] ?? 'bg-gray-100 text-gray-700' }}">
+                            {{ ucfirst($mt->skill) }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm">
+                        @if($mt->score !== null)
+                            @php $s = (float)$mt->score; $c = $s>=80?'text-green-600':($s>=50?'text-amber-600':'text-red-500'); @endphp
+                            <span class="font-bold {{ $c }}">{{ number_format($s, 0) }}%</span>
+                        @else
+                            <span class="text-gray-400">—</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        @if($mt->duration_seconds)
+                            {{ gmdate('i:s', $mt->duration_seconds) }}
+                        @else
+                            —
+                        @endif
+                    </td>
+                    <td class="px-6 py-4">
+                        @if($mt->status === 'completed')
+                            <x-badge variant="success">✅ Hoàn thành</x-badge>
+                        @else
+                            <x-badge variant="warning">⏳ Đang làm</x-badge>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        {{ $mt->created_at->format('d/m/Y H:i') }}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        @if($mt->status === 'completed')
+                            <a href="{{ route('mock-test.result', $mt->id) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                               target="_blank">
+                                Xem kết quả ↗
+                            </a>
+                        @else
+                            <span class="text-xs text-gray-400">Chưa hoàn thành</span>
+                        @endif
+                    </td>
                 </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($mockTests as $mt)
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4 text-sm text-gray-400">{{ $mt->id }}</td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-bold">
-                                    {{ strtoupper(substr($mt->user->name ?? '?', 0, 1)) }}
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">{{ $mt->user->name ?? 'N/A' }}</p>
-                                    <p class="text-xs text-gray-400">{{ $mt->user->email ?? '' }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            @php
-                                $skillColors = ['reading' => 'bg-blue-100 text-blue-700', 'listening' => 'bg-green-100 text-green-700', 'writing' => 'bg-purple-100 text-purple-700'];
-                            @endphp
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $skillColors[$mt->skill] ?? 'bg-gray-100 text-gray-700' }}">
-                                {{ ucfirst($mt->skill) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm">
-                            @if($mt->score !== null)
-                                @php $s = (float)$mt->score; $c = $s>=80?'text-green-600':($s>=50?'text-amber-600':'text-red-500'); @endphp
-                                <span class="font-bold {{ $c }}">{{ number_format($s, 0) }}%</span>
-                            @else
-                                <span class="text-gray-400">—</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">
-                            @if($mt->duration_seconds)
-                                {{ gmdate('i:s', $mt->duration_seconds) }}
-                            @else
-                                —
-                            @endif
-                        </td>
-                        <td class="px-6 py-4">
-                            @if($mt->status === 'completed')
-                                <x-badge variant="success">✅ Hoàn thành</x-badge>
-                            @else
-                                <x-badge variant="warning">⏳ Đang làm</x-badge>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">
-                            {{ $mt->created_at->format('d/m/Y H:i') }}
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            @if($mt->status === 'completed')
-                                <a href="{{ route('mock-test.result', $mt->id) }}"
-                                   class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
-                                   target="_blank">
-                                    Xem kết quả ↗
-                                </a>
-                            @else
-                                <span class="text-xs text-gray-400">Chưa hoàn thành</span>
-                            @endif
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="px-6 py-12 text-center">
-                            <div class="text-gray-400">
-                                <svg class="mx-auto w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                <p class="text-sm font-medium">Chưa có bài thi thử nào</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </x-table>
-    </x-card>
-
-    <div class="mt-4">
-        {{ $mockTests->links() }}
-    </div>
+            @empty
+                <tr>
+                    <td colspan="8" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <svg class="mx-auto w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <p class="text-sm font-medium">Chưa có bài thi thử nào</p>
+                        </div>
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </x-datatable>
 </div>
 @endsection

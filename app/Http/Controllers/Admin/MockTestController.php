@@ -25,7 +25,8 @@ class MockTestController extends Controller
             $query->where('status', $status);
         }
 
-        $mockTests = $query->paginate(25)->appends($request->only('skill', 'status'));
+        $perPage = $request->integer('per_page', 25);
+        $mockTests = $query->paginate($perPage)->appends($request->only('skill', 'status', 'per_page'));
 
         $stats = [
             'total'       => MockTest::count(),

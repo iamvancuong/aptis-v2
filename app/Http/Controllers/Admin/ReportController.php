@@ -16,6 +16,7 @@ class ReportController extends Controller
         $skill    = $request->get('skill', 'all');
         $dateFrom = $request->get('date_from');
         $dateTo   = $request->get('date_to');
+        $perPage  = $request->integer('per_page', 20);
 
         $users = User::where('role', 'user')
             ->with(['attempts' => function ($q) use ($skill, $dateFrom, $dateTo) {
@@ -25,9 +26,10 @@ class ReportController extends Controller
                 if ($dateTo) $q->whereDate('finished_at', '<=', $dateTo);
             }])
             ->orderBy('name')
-            ->get();
+            ->paginate($perPage)
+            ->appends($request->all());
 
-        $rows = $users->map(function ($user) {
+        $rows = $users->getCollection()->map(function ($user) {
             $attempts = $user->attempts;
 
             $bySkill = function (string $sk, ?string $mode = null) use ($attempts) {
@@ -60,7 +62,14 @@ class ReportController extends Controller
             ];
         });
 
-        return view('admin.reports.index', compact('rows', 'skill', 'dateFrom', 'dateTo'));
+        $users->setCollection($rows);
+
+        return view('admin.reports.index', [
+            'rows' => $users,
+            'skill' => $skill,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo
+        ]);
     }
 
     public function export(Request $request)
