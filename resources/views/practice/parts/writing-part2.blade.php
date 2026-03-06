@@ -30,6 +30,8 @@
         <div>
             <textarea
                 x-model="writingPart2Answer"
+                @input="writingPart2Answer = enforceWordLimit($event.target.value, currentQuestion.metadata?.word_limit?.max || 30)"
+                @paste.prevent
                 :disabled="hasAnswered(currentQuestion.id)"
                 rows="8"
                 class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y disabled:bg-gray-100 disabled:text-gray-500"

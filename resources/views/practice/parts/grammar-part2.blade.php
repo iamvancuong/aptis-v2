@@ -23,11 +23,11 @@
                         'border-green-300 bg-green-50':
                             hasAnswered(currentQuestion.id) &&
                             vocabAnswers[currentQuestion.id] &&
-                            vocabAnswers[currentQuestion.id][pair.id] === currentQuestion.metadata.correct_answers[pair.id],
+                            vocabAnswers[currentQuestion.id][pair.id] == currentQuestion.metadata.correct_answers[pair.id],
                         'border-red-200 bg-red-50':
                             hasAnswered(currentQuestion.id) &&
                             vocabAnswers[currentQuestion.id] &&
-                            vocabAnswers[currentQuestion.id][pair.id] !== currentQuestion.metadata.correct_answers[pair.id],
+                            vocabAnswers[currentQuestion.id][pair.id] != currentQuestion.metadata.correct_answers[pair.id],
                      }">
                     {{-- Number --}}
                     <span class="w-5 text-xs font-semibold text-gray-400 shrink-0 text-center" x-text="pair.id"></span>
@@ -61,7 +61,7 @@
                             <option value="">Chọn...</option>
                             <template x-for="word in currentQuestion.metadata.dropdown_pool" :key="word">
                                 <option :value="word"
-                                        :selected="vocabAnswers[currentQuestion.id] && vocabAnswers[currentQuestion.id][pair.id] === word"
+                                        :selected="vocabAnswers[currentQuestion.id] && vocabAnswers[currentQuestion.id][pair.id] == word"
                                         x-text="word"></option>
                             </template>
                         </select>
@@ -74,13 +74,13 @@
                                   :class="{
                                     'text-green-600':
                                         vocabAnswers[currentQuestion.id] &&
-                                        vocabAnswers[currentQuestion.id][pair.id] === currentQuestion.metadata.correct_answers[pair.id],
+                                        vocabAnswers[currentQuestion.id][pair.id] == currentQuestion.metadata.correct_answers[pair.id],
                                     'text-red-500':
                                         !vocabAnswers[currentQuestion.id] ||
-                                        vocabAnswers[currentQuestion.id][pair.id] !== currentQuestion.metadata.correct_answers[pair.id],
+                                        vocabAnswers[currentQuestion.id][pair.id] != currentQuestion.metadata.correct_answers[pair.id],
                                   }"
                                   x-text="vocabAnswers[currentQuestion.id] ? (vocabAnswers[currentQuestion.id][pair.id] || '—') : '—'"></span>
-                            <template x-if="vocabAnswers[currentQuestion.id] && vocabAnswers[currentQuestion.id][pair.id] !== currentQuestion.metadata.correct_answers[pair.id]">
+                            <template x-if="vocabAnswers[currentQuestion.id] && vocabAnswers[currentQuestion.id][pair.id] != currentQuestion.metadata.correct_answers[pair.id]">
                                 <span class="text-xs text-green-600 font-medium">
                                     → <span x-text="currentQuestion.metadata.correct_answers[pair.id]"></span>
                                 </span>

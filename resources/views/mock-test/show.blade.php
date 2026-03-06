@@ -925,7 +925,7 @@ function mockTestExam() {
         // Word count helpers
         countWords(text) {
             if (!text || !text.trim()) return 0;
-            return text.trim().split(/\s+/).length;
+            return text.trim().split(/\s+/).filter(w => w.length > 0).length;
         },
         getWordCountClass(text, limit) {
             const count = this.countWords(text);
@@ -933,6 +933,16 @@ function mockTestExam() {
             if (count < (limit.min || 0)) return 'text-amber-500';
             if (count > (limit.max || 999)) return 'text-red-500';
             return 'text-green-500';
+        },
+        enforceWordLimit(text, max) {
+            if (!max) return text;
+            const words = text.split(/\s+/).filter(w => w.length > 0);
+            if (words.length > max) {
+                const isTrailingSpace = /\s$/.test(text);
+                const truncated = words.slice(0, max).join(' ');
+                return isTrailingSpace ? truncated + ' ' : truncated;
+            }
+            return text;
         },
 
         // Footer action (not used in mock test — no per-question submit)

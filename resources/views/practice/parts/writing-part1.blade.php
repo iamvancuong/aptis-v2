@@ -24,13 +24,8 @@
                     </div>
                     <input type="text"
                         x-model="writingPart1Answers[idx]"
-                        @input="
-                            if (countWords($event.target.value) > 5) {
-                                const words = $event.target.value.trim().split(/\s+/).slice(0, 5);
-                                writingPart1Answers[idx] = words.join(' ');
-                                $event.target.value = writingPart1Answers[idx];
-                            }
-                        "
+                        @input="writingPart1Answers[idx] = enforceWordLimit($event.target.value, 5)"
+                        @paste.prevent
                         :placeholder="field.placeholder || ''"
                         :disabled="hasAnswered(currentQuestion.id)"
                         class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500">

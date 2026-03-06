@@ -190,6 +190,7 @@
             part2Pool: [],
             p2DragOverSlot: null,
             p2DraggingPoolIdx: null,
+            p2SelectedPoolIdx: null,
             part3Answers: [],
             part4Answers: [],
 
@@ -397,6 +398,38 @@
                 this.part2Slots = [...this.part2Slots];
                 this.part2Pool = [...this.part2Pool];
                 this.p2DraggingPoolIdx = null;
+                this.p2SelectedPoolIdx = null;
+            },
+
+            selectP2Pool(poolIdx) {
+                if (this.hasAnswered(this.currentQuestion.id)) return;
+                
+                // If already selected, deselect it
+                if (this.p2SelectedPoolIdx === poolIdx) {
+                    this.p2SelectedPoolIdx = null;
+                } else {
+                    this.p2SelectedPoolIdx = poolIdx;
+                }
+            },
+
+            selectP2Slot(slotIdx) {
+                if (this.hasAnswered(this.currentQuestion.id)) return;
+
+                // Case 1: Slot has an item -> Move back to pool
+                if (this.part2Slots[slotIdx] !== null) {
+                    this.removeFromSlot(slotIdx);
+                    return;
+                }
+
+                // Case 2: Slot is empty and a pool item is selected -> Place it
+                if (this.p2SelectedPoolIdx !== null) {
+                    const item = this.part2Pool.splice(this.p2SelectedPoolIdx, 1)[0];
+                    this.part2Slots[slotIdx] = item;
+                    
+                    this.part2Slots = [...this.part2Slots];
+                    this.part2Pool = [...this.part2Pool];
+                    this.p2SelectedPoolIdx = null;
+                }
             },
 
             removeFromSlot(slotIdx) {
@@ -899,7 +932,7 @@
             // --- Word Count Helpers ---
             countWords(text) {
                 if (!text || !text.trim()) return 0;
-                return text.trim().split(/\s+/).length;
+                return text.trim().split(/\s+/).filter(w => w.length > 0).length;
             },
 
             getWordCountClass(text, limit) {
@@ -908,6 +941,18 @@
                 if (count < (limit.min || 0)) return 'text-amber-500';
                 if (count > (limit.max || 999)) return 'text-red-500';
                 return 'text-green-500';
+            },
+
+            enforceWordLimit(text, max) {
+                if (!max) return text;
+                const words = text.split(/\s+/).filter(w => w.length > 0);
+                if (words.length > max) {
+                    // Try to preserve trailing spaces if they don't add a new word
+                    const isTrailingSpace = /\s$/.test(text);
+                    const truncated = words.slice(0, max).join(' ');
+                    return isTrailingSpace ? truncated + ' ' : truncated;
+                }
+                return text;
             },
 
             // --- Unified Footer Action ---

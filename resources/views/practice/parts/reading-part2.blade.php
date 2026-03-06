@@ -18,16 +18,18 @@
                 
                 {{-- Droppable Slots --}}
                 <template x-for="(slot, slotIdx) in part2Slots" :key="'slot-'+slotIdx">
-                    <div class="p-3 rounded-lg border-2 border-dashed min-h-[56px] transition-all"
+                    <div class="p-3 rounded-lg border-2 border-dashed min-h-[56px] transition-all cursor-pointer touch-action-pan-y"
                          :class="[
                             hasAnswered(currentQuestion.id) 
                                 ? (slot && slot.originalIndex === slotIdx + 1 ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50')
                                 : (slot ? 'border-gray-300 bg-white' : 'border-gray-300 bg-gray-50'),
-                            p2DragOverSlot === slotIdx && !hasAnswered(currentQuestion.id) ? 'border-blue-500 bg-blue-50 scale-[1.02]' : ''
+                            p2DragOverSlot === slotIdx && !hasAnswered(currentQuestion.id) ? 'border-blue-500 bg-blue-50 scale-[1.02]' : '',
+                            !hasAnswered(currentQuestion.id) && p2SelectedPoolIdx !== null && !slot ? 'border-blue-300 bg-blue-50/30' : ''
                          ]"
                          @dragover.prevent="if(!hasAnswered(currentQuestion.id)) p2DragOverSlot = slotIdx"
                          @dragleave="p2DragOverSlot = null"
                          @drop.prevent="dropToSlot(slotIdx)"
+                         @click="selectP2Slot(slotIdx)"
                     >
                         {{-- Row 1: Number + Sentence + Remove Button --}}
                         <div class="flex items-center gap-3">
@@ -41,7 +43,7 @@
                                 <div class="flex-1 flex items-center justify-between gap-2">
                                     <span class="text-sm text-gray-800" x-text="slot.text"></span>
                                     <button x-show="!hasAnswered(currentQuestion.id)" 
-                                            @click="removeFromSlot(slotIdx)"
+                                            @click.stop="removeFromSlot(slotIdx)"
                                             class="text-gray-400 hover:text-red-500 flex-shrink-0 p-1">
                                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
@@ -49,7 +51,10 @@
                             </template>
                             
                             <template x-if="!slot">
-                                <span class="text-sm text-gray-400 italic">Drop a sentence here...</span>
+                                <div class="flex-1">
+                                    <span class="text-sm text-gray-400 italic md:hidden">Tap to place selected sentence...</span>
+                                    <span class="text-sm text-gray-400 italic hidden md:inline">Drop a sentence here...</span>
+                                </div>
                             </template>
                         </div>
 
@@ -72,17 +77,28 @@
 
             {{-- RIGHT: Sentence Pool --}}
             <div class="space-y-3">
-                <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-2">Sentences (drag from here)</h4>
+                <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-2">Sentences (tap/drag)</h4>
                 
                 <template x-for="(item, poolIdx) in part2Pool" :key="'pool-'+item.originalIndex">
-                    <div class="p-3 bg-white rounded-lg border border-orange-200 flex items-center gap-3 transition-all hover:shadow-md"
-                         :class="p2DraggingPoolIdx === poolIdx ? 'opacity-40' : 'cursor-move hover:border-orange-400'"
+                    <div class="p-3 bg-white rounded-lg border flex items-center gap-3 transition-all hover:shadow-md cursor-pointer touch-action-pan-y"
+                         :class="[
+                            p2DraggingPoolIdx === poolIdx ? 'opacity-40' : 'hover:border-orange-400',
+                            p2SelectedPoolIdx === poolIdx ? 'border-blue-500 ring-2 ring-blue-100 shadow-md' : 'border-orange-200'
+                         ]"
                          draggable="true"
                          @dragstart="p2PoolDragStart($event, poolIdx)"
                          @dragend="p2DraggingPoolIdx = null"
+                         @click="selectP2Pool(poolIdx)"
                     >
-                        <span class="text-orange-400 flex-shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+                        <span class="flex-shrink-0" :class="p2SelectedPoolIdx === poolIdx ? 'text-blue-500' : 'text-orange-400'">
+                            {{-- Check icon when selected --}}
+                            <svg x-show="p2SelectedPoolIdx === poolIdx" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            {{-- Drag icon when not selected --}}
+                            <svg x-show="p2SelectedPoolIdx !== poolIdx" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
+                            </svg>
                         </span>
                         <span class="text-sm text-gray-800" x-text="item.text"></span>
                     </div>

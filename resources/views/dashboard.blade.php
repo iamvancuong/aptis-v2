@@ -5,7 +5,7 @@
 @section('content')
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">Chọn kỹ năng luyện tập</h1>
-    <p class="mt-2 text-gray-600">Chọn một trong ba kỹ năng để bắt đầu luyện tập</p>
+    <p class="mt-2 text-gray-600">Chọn các kỹ năng để bắt đầu luyện tập</p>
 </div>
 
 {{-- Writing Graded Notification Banner --}}
@@ -130,18 +130,19 @@
 </div>
 
 
+<small><i>Thứ tự luyện thi theo chuẩn Aptis</i></small>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-    <!-- Reading -->
+    <!-- Speaking -->
     <x-card>
         <div class="text-center">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                 </svg>
             </div>
-            <h3 class="text-xl font-semibold mb-2">Reading</h3>
-            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng đọc hiểu</p>
-            <x-button href="{{ route('skills.show', 'reading') }}" class="w-full">Bắt đầu</x-button>
+            <h3 class="text-xl font-semibold mb-2">Speaking</h3>
+            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng nói</p>
+            <x-button href="{{ route('skills.show', 'speaking') }}" class="w-full">Bắt đầu</x-button>
         </div>
     </x-card>
 
@@ -156,6 +157,34 @@
             <h3 class="text-xl font-semibold mb-2">Listening</h3>
             <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng nghe</p>
             <x-button href="{{ route('skills.show', 'listening') }}" class="w-full">Bắt đầu</x-button>
+        </div>
+    </x-card>
+    
+    <!-- Grammar & Vocabulary -->
+    <x-card>
+        <div class="text-center">
+            <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Grammar</h3>
+            <p class="text-gray-600 text-sm mb-4">Ngữ pháp & Từ vựng</p>
+            <x-button href="{{ route('grammar.index') }}" class="w-full">Bắt đầu</x-button>
+        </div>
+    </x-card>
+
+    <!-- Reading -->
+    <x-card>
+        <div class="text-center">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Reading</h3>
+            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng đọc hiểu</p>
+            <x-button href="{{ route('skills.show', 'reading') }}" class="w-full">Bắt đầu</x-button>
         </div>
     </x-card>
 
@@ -173,33 +202,6 @@
         </div>
     </x-card>
 
-    <!-- Grammar & Vocabulary -->
-    <x-card>
-        <div class="text-center">
-            <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Grammar</h3>
-            <p class="text-gray-600 text-sm mb-4">Ngữ pháp & Từ vựng</p>
-            <x-button href="{{ route('grammar.index') }}" class="w-full">Bắt đầu</x-button>
-        </div>
-    </x-card>
-
-    <!-- Speaking -->
-    <x-card>
-        <div class="text-center">
-            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Speaking</h3>
-            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng nói</p>
-            <x-button href="{{ route('skills.show', 'speaking') }}" class="w-full">Bắt đầu</x-button>
-        </div>
-    </x-card>
 </div>
 
 <div class="mt-8 mb-8">
