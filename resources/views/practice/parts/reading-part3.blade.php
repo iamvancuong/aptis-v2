@@ -14,7 +14,7 @@
                         </div>
                         {{-- Text content --}}
                         <div class="p-4 flex-1">
-                            <p class="text-sm text-gray-700 leading-relaxed" x-text="opt"></p>
+                            <div class="text-sm text-gray-700 leading-relaxed" x-html="opt"></div>
                         </div>
                     </div>
                 </template>
@@ -31,7 +31,7 @@
                         {{-- Question text --}}
                         <div class="flex items-start gap-3 mb-3">
                             <span class="font-bold text-gray-500 text-sm flex-shrink-0 mt-0.5" x-text="(qIdx + 1) + '.'"></span>
-                            <p class="text-sm font-medium text-gray-800" x-text="q"></p>
+                            <div class="text-sm font-medium text-gray-800" x-html="q"></div>
                         </div>
                         
                         {{-- Dropdown --}}

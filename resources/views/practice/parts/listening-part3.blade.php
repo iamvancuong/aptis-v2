@@ -4,7 +4,13 @@
         {{-- Audio Player --}}
         <div class="bg-gray-50 rounded-lg p-4">
             <template x-if="currentQuestion.audio_path">
-                <audio :src="'/storage/' + currentQuestion.audio_path" controls class="w-full"></audio>
+                <div class="space-y-3">
+                    <audio :src="'/storage/' + currentQuestion.audio_path" controls class="w-full"></audio>
+                    <div class="flex justify-end">
+                        <button @click="const el = document.getElementById('lp3_audio_desc'); if(el) el.classList.toggle('hidden')" class="text-blue-500 text-xs hover:underline">Xem mô tả</button>
+                    </div>
+                    <div id="lp3_audio_desc" class="hidden p-3 bg-white border border-gray-200 rounded-lg text-sm ck-content" x-html="currentQuestion.metadata.description || 'Chưa có mô tả'"></div>
+                </div>
             </template>
             <template x-if="!currentQuestion.audio_path">
                 <div class="flex items-center gap-3 text-gray-400 py-2">
@@ -17,8 +23,8 @@
         {{-- Topic/Question --}}
         <div>
             <h4 class="font-bold text-gray-800 mb-1">Câu hỏi</h4>
-            <p class="text-gray-700 text-sm" x-text="'Topic: ' + (currentQuestion.metadata.topic || '')"></p>
-            <p class="text-gray-700" x-show="currentQuestion.stem" x-text="currentQuestion.stem"></p>
+            <p class="text-gray-700 text-sm"></p>
+            <p class="text-gray-700" x-show="currentQuestion.stem" x-html="currentQuestion.stem"></p>
         </div>
 
         {{-- Statements with Shared Dropdown --}}

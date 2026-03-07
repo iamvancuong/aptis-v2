@@ -18,7 +18,14 @@ Route::get('/', function () {
     $feedbacks = Feedback::where('is_active', true)->latest()->take(6)->get();
     $highScores = HighScore::where('is_active', true)->latest()->take(8)->get();
     
-    return view('welcome', compact('feedbacks', 'highScores'));
+    $settings = \App\Models\Setting::whereIn('key', [
+        'zalo_contact_number', 
+        'zalo_contact_number_2', 
+        'contact_email', 
+        'contact_hotline'
+    ])->pluck('value', 'key');
+    
+    return view('welcome', compact('feedbacks', 'highScores', 'settings'));
 })->name('home');
 
 // Guest routes

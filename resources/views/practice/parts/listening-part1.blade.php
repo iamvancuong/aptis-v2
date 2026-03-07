@@ -17,7 +17,7 @@
         {{-- Question --}}
         <div>
             <h4 class="font-bold text-gray-800 mb-1">Câu hỏi</h4>
-            <p class="text-gray-700" x-text="currentQuestion.stem"></p>
+            <p class="text-gray-700" x-html="currentQuestion.stem"></p>
         </div>
 
         {{-- Radio Choices --}}

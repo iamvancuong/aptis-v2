@@ -12,7 +12,7 @@
                 <template x-if="currentQuestion.metadata.sentences[0]">
                     <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-500 flex gap-3 cursor-not-allowed opacity-80">
                         <span class="font-bold text-gray-400 w-6 text-center">1</span>
-                        <span class="text-sm" x-text="currentQuestion.metadata.sentences[0]"></span>
+                        <span class="text-sm" x-html="currentQuestion.metadata.sentences[0]"></span>
                     </div>
                 </template>
                 
@@ -41,7 +41,7 @@
                             
                             <template x-if="slot">
                                 <div class="flex-1 flex items-center justify-between gap-2">
-                                    <span class="text-sm text-gray-800" x-text="slot.text"></span>
+                                    <span class="text-sm text-gray-800" x-html="slot.text"></span>
                                     <button x-show="!hasAnswered(currentQuestion.id)" 
                                             @click.stop="removeFromSlot(slotIdx)"
                                             class="text-gray-400 hover:text-red-500 flex-shrink-0 p-1">
@@ -67,7 +67,7 @@
                                 </div>
                                 <div x-show="slot.originalIndex !== slotIdx + 1" class="flex items-start text-red-600">
                                     <svg class="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    <span><span class="font-bold">Incorrect.</span> Answer: <span class="font-bold text-green-600" x-text="currentQuestion.metadata.sentences[slotIdx + 1]"></span></span>
+                                    <span><span class="font-bold">Incorrect.</span> Answer: <span class="font-bold text-green-600" x-html="currentQuestion.metadata.sentences[slotIdx + 1]"></span></span>
                                 </div>
                             </div>
                         </template>
@@ -100,7 +100,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path>
                             </svg>
                         </span>
-                        <span class="text-sm text-gray-800" x-text="item.text"></span>
+                        <span class="text-sm text-gray-800" x-html="item.text"></span>
                     </div>
                 </template>
                 
@@ -118,7 +118,7 @@
                     <li x-text="currentQuestion.metadata.sentences[0]"></li>
                 </template>
                 <template x-for="(sentence, sIdx) in currentQuestion.metadata.sentences.slice(1)" :key="sIdx">
-                    <li x-text="sentence"></li>
+                    <li x-html="sentence"></li>
                 </template>
             </ol>
         </div>

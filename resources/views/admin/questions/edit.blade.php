@@ -1,6 +1,11 @@
 @extends('layouts.admin')
 
 @section('content')
+    <style>
+        .ck-editor__editable_inline {
+            min-height: 300px;
+        }
+    </style>
     <div class="min-h-screen" x-data="questionForm({{ json_encode($question) }})">
         <!-- Header -->
         <div class="mb-8 flex justify-between items-center">
@@ -53,9 +58,12 @@
                                     Quiz
                                     <span class="text-red-500">*</span>
                                 </label>
-                                <select name="quiz_id" required disabled
+                                <select name="quiz_id" id="quiz_id" required disabled
                                         class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-700 pointer-events-none">
-                                    <option value="{{ $question->quiz_id }}" selected>
+                                    <option value="{{ $question->quiz_id }}" 
+                                            data-skill="{{ $question->quiz->skill }}" 
+                                            data-part="{{ $question->quiz->part }}"
+                                            selected>
                                         {{ $question->quiz->title }} ({{ ucfirst($question->quiz->skill) }} - Part {{ $question->quiz->part }})
                                     </option>
                                 </select>
@@ -110,14 +118,29 @@
                             </div>
                             
                             <!-- Audio Upload (For Listening) -->
-                            <div x-show="quizMetadata.skill === 'listening'" x-data="{ audioFileName: '', audioPreviewUrl: '' }">
+                            <div x-show="quizMetadata.skill === 'listening'" x-data="{ 
+                                audioFileName: '', 
+                                audioPreviewUrl: '', 
+                                deleteAudio: false 
+                            }">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Audio File (Optional)</label>
                                 
+                                <input type="hidden" name="delete_audio" :value="deleteAudio ? '1' : '0'">
+
                                 @if($question->audio_path)
-                                    <div class="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                                        <p class="text-xs font-medium text-gray-600 mb-2">Current Audio:</p>
+                                    <div x-show="!deleteAudio" class="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <p class="text-xs font-medium text-gray-600">Current Audio:</p>
+                                            <button type="button" @click="deleteAudio = true" class="text-xs text-red-600 hover:text-red-800 font-medium">
+                                                <i class="fas fa-trash-alt mr-1"></i> Xóa audio
+                                            </button>
+                                        </div>
                                         <p class="text-sm text-gray-700 mb-2 truncate">{{ basename($question->audio_path) }}</p>
                                         <audio src="{{ Storage::url($question->audio_path) }}" controls class="w-full"></audio>
+                                    </div>
+                                    <div x-show="deleteAudio" class="mb-3 p-2 bg-red-50 text-red-700 text-xs rounded border border-red-100 flex items-center justify-between">
+                                        <span>Audio sẽ bị xóa sau khi lưu.</span>
+                                        <button type="button" @click="deleteAudio = false" class="text-red-700 font-bold hover:underline">Hoàn tác</button>
                                     </div>
                                 @endif
                                 
@@ -128,21 +151,27 @@
                                         </svg>
                                         <div class="flex text-sm text-gray-600 justify-center">
                                             <label for="audio-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
-                                                <span>{{ $question->audio_path ? 'Change audio' : 'Upload audio' }}</span>
+                                                <span x-text="audioFileName ? 'Thay đổi: ' + audioFileName : (deleteAudio || !'{{ $question->audio_path }}' ? 'Tải lên audio' : 'Thay đổi audio')"></span>
                                                 <input 
                                                     id="audio-upload" 
                                                     name="audio" 
                                                     type="file" 
                                                     accept="audio/*" 
                                                     class="sr-only"
-                                                    @change="audioFileName = $el.files[0]?.name || ''; audioPreviewUrl = $el.files[0] ? URL.createObjectURL($el.files[0]) : ''"
+                                                    x-ref="audioInput"
+                                                    @change="audioFileName = $el.files[0]?.name || ''; audioPreviewUrl = $el.files[0] ? URL.createObjectURL($el.files[0]) : ''; if(audioFileName) deleteAudio = false"
                                                 >
                                             </label>
+                                            <template x-if="audioFileName">
+                                                <button type="button" @click="audioFileName = ''; audioPreviewUrl = ''; $refs.audioInput.value = ''" class="ml-2 text-red-500 hover:text-red-700">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </template>
                                         </div>
                                         <p class="text-xs text-gray-500">MP3, WAV, OGG, M4A up to 10MB</p>
                                         
                                         <div x-show="audioFileName" class="mt-3 p-2 bg-indigo-50 rounded border border-indigo-200">
-                                            <p class="text-xs font-medium text-indigo-700" x-text="'New: ' + audioFileName"></p>
+                                            <p class="text-xs font-medium text-indigo-700" x-text="'Mới: ' + audioFileName"></p>
                                             <audio x-show="audioPreviewUrl" :src="audioPreviewUrl" controls class="w-full mt-2"></audio>
                                         </div>
                                     </div>
@@ -151,9 +180,9 @@
                             
                             <!-- Points -->
                             <!-- Explanation / Transcript -->
-                            <div x-show="['reading', 'listening', 'grammar'].includes(quizMetadata.skill)">
+                            <div x-show="['reading', 'listening', 'grammar'].includes(quizMetadata.skill.toLowerCase())">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Explanation / Transcript (Optional)</label>
-                                <textarea name="explanation" rows="3" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200" placeholder="Nhập giải thích đáp án hoặc transcript audio... (nếu có)">{{ old('explanation', $question->explanation ?? '') }}</textarea>
+                                <textarea name="explanation" rows="5" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 editor-content" placeholder="Nhập giải thích đáp án hoặc transcript audio... (nếu có)">{{ old('explanation', $question->explanation ?? '') }}</textarea>
                             </div>
                             
                              <!-- Order -->
@@ -467,6 +496,52 @@
                     return '';
                 }
             }));
+        });
+    </script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/38.1.0/classic/ckeditor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function initEditor(textarea) {
+                if (textarea.classList.contains('ck-editor-initialized')) return;
+                
+                ClassicEditor
+                    .create(textarea, {
+                        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
+                    })
+                    .then(editor => {
+                        textarea.classList.add('ck-editor-initialized');
+                        // Sync with Alpine model if needed
+                        editor.model.document.on('change:data', () => {
+                            textarea.value = editor.getData();
+                            textarea.dispatchEvent(new Event('input'));
+                        });
+                    })
+                    .catch(error => {
+                        console.error('CKEditor Init Error:', error);
+                    });
+            }
+
+            // Initial check
+            document.querySelectorAll('.editor-content').forEach(initEditor);
+
+            // Observe dynamic changes (for Alpine x-for/x-if)
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.classList.contains('editor-content')) {
+                                initEditor(node);
+                            }
+                            node.querySelectorAll('.editor-content').forEach(initEditor);
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
         });
     </script>
 @endsection

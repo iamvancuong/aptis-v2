@@ -11,6 +11,7 @@ use App\Exports\UsersExport;
 use App\Exports\UsersTemplateExport;
 use App\Imports\UsersImport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
@@ -165,10 +166,43 @@ class UserController extends Controller
                 ->with('error', 'Cannot delete your own account.');
         }
         
-        $user->delete();
-        
+        DB::transaction(function () use ($user) {
+            // Get all attempt IDs for this user
+            $attemptIds = \App\Models\Attempt::where('user_id', $user->id)->pluck('id');
+            
+            // Get all attempt answer IDs for these attempts
+            $answerIds = \App\Models\AttemptAnswer::whereIn('attempt_id', $attemptIds)->pluck('id');
+
+            // 1. Delete writing reviews (specifically for student's submissions)
+            if ($answerIds->isNotEmpty()) {
+                \App\Models\WritingReview::whereIn('attempt_answer_id', $answerIds)->delete();
+            }
+
+            // 2. Delete attempt answers
+            if ($attemptIds->isNotEmpty()) {
+                \App\Models\AttemptAnswer::whereIn('attempt_id', $attemptIds)->delete();
+            }
+
+            // 3. Delete attempts
+            if ($attemptIds->isNotEmpty()) {
+                \App\Models\Attempt::whereIn('id', $attemptIds)->delete();
+            }
+
+            // 4. Delete mock tests
+            \App\Models\MockTest::where('user_id', $user->id)->delete();
+
+            // 5. Delete login sessions
+            \App\Models\LoginSession::where('user_id', $user->id)->delete();
+
+            // 6. Delete AI usage history
+            \App\Models\WritingAiUsage::where('user_id', $user->id)->delete();
+
+            // 7. Delete the user record
+            $user->delete();
+        });
+
         return redirect()->route('admin.users.index')
-            ->with('success', 'User deleted successfully.');
+            ->with('success', 'User and all related history deleted successfully.');
     }
 
     public function extendExpiration(Request $request, User $user)

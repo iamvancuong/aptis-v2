@@ -92,6 +92,7 @@ class GrammarSetController extends Controller
                 $fakeQ = new Question([
                     'order'    => $order,
                     'stem'     => $data['stem'] ?? '',
+                    'explanation' => $data['explanation'] ?? '',
                     'metadata' => $data['metadata'] ?? [],
                 ]);
                 $questions[$order] = $fakeQ;
@@ -148,9 +149,10 @@ class GrammarSetController extends Controller
             foreach (($request->questions ?? []) as $orderIndex => $qData) {
                 $orderIndex = (int) $orderIndex;
                 $stem       = trim($qData['stem'] ?? '');
+                $explanation = trim($qData['explanation'] ?? '');
                 $rawMeta    = $qData['metadata'] ?? [];
                 
-                if ($stem === '' && empty($rawMeta)) continue;
+                if ($stem === '' && empty($rawMeta) && $explanation === '') continue;
                 
                 $part     = ($orderIndex <= $config['mcq_count']) ? 1 : 2;
                 $vocabPos = $orderIndex - $config['mcq_count'];
@@ -160,6 +162,7 @@ class GrammarSetController extends Controller
                 
                 $formattedQuestions[$orderIndex] = [
                     'stem' => $stem,
+                    'explanation' => $explanation,
                     'metadata' => $metadata
                 ];
             }
@@ -199,9 +202,10 @@ class GrammarSetController extends Controller
         foreach ($rawQuestions as $orderIndex => $qData) {
             $orderIndex = (int) $orderIndex;
             $stem       = trim($qData['stem'] ?? '');
+            $explanation = trim($qData['explanation'] ?? '');
             $rawMeta    = $qData['metadata'] ?? [];
 
-            if ($stem === '' && empty($rawMeta)) {
+            if ($stem === '' && empty($rawMeta) && $explanation === '') {
                 continue; // Skip empty slots
             }
 
@@ -221,6 +225,7 @@ class GrammarSetController extends Controller
                 'part'     => $part,
                 'type'     => $type,
                 'stem'     => $stem ?: $type,
+                'explanation' => $explanation,
                 'point'    => ($part === 1) ? 1 : 5,
                 'order'    => $orderIndex,
                 'metadata' => $metadata,

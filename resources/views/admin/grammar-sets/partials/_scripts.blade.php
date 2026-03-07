@@ -1,4 +1,9 @@
 {{-- Partial: _scripts.blade.php — Grammar Edit JS --}}
+<style>
+    .ck-editor__editable_inline {
+        min-height: 150px !important;
+    }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const form      = document.getElementById('grammar-form');
@@ -142,4 +147,49 @@ document.addEventListener('DOMContentLoaded', () => {
         syncSelects(p); // init on load
     });
 });
+</script>
+
+{{-- CKEditor 5 --}}
+<script src="https://cdn.ckeditor.com/ckeditor5/38.1.0/classic/ckeditor.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function initEditor(textarea) {
+            if (textarea.classList.contains('ck-editor-initialized')) return;
+            
+            ClassicEditor
+                .create(textarea, {
+                    toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
+                })
+                .then(editor => {
+                    textarea.classList.add('ck-editor-initialized');
+                    // Sync with Alpine model if needed (though not using Alpine for these textareas directly yet)
+                    editor.model.document.on('change:data', () => {
+                        textarea.value = editor.getData();
+                        textarea.dispatchEvent(new Event('input'));
+                    });
+                })
+                .catch(error => {
+                    console.error('CKEditor Init Error:', error);
+                });
+        }
+
+        // Initial check
+        document.querySelectorAll('.editor-content').forEach(initEditor);
+
+        // Observe dynamic changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        if (node.classList.contains('editor-content')) {
+                            initEditor(node);
+                        }
+                        node.querySelectorAll('.editor-content').forEach(initEditor);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    });
 </script>

@@ -121,31 +121,54 @@ class QuestionService
             // Log warning or ignore if no handler found
         }
 
-        // Handle audio upload
+        // 1. Handle main audio deletion/upload
+        if (isset($data['delete_audio']) && $data['delete_audio'] == '1') {
+            if ($question->audio_path) {
+                Storage::disk('public')->delete($question->audio_path);
+                $question->audio_path = null;
+                $question->save();
+            }
+        }
+
         if ($audio) {
-            // Delete old audio
+            // Delete old audio if exists
             if ($question->audio_path) {
                 Storage::disk('public')->delete($question->audio_path);
             }
             $data['audio_path'] = $audio->store('questions/audio', 'public');
         }
 
-        // Handle speaker audio (Part 2: 4 separate files)
-        if ($speakerAudio && is_array($speakerAudio)) {
+        // 2. Handle speaker audio (Part 2: 4 separate files)
+        $meta = $data['metadata'] ?? [];
+        if (is_array($speakerAudio) || (isset($question->metadata['audio_files']) && !empty($question->metadata['audio_files'])) || isset($data['delete_speaker_audio'])) {
             // Get existing audio files from metadata
             $existingAudioFiles = $question->metadata['audio_files'] ?? [];
+            $deleteSpeakerAudio = $data['delete_speaker_audio'] ?? [];
             
             $audioPaths = [];
-            foreach ($speakerAudio as $index => $file) {
-                if ($file) {
+            // Use the number of items in the CURRENT request metadata if possible, fallback to old or 4
+            $items = $meta['items'] ?? ($question->metadata['items'] ?? [0,1,2,3]);
+            $itemCount = count($items);
+            
+            for ($index = 0; $index < $itemCount; $index++) {
+                $file = (is_array($speakerAudio) && isset($speakerAudio[$index])) ? $speakerAudio[$index] : null;
+                $shouldDelete = isset($deleteSpeakerAudio[$index]) && $deleteSpeakerAudio[$index] == '1';
+                
+                if ($file instanceof UploadedFile) {
                     // Delete old file if exists
                     if (isset($existingAudioFiles[$index])) {
                         Storage::disk('public')->delete($existingAudioFiles[$index]);
                     }
                     // Store new file
                     $audioPaths[$index] = $file->store('questions/audio/speakers', 'public');
+                } elseif ($shouldDelete) {
+                    // Delete existing file
+                    if (isset($existingAudioFiles[$index])) {
+                        Storage::disk('public')->delete($existingAudioFiles[$index]);
+                    }
+                    // Do not add to audioPaths, it will be missing (deleted)
                 } else {
-                    // Keep existing file if no new upload
+                    // Keep existing file if no new upload and not deleted
                     if (isset($existingAudioFiles[$index])) {
                         $audioPaths[$index] = $existingAudioFiles[$index];
                     }
@@ -153,15 +176,13 @@ class QuestionService
             }
             
             // Update metadata with new audio paths
-            if (!empty($audioPaths)) {
-                $data['metadata']['audio_files'] = $audioPaths;
-            }
+            $data['metadata']['audio_files'] = $audioPaths;
         }
 
         $updated = $this->questionRepository->update($question, $data);
 
         // Update Set association if provided
-        if ($updated && $data['set_id']) {
+        if ($updated && isset($data['set_id'])) {
             $question->sets()->sync([$data['set_id']]);
         }
         

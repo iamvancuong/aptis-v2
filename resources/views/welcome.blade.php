@@ -65,6 +65,7 @@
 
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#about" class="text-slate-600 hover:text-blue-600 font-medium transition-colors">Giới thiệu</a>
                     <a href="#features" class="text-slate-600 hover:text-blue-600 font-medium transition-colors">Tính năng</a>
                     <a href="#how-it-works" class="text-slate-600 hover:text-blue-600 font-medium transition-colors">Cách hoạt động</a>
                     <a href="#pricing" class="text-slate-600 hover:text-blue-600 font-medium transition-colors">Bảng giá</a>
@@ -100,6 +101,7 @@
         <!-- Mobile Menu -->
         <div x-show="mobileMenuOpen" x-transition x-cloak class="md:hidden bg-white border-b border-slate-200 shadow-lg">
             <div class="px-4 pt-2 pb-6 space-y-1">
+                <a href="#about" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Giới thiệu</a>
                 <a href="#features" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Tính năng</a>
                 <a href="#how-it-works" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Cách hoạt động</a>
                 <a href="#pricing" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Bảng giá</a>
@@ -222,6 +224,77 @@
 
         </div>
     </div>
+    <!-- Introduction Section -->
+    <section id="about" class="py-20 relative overflow-hidden bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <!-- Info Left -->
+                <div class="lg:w-1/2">
+                    <h2 class="text-base text-blue-600 font-bold tracking-widest uppercase mb-3">Về chúng tôi</h2>
+                    <h3 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6 leading-tight">
+                        Milaedu - Người bạn đồng hành tin cậy trong kỳ thi Aptis
+                    </h3>
+                    <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+                        Chúng tôi cung cấp giải pháp luyện thi toàn diện, giúp học viên nắm vững kiến thức và kỹ năng cần thiết để tự tin bước vào kỳ thi Aptis. Với đội ngũ chuyên gia giàu kinh nghiệm và hệ thống hỗ trợ hiện đại, Milaedu cam kết mang đến trải nghiệm học tập tốt nhất.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        @if($settings['contact_hotline'] ?? null)
+                        <a href="tel:{{ str_replace([' ', '.', '-'], '', $settings['contact_hotline']) }}" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:shadow-md hover:bg-blue-50/50 group">
+                            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Hotline</p>
+                                <p class="text-slate-900 font-bold">{{ $settings['contact_hotline'] }}</p>
+                            </div>
+                        </a>
+                        @endif
+
+                        @if($settings['zalo_contact_number_2'] ?? null)
+                        <a href="https://zalo.me/{{ str_replace([' ', '.', '-'], '', $settings['zalo_contact_number_2']) }}" target="_blank" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:shadow-md hover:bg-orange-50/50 group">
+                            <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shrink-0 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.002 2C6.477 2 2 6.477 2 12.002c0 5.525 4.477 10.002 10.002 10.002 5.525 0 10.002-4.477 10.002-10.002C22.004 6.477 17.527 2 12.002 2zm0 18.004c-4.413 0-8.002-3.589-8.002-8.002 0-4.413 3.589-8.002 8.002-8.002 4.413 0 8.002 3.589 8.002 8.002 0 4.413-3.589 8.002-8.002 8.002zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Zalo Phụ</p>
+                                <p class="text-slate-900 font-bold">{{ $settings['zalo_contact_number_2'] }}</p>
+                            </div>
+                        </a>
+                        @endif
+
+                        @if($settings['contact_email'] ?? null)
+                        <a href="mailto:{{ $settings['contact_email'] }}" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:shadow-md hover:bg-indigo-50/50 group sm:col-span-2">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Email</p>
+                                <p class="text-slate-900 font-bold break-all">{{ $settings['contact_email'] }}</p>
+                            </div>
+                        </a>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Image Right -->
+                <div class="lg:w-1/2 relative">
+                    <div class="relative rounded-3xl overflow-hidden shadow-2xl">
+                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1471&q=80" alt="Milaedu Team" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
+                    </div>
+                    
+                    <!-- Stats Floating -->
+                    <div class="absolute -bottom-6 -left-6 bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
+                        <div class="flex items-center gap-4">
+                            <div class="text-4xl font-black text-blue-600">5k+</div>
+                            <div class="text-slate-500 font-bold leading-tight">Học viên<br>tin dùng</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Features Section -->
     <section id="features" class="py-24 bg-white relative">

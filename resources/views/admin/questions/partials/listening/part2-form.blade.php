@@ -28,6 +28,7 @@
                     <div x-data="{ 
                         fileName: '', 
                         previewUrl: '', 
+                        deleteAudio: false,
                         get existingAudio() { 
                             const audioFiles = @js($question->metadata['audio_files'] ?? []);
                             return audioFiles[index] || null;
@@ -35,31 +36,65 @@
                     }">
                         <label class="text-xs font-medium text-gray-600">Audio File</label>
                         
+                        <input type="hidden" :name="'delete_speaker_audio[' + index + ']'" :value="deleteAudio ? '1' : '0'">
+
                         <!-- Existing Audio Preview (Edit Mode) -->
-                        <template x-if="existingAudio">
+                        <template x-if="existingAudio && !deleteAudio">
                             <div class="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
-                                <p class="text-xs text-gray-600 mb-1">Current Audio:</p>
+                                <div class="flex items-center justify-between mb-1">
+                                    <p class="text-xs text-gray-600">Current Audio:</p>
+                                    <button type="button" @click="deleteAudio = true" class="text-[10px] text-red-600 hover:underline">Xóa</button>
+                                </div>
                                 <audio :src="'/storage/' + existingAudio" controls class="w-full h-8"></audio>
                             </div>
                         </template>
+
+                        <!-- Deletion Notice -->
+                        <template x-if="deleteAudio">
+                            <div class="mt-2 p-1 bg-red-50 text-red-700 text-[10px] rounded border border-red-100 flex items-center justify-between">
+                                <span>Sẽ bị xóa</span>
+                                <button type="button" @click="deleteAudio = false" class="font-bold hover:underline">Hoàn tác</button>
+                            </div>
+                        </template>
                         
-                        <div class="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-indigo-400 transition">
+                        <div class="mt-1 border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-indigo-400 transition text-indigo-600">
                             <label :for="'audio_' + index" class="cursor-pointer block">
                                 <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
                                 </svg>
-                                <span class="text-xs text-indigo-600 font-medium" x-text="existingAudio ? 'Change file' : 'Choose file'"></span>
+                                <span class="text-xs font-medium" x-text="fileName ? 'Thay đổi' : (existingAudio && !deleteAudio ? 'Thay đổi file' : 'Chọn file audio')"></span>
                                 <input 
                                     :id="'audio_' + index" 
                                     :name="'speaker_audio[' + index + ']'" 
                                     type="file" 
                                     class="sr-only" 
                                     accept=".mp3,.wav,.ogg,.m4a"
-                                    @change="fileName = $event.target.files[0]?.name || ''; previewUrl = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : '';"
+                                    x-ref="audioInput"
+                                    @change="fileName = $event.target.files[0]?.name || ''; previewUrl = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : ''; if(fileName) deleteAudio = false"
                                 >
                             </label>
-                            <p x-show="fileName" x-text="fileName" class="text-xs text-gray-600 mt-2 truncate"></p>
+                            
+                            <template x-if="fileName">
+                                <div class="mt-2 flex items-center justify-center gap-2">
+                                    <p x-text="fileName" class="text-[10px] text-gray-600 truncate max-w-[120px]"></p>
+                                    <button type="button" @click="fileName = ''; previewUrl = ''; $refs.audioInput.value = ''" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </template>
+                            
                             <audio x-show="previewUrl" :src="previewUrl" controls class="w-full mt-2 h-8"></audio>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="text-xs font-medium text-gray-600">Audio Description (Transcript/Mô tả)</label>
+                            <textarea 
+                                :name="'metadata[descriptions][' + index + ']'" 
+                                x-model="questionMetadata.descriptions[index]" 
+                                rows="3"
+                                class="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 editor-content"
+                                placeholder="Nhập mô tả cho audio này..."
+                            ></textarea>
                         </div>
                     </div>
                 </div>

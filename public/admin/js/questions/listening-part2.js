@@ -3,9 +3,13 @@ document.addEventListener('alpine:init', () => {
         items: metadata?.items || ['Speaker A', 'Speaker B', 'Speaker C', 'Speaker D'],
         choices: metadata?.choices || ['', '', '', '', '', ''],
         correctAnswers: metadata?.correct_answers || [0, 0, 0, 0],
+        descriptions: metadata?.descriptions || ['', '', '', ''],
         
         init() {
             // Data is initialized from metadata parameter or defaults
+            if (!this.descriptions || this.descriptions.length < 4) {
+                this.descriptions = ['', '', '', ''];
+            }
         }
     }));
 });

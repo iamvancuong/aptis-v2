@@ -6,7 +6,7 @@
                 {{-- Paragraph Text with Inline Select --}}
                 <template x-for="(segment, sIndex) in paragraph.split('[BLANK]')" :key="sIndex">
                     <span>
-                        <span x-text="segment"></span>
+                        <span x-html="segment"></span>
                         <template x-if="sIndex < paragraph.split('[BLANK]').length - 1">
                             <select 
                                 x-model.number="part1Answers[currentQuestion.id][pIndex]"

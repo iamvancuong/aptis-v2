@@ -3,23 +3,27 @@
     <div class="space-y-6">
         {{-- Audio Player (optional) --}}
         <template x-if="currentQuestion.audio_path">
-            <div class="bg-gray-50 rounded-lg p-4">
+            <div class="bg-gray-50 rounded-lg p-4 space-y-3">
                 <audio :src="'/storage/' + currentQuestion.audio_path" controls class="w-full"></audio>
+                <div class="flex justify-end">
+                    <button @click="const el = document.getElementById('lp4_audio_desc'); if(el) el.classList.toggle('hidden')" class="text-blue-500 text-xs hover:underline">Xem mô tả</button>
+                </div>
+                <div id="lp4_audio_desc" class="hidden p-3 bg-white border border-gray-200 rounded-lg text-sm ck-content" x-html="currentQuestion.metadata.description || 'Chưa có mô tả'"></div>
             </div>
         </template>
 
         {{-- Topic/Context --}}
         <div>
             <h4 class="font-bold text-gray-800 mb-1">Câu hỏi</h4>
-            <p class="text-gray-700" x-text="currentQuestion.metadata.topic || currentQuestion.stem"></p>
+            <p class="text-gray-700" x-html="currentQuestion.metadata.topic || currentQuestion.stem"></p>
         </div>
-
+        
         {{-- Sub-questions with Radio Choices --}}
         <div class="space-y-6">
             <template x-for="(subQ, qIdx) in currentQuestion.metadata.questions" :key="qIdx">
                 <div class="border-l-4 border-indigo-400 bg-white rounded-r-lg p-5">
                     {{-- Sub-question text --}}
-                    <p class="font-semibold text-gray-800 mb-4" x-text="subQ.question"></p>
+                    <p class="font-semibold text-gray-800 mb-4" x-html="subQ.question"></p>
 
                     {{-- Radio choices --}}
                     <div class="space-y-3">

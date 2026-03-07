@@ -12,7 +12,7 @@
                 <div class="border border-gray-200 rounded-lg p-4 bg-white">
                     <div class="flex items-center justify-between mb-2">
                         <span class="font-semibold text-gray-800 text-sm" x-text="speaker || 'Speaker ' + String.fromCharCode(65 + sIdx)"></span>
-                        <button @click="$refs['lp2desc_' + sIdx]?.classList.toggle('hidden')" class="text-blue-500 text-xs hover:underline">Xem mô tả</button>
+                        <button @click="const el = document.getElementById('lp2desc_' + sIdx); if(el) el.classList.toggle('hidden')" class="text-blue-500 text-xs hover:underline">Xem mô tả</button>
                     </div>
                     
                     {{-- Audio --}}
@@ -25,6 +25,10 @@
                             <span class="text-xs">No audio</span>
                         </div>
                     </template>
+
+                    {{-- Description --}}
+                    <div :id="'lp2desc_' + sIdx" class="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700 hidden ck-content" x-html="currentQuestion.metadata.descriptions ? currentQuestion.metadata.descriptions[sIdx] : ''">
+                    </div>
                 </div>
             </template>
         </div>
@@ -32,7 +36,7 @@
         {{-- Question Stem --}}
         <div>
             <h4 class="font-bold text-gray-800 mb-1">Câu hỏi</h4>
-            <p class="text-gray-700 text-sm" x-text="currentQuestion.stem"></p>
+            <p class="text-gray-700 text-sm" x-html="currentQuestion.stem"></p>
         </div>
 
         {{-- Speaker-to-Opinion Dropdowns --}}

@@ -1,6 +1,11 @@
 @extends('layouts.admin')
 
 @section('content')
+    <style>
+        .ck-editor__editable_inline {
+            min-height: 400px;
+        }
+    </style>
     <div class="min-h-screen" x-data="questionForm">
         <!-- Header -->
         <div class="mb-8">
@@ -113,7 +118,10 @@
                             </div>
                             
                             <!-- Audio Upload (For Listening) -->
-                            <div x-show="quizMetadata.skill === 'listening'" x-data="{ audioFileName: '', audioPreviewUrl: '' }">
+                            <div x-show="quizMetadata.skill === 'listening'" x-data="{ 
+                                audioFileName: '', 
+                                audioPreviewUrl: '' 
+                            }">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Audio File (Optional)</label>
                                 <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-500 transition-colors duration-200">
                                     <div class="space-y-1 text-center w-full">
@@ -122,16 +130,22 @@
                                         </svg>
                                         <div class="flex text-sm text-gray-600 justify-center">
                                             <label for="audio" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                                <span>Upload audio file</span>
+                                                <span x-text="audioFileName ? 'Thay đổi: ' + audioFileName : 'Tải lên audio'"></span>
                                                 <input 
                                                     id="audio" 
                                                     name="audio" 
                                                     type="file" 
                                                     class="sr-only" 
                                                     accept=".mp3,.wav,.ogg,.m4a"
+                                                    x-ref="audioInput"
                                                     @change="audioFileName = $event.target.files[0]?.name || ''; audioPreviewUrl = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : '';"
                                                 >
                                             </label>
+                                            <template x-if="audioFileName">
+                                                <button type="button" @click="audioFileName = ''; audioPreviewUrl = ''; $refs.audioInput.value = ''" class="ml-2 text-red-500 hover:text-red-700">
+                                                    <i class="fas fa-times"></i> Xóa
+                                                </button>
+                                            </template>
                                         </div>
                                         <p class="text-xs text-gray-500">MP3, WAV, OGG, M4A up to 10MB</p>
                                         
@@ -146,9 +160,9 @@
 
                             
                             <!-- Explanation / Transcript -->
-                            <div x-show="['reading', 'listening', 'grammar'].includes(quizMetadata.skill)">
+                            <div x-show="['reading', 'listening', 'grammar'].includes(quizMetadata.skill.toLowerCase())">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Explanation / Transcript (Optional)</label>
-                                <textarea name="explanation" rows="3" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200" placeholder="Nhập giải thích đáp án hoặc transcript audio... (nếu có)"></textarea>
+                                <textarea name="explanation" rows="5" class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 editor-content" placeholder="Nhập giải thích đáp án hoặc transcript audio... (nếu có)"></textarea>
                             </div>
                                                         {{-- Order --}}
                              <div>
@@ -468,6 +482,52 @@
                     return '';
                 }
             }));
+        });
+    </script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/38.1.0/classic/ckeditor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function initEditor(textarea) {
+                if (textarea.classList.contains('ck-editor-initialized')) return;
+                
+                ClassicEditor
+                    .create(textarea, {
+                        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
+                    })
+                    .then(editor => {
+                        textarea.classList.add('ck-editor-initialized');
+                        // Sync with Alpine model if needed
+                        editor.model.document.on('change:data', () => {
+                            textarea.value = editor.getData();
+                            textarea.dispatchEvent(new Event('input'));
+                        });
+                    })
+                    .catch(error => {
+                        console.error('CKEditor Init Error:', error);
+                    });
+            }
+
+            // Initial check
+            document.querySelectorAll('.editor-content').forEach(initEditor);
+
+            // Observe dynamic changes (for Alpine x-for/x-if)
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.classList.contains('editor-content')) {
+                                initEditor(node);
+                            }
+                            node.querySelectorAll('.editor-content').forEach(initEditor);
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
         });
     </script>
 @endsection

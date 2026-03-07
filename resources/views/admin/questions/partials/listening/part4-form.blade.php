@@ -18,6 +18,17 @@
         >
     </div>
 
+    <!-- Audio Description -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Audio Description</label>
+        <textarea 
+            x-model="description" 
+            name="metadata[description]" 
+            class="editor-content w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            placeholder="Enter audio description/transcript..."
+        ></textarea>
+    </div>
+
     <!-- Questions (Fixed 2) -->
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-3">Questions (2 fixed)</label>

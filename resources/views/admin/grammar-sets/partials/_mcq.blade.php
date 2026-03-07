@@ -52,5 +52,14 @@
             </div>
             @endforeach
         </div>
+
+        {{-- Giải thích --}}
+        <div class="mt-3 pt-3 border-t border-indigo-100">
+            <label class="block text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1.5">Giải thích (Explanation)</label>
+            <textarea name="questions[{{ $i }}][explanation]"
+                      rows="3"
+                      class="editor-content w-full border border-gray-100 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 placeholder-gray-300"
+                      placeholder="Giải thích đáp án câu {{ $i }} cho học sinh...">{{ old("questions.$i.explanation", $q?->explanation ?? '') }}</textarea>
+        </div>
     </div>
 </div>

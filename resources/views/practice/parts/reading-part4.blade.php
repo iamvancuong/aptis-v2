@@ -23,7 +23,7 @@
                 </div>
 
                 {{-- Paragraph Text --}}
-                <p class="text-gray-700 leading-relaxed text-sm" x-text="para"></p>
+                <div class="text-gray-700 leading-relaxed text-sm" x-html="para"></div>
 
                 {{-- Per-paragraph feedback --}}
                 <template x-if="hasAnswered(currentQuestion.id)">

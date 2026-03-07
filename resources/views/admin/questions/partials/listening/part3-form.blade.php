@@ -1,22 +1,21 @@
 <div class="space-y-6">
+    <!-- Audio Description -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Audio Description</label>
+        <textarea 
+            x-model="description" 
+            name="metadata[description]" 
+            class="editor-content w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            placeholder="Enter audio description/transcript..."
+        ></textarea>
+    </div>
+
     <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
         <p class="text-sm text-blue-700">
             <strong>Part 3 Format:</strong> Students listen to a conversation and respond to statements using a shared set of options (e.g., "Agree", "Disagree", "Not stated").
         </p>
     </div>
 
-    <!-- Topic/Context -->
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Topic/Context</label>
-        <input 
-            type="text" 
-            x-model="topic" 
-            name="metadata[topic]" 
-            class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            placeholder="e.g., politics bản 1"
-            required
-        >
-    </div>
 
     <!-- Shared Dropdown Choices (Fixed) -->
     <div>

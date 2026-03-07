@@ -22,6 +22,7 @@ class ListeningPart4Handler implements PartHandlerInterface
     {
         return [
             'metadata.topic' => 'required|string|max:255',
+            'metadata.description' => 'nullable|string',
             'metadata.questions' => 'required|array|size:2',
             'metadata.questions.*.question' => 'required|string',
             'metadata.questions.*.choices' => 'required|array|size:3',

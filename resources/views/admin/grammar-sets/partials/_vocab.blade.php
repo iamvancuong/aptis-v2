@@ -58,11 +58,11 @@
                                value="{{ old("questions.$orderI.metadata.pairs.".($pi-1).".prefix", $pair['prefix'] ?? '') }}"
                                class="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:ring-1 focus:ring-purple-300 min-w-0"
                                placeholder="Prefix...">
-                        <span class="text-gray-300 text-xs font-mono shrink-0">___</span>
                         <input type="text" name="questions[{{ $orderI }}][metadata][pairs][{{ $pi-1 }}][suffix]"
                                value="{{ old("questions.$orderI.metadata.pairs.".($pi-1).".suffix", $pair['suffix'] ?? '') }}"
                                class="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:ring-1 focus:ring-purple-300 min-w-0"
                                placeholder="Suffix...">
+                        <span class="text-gray-300 text-xs font-mono shrink-0">___</span>
                     @else
                         <input type="text" name="questions[{{ $orderI }}][metadata][pairs][{{ $pi-1 }}][prompt]"
                                value="{{ old("questions.$orderI.metadata.pairs.".($pi-1).".prompt", $pair['prompt'] ?? '') }}"
@@ -83,6 +83,13 @@
                             <option value="{{ $word }}" {{ $correctVal === $word ? 'selected' : '' }}>{{ $word }}</option>
                         @endforeach
                     </select>
+
+                    @if($vdef['type'] === 'sentence_completion')
+                        <input type="text" name="questions[{{ $orderI }}][metadata][pairs][{{ $pi-1 }}][after]"
+                               value="{{ old("questions.$orderI.metadata.pairs.".($pi-1).".after", $pair['after'] ?? '') }}"
+                               class="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:ring-1 focus:ring-purple-300 min-w-0"
+                               placeholder="After...">
+                    @endif
                 </div>
             @endfor
         </div>
@@ -96,6 +103,15 @@
                    class="pool-input w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-purple-300 text-gray-600"
                    data-order="{{ $orderI }}"
                    placeholder="learn, get, begin, speak, choose, donate, go, run">
+        </div>
+
+        {{-- Giải thích --}}
+        <div class="mt-3 pt-3 border-t border-purple-100">
+            <label class="block text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1.5">Giải thích (Explanation)</label>
+            <textarea name="questions[{{ $orderI }}][explanation]"
+                      rows="3"
+                      class="editor-content w-full border border-gray-100 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-purple-300 focus:border-purple-400 placeholder-gray-300"
+                      placeholder="Giải thích các đáp án trong phần này cho học sinh...">{{ old("questions.$orderI.explanation", $vq?->explanation ?? '') }}</textarea>
         </div>
     </div>
 </div>

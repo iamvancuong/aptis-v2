@@ -20,7 +20,7 @@
                 <div class="mt-4" x-show="currentQuestion.explanation">
                     <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
                         <span class="font-semibold text-blue-800 block mb-2">Giải thích / Transcript:</span>
-                        <div class="text-sm text-gray-700 whitespace-pre-wrap" x-text="currentQuestion.explanation"></div>
+                        <div class="text-sm text-gray-700 whitespace-pre-wrap" x-html="currentQuestion.explanation"></div>
                     </div>
                 </div>
             </div>

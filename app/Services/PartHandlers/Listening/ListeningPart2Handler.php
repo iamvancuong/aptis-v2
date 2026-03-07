@@ -26,6 +26,10 @@ class ListeningPart2Handler implements PartHandlerInterface
             'metadata.choices.*' => 'required|string',
             'metadata.correct_answers' => 'required|array',
             'metadata.correct_answers.*' => 'required|integer|min:0',
+            'metadata.descriptions' => 'nullable|array',
+            'metadata.descriptions.*' => 'nullable|string',
+            'metadata.audio_files' => 'nullable|array',
+            'metadata.audio_files.*' => 'nullable|string',
         ];
     }
 }

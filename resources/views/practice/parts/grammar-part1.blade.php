@@ -61,5 +61,18 @@
                 </label>
             </template>
         </div>
+
+        {{-- Explanation --}}
+        <template x-if="hasAnswered(currentQuestion.id) && currentQuestion.explanation">
+            <div class="mt-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex gap-3">
+                <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Giải thích</p>
+                    <div class="prose prose-sm prose-indigo max-w-none text-indigo-900 leading-relaxed ck-content" x-html="currentQuestion.explanation"></div>
+                </div>
+            </div>
+        </template>
     </div>
 </template>
