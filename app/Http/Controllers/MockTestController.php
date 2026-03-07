@@ -191,6 +191,8 @@ class MockTestController extends Controller
                         'skill' => $q->skill,
                         'part' => $q->part,
                         'stem' => $q->stem,
+                        'audio_path' => $q->audio_path,
+                        'image_path' => $q->image_path,
                         'metadata' => $q->metadata,
                         'point' => $q->point,
                         'title' => $q->title,
