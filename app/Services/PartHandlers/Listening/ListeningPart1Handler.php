@@ -21,6 +21,7 @@ class ListeningPart1Handler implements PartHandlerInterface
     public function getValidationRules(): array
     {
         return [
+            'metadata.description' => 'nullable|string',
             'metadata.choices' => 'required|array|size:3',
             'metadata.choices.*' => 'required|string',
             'metadata.correct_answer' => 'required|integer|min:0|max:2',

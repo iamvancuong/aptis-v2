@@ -42,7 +42,7 @@
 
                     {{-- Prompt (for non-sentence-completion) --}}
                     <template x-if="pair.prompt !== undefined">
-                        <span class="text-sm font-medium text-gray-700 min-w-0 shrink-0 w-28 truncate" x-text="pair.prompt"></span>
+                        <span class="text-sm font-medium text-gray-700 min-w-0" x-text="pair.prompt"></span>
                     </template>
 
                     {{-- Connector (for non-sentence-completion) --}}
