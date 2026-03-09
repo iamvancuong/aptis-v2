@@ -92,7 +92,7 @@ class UserController extends Controller
         $user->load(['loginSessions' => function($query) {
             $query->orderBy('last_active_at', 'desc');
         }, 'attempts' => function($query) {
-            $query->with('quiz')->orderBy('created_at', 'desc');
+            $query->with(['set.quiz', 'mockTest'])->orderBy('created_at', 'desc');
         }]);
 
         return view('admin.users.show', compact('user'));

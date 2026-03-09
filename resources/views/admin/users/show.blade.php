@@ -146,8 +146,18 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 @foreach($user->attempts as $attempt)
                     <tr>
-                        <td class="px-6 py-4 text-sm">{{ $attempt->quiz->title ?? 'N/A' }}</td>
-                        <td class="px-6 py-4 text-sm">{{ $attempt->set->title ?? 'N/A' }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            @if($attempt->set && $attempt->set->quiz)
+                                {{ $attempt->set->quiz->title }}
+                            @elseif($attempt->mockTest)
+                                Mock Test: {{ ucfirst($attempt->skill) }}
+                            @else
+                                N/A
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            {{ $attempt->set->title ?? ($attempt->mockTest ? 'Full Exam' : 'N/A') }}
+                        </td>
                         <td class="px-6 py-4 text-sm font-semibold">{{ $attempt->score }}</td>
                         <td class="px-6 py-4 text-sm">{{ $attempt->total_questions }}</td>
                         <td class="px-6 py-4 text-sm">
