@@ -51,7 +51,18 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        if (Auth::check()) {
+            $user = Auth::user();
+            $deviceId = $request->cookie('aptis_device_id');
+            
+            if ($deviceId) {
+                \App\Models\LoginSession::where('user_id', $user->id)
+                    ->where('device_id', $deviceId)
+                    ->delete();
+            }
+            
+            Auth::logout();
+        }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

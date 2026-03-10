@@ -62,6 +62,10 @@
             <x-alert type="success" class="mb-4">{{ session('success') }}</x-alert>
         @endif
         
+        @if(session('warning'))
+            <x-alert type="warning" class="border-yellow-200 bg-yellow-50 text-yellow-800 mb-4">{{ session('warning') }}</x-alert>
+        @endif
+
         @if(session('error'))
             <x-alert type="error" class="mb-4">{{ session('error') }}</x-alert>
         @endif

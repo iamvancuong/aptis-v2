@@ -26,7 +26,13 @@ class SessionLimit
             return $next($request);
         }
 
-        $deviceId = $this->getDeviceId($request);
+        $deviceId = $request->cookie('aptis_device_id');
+        $isNewDevice = false;
+
+        if (!$deviceId) {
+            $deviceId = hash('sha256', Str::uuid() . time());
+            $isNewDevice = true;
+        }
 
         // Update or create session for this device
         $existingSession = LoginSession::where('device_id', $deviceId)->first();
@@ -48,19 +54,23 @@ class SessionLimit
         if ($activeSessions >= $user->max_devices) {
             // Increment violation count
             $user->increment('violation_count');
+            $newViolationCount = $user->violation_count;
 
             // Block if violations >= 3
-            if ($user->violation_count >= 3) {
+            if ($newViolationCount >= 3) {
                 $user->update(['status' => 'blocked']);
                 auth()->logout();
-                return redirect()->route('login')->with('error', 'Tài khoản đã bị khóa do vi phạm đăng nhập quá nhiều thiết bị.');
+                return redirect()->route('login')->with('error', 'Tài khoản đã bị khóa do vi phạm đăng nhập quá nhiều thiết bị (hệ thống chỉ cho phép đăng nhập đồng thời 1 thiết bị).');
             }
 
-            // Remove oldest session
+            // Remove oldest session (kicking out the previous device)
             LoginSession::where('user_id', $user->id)
                 ->orderBy('last_active_at', 'asc')
                 ->first()
                 ?->delete();
+                
+            // Set alert message for the new session
+            session()->flash('warning', "Cảnh báo: Bạn vừa đăng nhập trên thiết bị mới trong khi thiết bị cũ vẫn đang hoạt động. Đây là vi phạm lần {$newViolationCount}/3. Hệ thống không cho phép dùng 2 thiết bị cùng lúc. Nếu vi phạm 3 lần, tài khoản sẽ bị khóa.");
         }
 
         // Create new session for this device
@@ -69,14 +79,17 @@ class SessionLimit
             'device_id' => $deviceId,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
+            'last_active_at' => now(),
         ]);
 
-        return $next($request);
+        $response = $next($request);
+        
+        // Attach the device ID cookie if it's new
+        if ($isNewDevice) {
+            $response->withCookie(cookie()->forever('aptis_device_id', $deviceId));
+        }
+
+        return $response;
     }
 
-    private function getDeviceId(Request $request): string
-    {
-        // Generate unique device ID based on IP + User Agent
-        return hash('sha256', $request->ip() . $request->userAgent());
-    }
 }
