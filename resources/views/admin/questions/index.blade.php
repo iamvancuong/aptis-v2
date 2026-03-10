@@ -86,6 +86,7 @@
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Question (Stem)</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Set</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Skill</th>
                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Part</th>
@@ -115,10 +116,15 @@
                     <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">
                         @if($question->title)
                             <span class="font-medium">{{ $question->title }}</span>
-                        @elseif($question->stem)
-                            <span class="text-gray-400 italic text-xs">{{ Str::limit(strip_tags($question->stem), 60) }}</span>
                         @else
                             <span class="text-gray-300">—</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 max-w-sm">
+                        @if($question->stem)
+                            <span class="text-gray-600 text-xs line-clamp-2" title="{{ strip_tags($question->stem) }}">{{ Str::limit(strip_tags($question->stem), 100) }}</span>
+                        @else
+                            <span class="text-gray-300 italic text-xs">No Question Text</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-900">

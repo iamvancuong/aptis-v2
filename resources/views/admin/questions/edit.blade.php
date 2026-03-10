@@ -506,21 +506,30 @@
             function initEditor(textarea) {
                 if (textarea.classList.contains('ck-editor-initialized')) return;
                 
-                ClassicEditor
-                    .create(textarea, {
-                        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
-                    })
-                    .then(editor => {
-                        textarea.classList.add('ck-editor-initialized');
-                        // Sync with Alpine model if needed
-                        editor.model.document.on('change:data', () => {
-                            textarea.value = editor.getData();
-                            textarea.dispatchEvent(new Event('input'));
+                // Small delay to ensure Alpine has populated the textarea
+                setTimeout(() => {
+                    ClassicEditor
+                        .create(textarea, {
+                            toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
+                        })
+                        .then(editor => {
+                            textarea.classList.add('ck-editor-initialized');
+                            
+                            // Load initial data if present (for Edit mode)
+                            if (textarea.value) {
+                                editor.setData(textarea.value);
+                            }
+
+                            // Sync with Alpine model
+                            editor.model.document.on('change:data', () => {
+                                textarea.value = editor.getData();
+                                textarea.dispatchEvent(new Event('input'));
+                            });
+                        })
+                        .catch(error => {
+                            console.error('CKEditor Init Error:', error);
                         });
-                    })
-                    .catch(error => {
-                        console.error('CKEditor Init Error:', error);
-                    });
+                }, 50);
             }
 
             // Initial check
