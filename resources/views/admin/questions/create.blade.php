@@ -69,11 +69,11 @@
                                 </select>
                             </div>
 
-                            <!-- Title (Optional) -->
                             <x-input 
                                 name="title"
                                 label="Title (Optional)"
                                 placeholder="Nhập tiêu đề câu hỏi (nếu có)"
+                                x-model="title"
                             />
                             <p class="text-sm text-gray-500 -mt-3 mb-4">Tiêu đề giúp học viên dễ nhận biết câu hỏi</p>
 
@@ -351,6 +351,8 @@
                 isLoadingSets: false,
                 sets: [],
                 quizMetadata: { skill: '', part: '' },
+                title: '',
+                stem: '',
 
                 init() {
                     this.$watch('selectedQuizId', (value) => {

@@ -6,7 +6,10 @@
         </svg>
         Preview
     </h4>
-    <div class="space-y-2">
+        <p class="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1" x-text="title || '(No Title)'"></p>
+        <p class="text-sm font-medium text-gray-800 mb-4" x-html="stem || '(No Question Text)'"></p>
+        
+        <div class="space-y-2">
         <template x-for="(choice, index) in choices" :key="index">
             <label 
                 class="flex items-center gap-3 p-3 bg-white rounded-lg border-2 transition-all duration-200 cursor-pointer hover:border-indigo-300"

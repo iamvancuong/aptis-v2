@@ -71,12 +71,12 @@
                                 <p class="text-xs text-gray-500 mt-1">Quiz không thể thay đổi khi chỉnh sửa</p>
                             </div>
 
-                            <!-- Title (Optional) -->
                             <x-input 
                                 name="title"
                                 label="Title (Optional)"
                                 :value="$question->title"
                                 placeholder="Nhập tiêu đề câu hỏi (nếu có)"
+                                x-model="title"
                             />
                             <p class="text-sm text-gray-500 -mt-3 mb-4">Tiêu đề giúp học viên dễ nhận biết câu hỏi</p>
 
@@ -356,6 +356,8 @@
                 sets: @json($sets), 
                 quizMetadata: { skill: question.skill, part: question.part },
                 questionMetadata: question.metadata || null,
+                title: question.title || '',
+                stem: question.stem || '',
 
                 init() {
                     this.$nextTick(() => {
