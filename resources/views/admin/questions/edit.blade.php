@@ -506,52 +506,53 @@
             function initEditor(textarea) {
                 if (textarea.classList.contains('ck-editor-initialized')) return;
                 
-                // Small delay to ensure Alpine has finished its initial pass
+                // Mark as initialized early to prevent duplicate calls
+                textarea.classList.add('ck-editor-initialized');
+                
+                // Small delay to ensure Alpine has populated models
                 setTimeout(() => {
-                    if (textarea.classList.contains('ck-editor-initialized')) return;
+                    const modelExpr = textarea.getAttribute('x-model');
 
                     ClassicEditor
                         .create(textarea, {
                             toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
                         })
                         .then(editor => {
-                            textarea.classList.add('ck-editor-initialized');
+                            // LOAD INITIAL DATA
+                            let content = textarea.value;
                             
-                            // Robust initial data load from Alpine.js
-                            const modelExpression = textarea.getAttribute('x-model');
-                            if (modelExpression && typeof Alpine !== 'undefined') {
+                            // If textarea is empty, try to get from Alpine directly
+                            if (!content && modelExpr && window.Alpine) {
                                 try {
-                                    const initialValue = Alpine.evaluate(textarea, modelExpression);
-                                    if (initialValue) {
-                                        editor.setData(initialValue);
-                                    }
-                                } catch (e) {
-                                    console.warn('Alpine evaluate failed for CKEditor init:', e);
-                                    if (textarea.value) editor.setData(textarea.value);
-                                }
-                            } else if (textarea.value) {
-                                editor.setData(textarea.value);
+                                    content = Alpine.evaluate(textarea, modelExpr);
+                                } catch (e) {}
+                            }
+                            
+                            if (content) {
+                                editor.setData(content);
                             }
 
-                            // Sync with Alpine model on change
+                            // Sync with Alpine model
                             editor.model.document.on('change:data', () => {
                                 const data = editor.getData();
                                 textarea.value = data;
                                 textarea.dispatchEvent(new Event('input'));
                                 
                                 // Force Alpine sync if model expression exists
-                                if (modelExpression && typeof Alpine !== 'undefined') {
+                                if (modelExpr && window.Alpine) {
                                     try {
-                                        // Using a setter expression
-                                        Alpine.evaluate(textarea, `${modelExpression} = \`${data.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\``);
+                                        // Use safer evaluation for setting value
+                                        const safeData = data.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+                                        Alpine.evaluate(textarea, `${modelExpr} = \`${safeData}\``);
                                     } catch (e) {}
                                 }
                             });
                         })
                         .catch(error => {
                             console.error('CKEditor Init Error:', error);
+                            textarea.classList.remove('ck-editor-initialized');
                         });
-                }, 150); // Slightly longer delay for stability
+                }, 200);
             }
 
             // Initial check

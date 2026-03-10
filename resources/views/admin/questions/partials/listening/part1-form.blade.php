@@ -20,7 +20,7 @@
             name="metadata[description]" 
             class="editor-content w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             placeholder="Enter audio description/transcript..."
-        ></textarea>
+        >{{ old('metadata.description', isset($question) && isset($question->metadata['description']) ? $question->metadata['description'] : '') }}</textarea>
     </div>
 
     <p class="text-sm text-gray-600">Create 3 choices for the listening question. Mark the correct answer.</p>
