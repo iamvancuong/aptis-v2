@@ -26,10 +26,9 @@
             <p class="text-gray-700" x-html="currentQuestion.stem"></p>
         </div>
 
-        {{-- Title and Stem display near choices --}}
-        <div class="mb-4 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100/50" x-show="currentQuestion.title || currentQuestion.stem">
-            <h5 class="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.2em] mb-1" x-show="currentQuestion.title" x-text="currentQuestion.title"></h5>
-            <p class="text-sm font-semibold text-gray-900 leading-relaxed" x-show="currentQuestion.stem" x-html="currentQuestion.stem"></p>
+        {{-- Title display near choices --}}
+        <div class="mb-4 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100/50" x-show="currentQuestion.title">
+            <h5 class="text-[11px] font-bold text-indigo-500 tracking-wide mb-0" x-text="currentQuestion.title"></h5>
         </div>
 
         {{-- Radio Choices --}}
