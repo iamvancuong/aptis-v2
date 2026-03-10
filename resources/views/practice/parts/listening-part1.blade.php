@@ -26,6 +26,11 @@
             <p class="text-gray-700" x-html="currentQuestion.stem"></p>
         </div>
 
+        {{-- Title display near choices --}}
+        <div class="mb-4" x-show="currentQuestion.title">
+            <h5 class="text-xs font-bold text-indigo-600 uppercase tracking-wider" x-text="currentQuestion.title"></h5>
+        </div>
+
         {{-- Radio Choices --}}
         <div class="space-y-3">
             <template x-for="(choice, cIdx) in currentQuestion.metadata.choices" :key="cIdx">
