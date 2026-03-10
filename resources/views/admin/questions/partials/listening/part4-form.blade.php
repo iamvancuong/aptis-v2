@@ -33,6 +33,18 @@
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-3">Questions (2 fixed)</label>
         <div class="space-y-4">
+    <!-- Question (Stem) -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Question (Stem)</label>
+        <input 
+            type="text" 
+            x-model="stem" 
+            name="stem" 
+            class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            placeholder="e.g., Listen to the monologue and answer the questions"
+            required
+        >
+    </div>
             <template x-for="(q, qIndex) in questions" :key="qIndex">
                 <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <label class="block text-sm font-medium text-gray-700 mb-2">

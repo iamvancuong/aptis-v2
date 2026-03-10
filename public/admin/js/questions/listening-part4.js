@@ -6,6 +6,7 @@ document.addEventListener('alpine:init', () => {
             { question: '', choices: ['', '', ''] }
         ],
         correctAnswers: metadata?.correct_answers || [0, 0],
+        description: metadata?.description || '',
         
         init() {
             // Data is initialized from metadata parameter or defaults
