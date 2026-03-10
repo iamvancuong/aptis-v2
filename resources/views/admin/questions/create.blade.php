@@ -492,21 +492,48 @@
             function initEditor(textarea) {
                 if (textarea.classList.contains('ck-editor-initialized')) return;
                 
-                ClassicEditor
-                    .create(textarea, {
-                        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
-                    })
-                    .then(editor => {
-                        textarea.classList.add('ck-editor-initialized');
-                        // Sync with Alpine model if needed
-                        editor.model.document.on('change:data', () => {
-                            textarea.value = editor.getData();
-                            textarea.dispatchEvent(new Event('input'));
+                setTimeout(() => {
+                    const modelExpr = textarea.getAttribute('x-model');
+
+                    ClassicEditor
+                        .create(textarea, {
+                            toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
+                        })
+                        .then(editor => {
+                            textarea.classList.add('ck-editor-initialized');
+                            
+                            // Load initial data if exists
+                            let content = textarea.value;
+                            if (modelExpr && window.Alpine) {
+                                try {
+                                    const alpineValue = Alpine.evaluate(textarea, modelExpr);
+                                    if (alpineValue !== undefined && alpineValue !== null) {
+                                        content = alpineValue;
+                                    }
+                                } catch (e) {}
+                            }
+                            
+                            if (content) {
+                                editor.setData(content);
+                            }
+
+                            // Sync with Alpine model
+                            editor.model.document.on('change:data', () => {
+                                const data = editor.getData();
+                                textarea.value = data;
+                                textarea.dispatchEvent(new Event('input'));
+
+                                if (modelExpr && window.Alpine) {
+                                    try {
+                                        Alpine.evaluate(textarea, `${modelExpr} = \`${data.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\``);
+                                    } catch (e) {}
+                                }
+                            });
+                        })
+                        .catch(error => {
+                            console.error('CKEditor Init Error:', error);
                         });
-                    })
-                    .catch(error => {
-                        console.error('CKEditor Init Error:', error);
-                    });
+                }, 200);
             }
 
             // Initial check

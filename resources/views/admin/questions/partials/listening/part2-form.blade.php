@@ -102,7 +102,7 @@
                             <label class="text-xs font-medium text-gray-600">Audio Description (Transcript/Mô tả)</label>
                             <textarea 
                                 :name="'metadata[descriptions][' + index + ']'" 
-                                x-model="questionMetadata.descriptions[index]" 
+                                x-model="descriptions[index]" 
                                 rows="3"
                                 class="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 editor-content"
                                 placeholder="Nhập mô tả cho audio này..."

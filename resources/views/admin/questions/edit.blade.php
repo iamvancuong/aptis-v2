@@ -506,8 +506,10 @@
             function initEditor(textarea) {
                 if (textarea.classList.contains('ck-editor-initialized')) return;
                 
-                // Small delay to ensure Alpine has populated the textarea
+                // Small delay to ensure Alpine has finished rendering
                 setTimeout(() => {
+                    const modelExpr = textarea.getAttribute('x-model');
+
                     ClassicEditor
                         .create(textarea, {
                             toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
@@ -515,21 +517,44 @@
                         .then(editor => {
                             textarea.classList.add('ck-editor-initialized');
                             
-                            // Load initial data if present (for Edit mode)
-                            if (textarea.value) {
-                                editor.setData(textarea.value);
+                            // LOAD INITIAL DATA
+                            let content = textarea.value;
+                            
+                            // FORCE OVERWRITE with Alpine data if model exists
+                            if (modelExpr && window.Alpine) {
+                                try {
+                                    const alpineValue = Alpine.evaluate(textarea, modelExpr);
+                                    if (alpineValue !== undefined && alpineValue !== null) {
+                                        content = alpineValue;
+                                    }
+                                } catch (e) {
+                                    console.warn('Alpine evaluate fail:', e);
+                                }
+                            }
+                            
+                            if (content) {
+                                editor.setData(content);
                             }
 
                             // Sync with Alpine model
                             editor.model.document.on('change:data', () => {
-                                textarea.value = editor.getData();
+                                const data = editor.getData();
+                                textarea.value = data;
                                 textarea.dispatchEvent(new Event('input'));
+                                
+                                // Direct sync back to Alpine to ensure it's saved
+                                if (modelExpr && window.Alpine) {
+                                    try {
+                                        // Handle complex expressions like array access
+                                        Alpine.evaluate(textarea, `${modelExpr} = \`${data.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\``);
+                                    } catch (e) {}
+                                }
                             });
                         })
                         .catch(error => {
                             console.error('CKEditor Init Error:', error);
                         });
-                }, 50);
+                }, 200);
             }
 
             // Initial check
