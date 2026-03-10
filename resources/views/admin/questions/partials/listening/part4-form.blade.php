@@ -26,7 +26,7 @@
             name="metadata[description]" 
             class="editor-content w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
             placeholder="Enter audio description/transcript..."
-        ></textarea>
+        >{{ old('metadata.description', $question->metadata['description'] ?? '') }}</textarea>
     </div>
 
     <!-- Questions (Fixed 2) -->
