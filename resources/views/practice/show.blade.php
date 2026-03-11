@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 flex flex-col" x-data="practiceSession({{ $set->questions }})">
+<div class="min-h-screen bg-gray-50 flex flex-col" x-data="practiceSession({{ $set->questions }})" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
     {{-- Premium Header --}}
     <header class="bg-white/90 backdrop-blur-md sticky top-0 z-30 border-b border-gray-100 shadow-sm transition-all duration-300">
         <div class="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 w-full">
@@ -1234,5 +1234,62 @@
             }
         };
     }
+</script>
+
+<style>
+    /* Allow text selection inside inputs, textareas, and contenteditable elements */
+    input, textarea, [contenteditable] {
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+    }
+</style>
+
+<script>
+    (function() {
+        // Block right-click context menu
+        document.addEventListener('contextmenu', function(e) {
+            // Allow right-click inside inputs and textareas so users can paste
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            e.preventDefault();
+        });
+
+        // Block copy / cut events (but allow in inputs/textareas)
+        document.addEventListener('copy', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            e.preventDefault();
+        });
+        document.addEventListener('cut', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            e.preventDefault();
+        });
+
+        // Block drag-start on text content
+        document.addEventListener('dragstart', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'AUDIO') return;
+            e.preventDefault();
+        });
+
+        // Block keyboard shortcuts: Ctrl+C, Ctrl+A, Ctrl+X, Ctrl+Shift+I, Ctrl+U, F12
+        document.addEventListener('keydown', function(e) {
+            const activeTag = document.activeElement ? document.activeElement.tagName : '';
+            const isInputArea = (activeTag === 'INPUT' || activeTag === 'TEXTAREA');
+
+            // Always allow inside inputs
+            if (isInputArea) return;
+
+            const ctrl = e.ctrlKey || e.metaKey;
+
+            if (ctrl && (e.key === 'c' || e.key === 'C')) { e.preventDefault(); return; }
+            if (ctrl && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); return; }
+            if (ctrl && (e.key === 'x' || e.key === 'X')) { e.preventDefault(); return; }
+            if (ctrl && (e.key === 'u' || e.key === 'U')) { e.preventDefault(); return; } // View source
+            if (ctrl && e.shiftKey && (e.key === 'i' || e.key === 'I')) { e.preventDefault(); return; } // DevTools
+            if (ctrl && e.shiftKey && (e.key === 'j' || e.key === 'J')) { e.preventDefault(); return; } // Console
+            if (ctrl && e.shiftKey && (e.key === 'c' || e.key === 'C')) { e.preventDefault(); return; } // Inspect
+            if (e.key === 'F12') { e.preventDefault(); return; } // DevTools
+        });
+    })();
 </script>
 @endsection

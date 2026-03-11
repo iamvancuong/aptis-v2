@@ -5,7 +5,7 @@
         <div class="bg-gray-50 rounded-lg p-4">
             <template x-if="currentQuestion.audio_path">
                 <div class="space-y-3">
-                    <audio :src="'/storage/' + currentQuestion.audio_path" controls class="w-full"></audio>
+                    <audio :src="'/storage/' + currentQuestion.audio_path" controls controlslist="nodownload nofullscreen noremoteplayback" oncontextmenu="return false" class="w-full"></audio>
                     <div class="flex justify-end">
                         <button @click="const el = document.getElementById('lp3_audio_desc'); if(el) el.classList.toggle('hidden')" class="text-blue-500 text-xs hover:underline">Xem mô tả</button>
                     </div>

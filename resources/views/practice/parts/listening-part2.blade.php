@@ -17,7 +17,7 @@
                     
                     {{-- Audio --}}
                     <template x-if="currentQuestion.metadata.audio_files && currentQuestion.metadata.audio_files[sIdx]">
-                        <audio :src="'/storage/' + currentQuestion.metadata.audio_files[sIdx]" controls class="w-full h-10" :id="'speaker_audio_' + sIdx"></audio>
+                        <audio :src="'/storage/' + currentQuestion.metadata.audio_files[sIdx]" controls controlslist="nodownload nofullscreen noremoteplayback" oncontextmenu="return false" class="w-full h-10" :id="'speaker_audio_' + sIdx"></audio>
                     </template>
                     <template x-if="!currentQuestion.metadata.audio_files || !currentQuestion.metadata.audio_files[sIdx]">
                         <div class="flex items-center gap-2 text-gray-400 py-2">
