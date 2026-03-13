@@ -18,13 +18,13 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-sm font-medium text-gray-700" x-text="field.label"></label>
-                        <span class="text-xs" :class="getWordCountClass(writingPart1Answers[idx], {max: 5})">
-                            <span x-text="countWords(writingPart1Answers[idx])"></span>/5 từ
+                        <span class="text-xs" :class="getWordCountClass(writingPart1Answers[idx], {max: 10})">
+                            <span x-text="countWords(writingPart1Answers[idx])"></span>/10 từ
                         </span>
                     </div>
                     <input type="text"
                         x-model="writingPart1Answers[idx]"
-                        @input="writingPart1Answers[idx] = enforceWordLimit($event.target.value, 5)"
+                        @input="writingPart1Answers[idx] = enforceWordLimit($event.target.value, 10)"
                         @paste.prevent
                         :placeholder="field.placeholder || ''"
                         :disabled="hasAnswered(currentQuestion.id)"

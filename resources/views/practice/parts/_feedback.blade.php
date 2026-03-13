@@ -1,6 +1,6 @@
 {{-- Generic Feedback Footer (Reusable across skills) --}}
 {{-- For Writing, we use AI feedback or Sample Answers instead of simple right/wrong --}}
-<template x-if="currentQuestion.skill !== 'writing'">
+<template x-if="currentQuestion.skill !== 'writing' && currentQuestion.skill !== 'speaking'">
     <div x-show="hasAnswered(currentQuestion.id)" 
          class="px-6 pb-6 bg-gray-50 border-t border-gray-100 pt-4">
         <div class="flex items-start">

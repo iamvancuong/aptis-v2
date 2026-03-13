@@ -11,7 +11,7 @@
                 {{-- Fixed First Sentence --}}
                 <template x-if="currentQuestion.metadata.sentences[0]">
                     <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-500 flex gap-3 cursor-not-allowed opacity-80">
-                        <span class="font-bold text-gray-400 w-6 text-center">1</span>
+                        <span class="font-bold text-gray-400 w-6 text-center">0</span>
                         <span class="text-sm" x-html="currentQuestion.metadata.sentences[0]"></span>
                     </div>
                 </template>
@@ -37,7 +37,7 @@
                                   :class="hasAnswered(currentQuestion.id) && slot
                                       ? (slot.originalIndex === slotIdx + 1 ? 'text-green-600' : 'text-red-600')
                                       : 'text-blue-600'"
-                                  x-text="slotIdx + 2"></span>
+                                  x-text="slotIdx + 1"></span>
                             
                             <template x-if="slot">
                                 <div class="flex-1 flex items-center justify-between gap-2">
