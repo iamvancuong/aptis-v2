@@ -26,6 +26,17 @@ class PracticeController extends Controller
             $query->orderBy('order');
         }, 'quiz']);
 
+        // Shuffle dropdown pools for Grammar Part 2 questions
+        if ($set->quiz->skill === 'grammar') {
+            foreach ($set->questions as $question) {
+                if ($question->part === 2 && isset($question->metadata['dropdown_pool']) && is_array($question->metadata['dropdown_pool'])) {
+                    $meta = $question->metadata;
+                    shuffle($meta['dropdown_pool']);
+                    $question->metadata = $meta;
+                }
+            }
+        }
+
         return view('practice.show', compact('set'));
     }
 

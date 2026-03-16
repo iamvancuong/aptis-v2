@@ -122,12 +122,16 @@ class GrammarSetController extends Controller
         }
 
         DB::transaction(function () use ($request, $grammarSet, $config) {
-            $grammarSet->update([
-                'title'  => $request->title,
-                'status' => $request->action === 'publish' ? 'published' : 'draft',
-            ]);
-
             $this->syncQuestions($grammarSet, $request->questions ?? [], $config);
+
+            // Clear the draft after a real save so edit() shows fresh DB data
+            $meta = $grammarSet->metadata ?? [];
+            unset($meta['draft']);
+            $grammarSet->update([
+                'title'    => $request->title,
+                'status'   => $request->action === 'publish' ? 'published' : 'draft',
+                'metadata' => $meta,
+            ]);
         });
 
         $msg = $request->action === 'publish'
