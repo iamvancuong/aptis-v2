@@ -228,6 +228,7 @@ function mockTestExam() {
         part2Pool: [],
         p2DragOverSlot: null,
         p2DraggingPoolIdx: null,
+        p2SelectedPoolIdx: null,
         part3Answers: [],
         part4Answers: [],
 
@@ -537,8 +538,16 @@ function mockTestExam() {
                     const sentences = q.metadata.sentences.slice(1).map((text, idx) => ({
                         text, originalIndex: idx + 1
                     }));
-                    this.part2Pool = sentences.sort(() => Math.random() - 0.5);
-                    this.part2Slots = new Array(sentences.length).fill(null);
+                    
+                    if (saved && Array.isArray(saved)) {
+                        this.part2Slots = [...saved];
+                        // Remove placed items from pool
+                        const savedIndices = saved.filter(s => s !== null).map(s => s.originalIndex);
+                        this.part2Pool = sentences.filter(s => !savedIndices.includes(s.originalIndex)).sort(() => Math.random() - 0.5);
+                    } else {
+                        this.part2Pool = sentences.sort(() => Math.random() - 0.5);
+                        this.part2Slots = new Array(sentences.length).fill(null);
+                    }
                 }
             }
 
@@ -611,6 +620,29 @@ function mockTestExam() {
             this.part2Slots = [...this.part2Slots];
             this.part2Pool = [...this.part2Pool];
             this.p2DraggingPoolIdx = null;
+            this.p2SelectedPoolIdx = null;
+        },
+        selectP2Pool(poolIdx) {
+            if (this.hasAnswered(this.currentQuestion.id)) return;
+            if (this.p2SelectedPoolIdx === poolIdx) {
+                this.p2SelectedPoolIdx = null;
+            } else {
+                this.p2SelectedPoolIdx = poolIdx;
+            }
+        },
+        selectP2Slot(slotIdx) {
+            if (this.hasAnswered(this.currentQuestion.id)) return;
+            if (this.part2Slots[slotIdx] !== null) {
+                this.removeFromSlot(slotIdx);
+                return;
+            }
+            if (this.p2SelectedPoolIdx !== null) {
+                const item = this.part2Pool.splice(this.p2SelectedPoolIdx, 1)[0];
+                this.part2Slots[slotIdx] = item;
+                this.part2Slots = [...this.part2Slots];
+                this.part2Pool = [...this.part2Pool];
+                this.p2SelectedPoolIdx = null;
+            }
         },
         removeFromSlot(slotIdx) {
             if (this.hasAnswered(this.currentQuestion.id)) return;
