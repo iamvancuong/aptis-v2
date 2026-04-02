@@ -3,6 +3,7 @@
 @section('title', $instruction->title . ' - Hướng dẫn')
 
 @section('content')
+<div class="select-none" oncopy="return false" oncut="return false" oncontextmenu="return false" onselectstart="return false">
 <div class="w-full bg-gradient-to-br from-indigo-50 via-white to-blue-50 border-b border-gray-200 shadow-sm relative overflow-hidden">
     <!-- Decorative background elements -->
     <div class="absolute top-0 right-0 -translate-y-12 translate-x-1/3 opacity-20 pointer-events-none">
@@ -83,5 +84,18 @@
             {!! $instruction->content !!}
         </div>
     @endif
+</div>
+
+<script>
+    document.addEventListener('keydown', function(e) {
+        // Chặn F12, Ctrl+C, Ctrl+X, Ctrl+U, Ctrl+S, Ctrl+P
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X' || e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'p' || e.key === 'P')) {
+            e.preventDefault();
+        }
+        if (e.key === 'F12') {
+            e.preventDefault();
+        }
+    });
+</script>
 </div>
 @endsection
