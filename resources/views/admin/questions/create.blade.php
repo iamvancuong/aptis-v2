@@ -490,9 +490,22 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             function initEditor(textarea) {
-                if (textarea.classList.contains('ck-editor-initialized')) return;
+                // Check if already initialized or currently initializing
+                if (textarea.classList.contains('ck-editor-initialized') || textarea.classList.contains('ck-editor-initializing')) {
+                    return;
+                }
                 
+                // Mark as initializing immediately to prevent double calls from MutationObserver
+                textarea.classList.add('ck-editor-initializing');
+                
+                // Small delay to ensure Alpine has finished rendering
                 setTimeout(() => {
+                    // Double check if it's still in the DOM and not already initialized
+                    if (!textarea.isConnected || textarea.classList.contains('ck-editor-initialized')) {
+                        textarea.classList.remove('ck-editor-initializing');
+                        return;
+                    }
+
                     const modelExpr = textarea.getAttribute('x-model');
 
                     ClassicEditor
@@ -500,6 +513,7 @@
                             toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo']
                         })
                         .then(editor => {
+                            textarea.classList.remove('ck-editor-initializing');
                             textarea.classList.add('ck-editor-initialized');
                             
                             // Load initial data if exists
@@ -525,15 +539,18 @@
 
                                 if (modelExpr && window.Alpine) {
                                     try {
-                                        Alpine.evaluate(textarea, `${modelExpr} = \`${data.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\``);
+                                        // Handle potential undefined/null data
+                                        const escapedData = (data || '').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+                                        Alpine.evaluate(textarea, `${modelExpr} = \`${escapedData}\``);
                                     } catch (e) {}
                                 }
                             });
                         })
                         .catch(error => {
+                            textarea.classList.remove('ck-editor-initializing');
                             console.error('CKEditor Init Error:', error);
                         });
-                }, 200);
+                }, 50); // Reduced delay for better responsiveness and less race condition window
             }
 
             // Initial check
