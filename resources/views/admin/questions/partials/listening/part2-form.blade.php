@@ -1,4 +1,16 @@
-<div class="space-y-4">
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('questionForm', () => ({
+            stem: @js($question->stem ?? ''),
+            items: @js($question->metadata['items'] ?? array_fill(0, 4, '')),
+            choices: @js($question->metadata['choices'] ?? array_fill(0, 6, '')),
+            correctAnswers: @js($question->metadata['correct_answers'] ?? array_fill(0, 4, '')),
+            descriptions: @js($question->metadata['descriptions'] ?? array_fill(0, 4, '')),
+        }));
+    });
+</script>
+
+<div x-data="questionForm" class="space-y-4">
     <!-- Question (Stem) -->
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Question (Stem)</label>
