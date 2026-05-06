@@ -100,24 +100,12 @@
 
                         <div class="mt-3">
                             <label class="text-xs font-medium text-gray-600">Audio Description (Transcript/Mô tả)</label>
-                            
-                            <!-- Debug info (hidden by default, can be shown by changing x-show) -->
-                            <div x-show="false" class="text-[10px] text-red-500 font-mono">
-                                Data: <span x-text="descriptions[index] ? 'Has data' : 'Empty'"></span>
-                            </div>
 
                             <textarea 
                                 :name="'metadata[descriptions][' + index + ']'" 
                                 x-model="descriptions[index]" 
                                 x-text="descriptions[index]"
                                 :value="descriptions[index]"
-                                x-init="
-                                    $nextTick(() => {
-                                        if (!descriptions[index] && questionMetadata?.descriptions?.[index]) {
-                                            descriptions[index] = questionMetadata.descriptions[index];
-                                        }
-                                    })
-                                "
                                 rows="3"
                                 class="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 editor-content"
                                 placeholder="Nhập mô tả cho audio này..."
