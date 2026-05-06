@@ -360,6 +360,15 @@
                 stem: question.stem || '',
 
                 init() {
+                    // Safety check for metadata if it's stringified (common on some hosting environments)
+                    if (typeof this.questionMetadata === 'string') {
+                        try {
+                            this.questionMetadata = JSON.parse(this.questionMetadata);
+                        } catch (e) {
+                            console.error('Failed to parse questionMetadata:', e);
+                        }
+                    }
+
                     this.$nextTick(() => {
                         this.updateQuizMetadata();
                         if (question.sets && question.sets.length > 0) {
@@ -569,7 +578,7 @@
                             textarea.classList.remove('ck-editor-initializing');
                             console.error('CKEditor Init Error:', error);
                         });
-                }, 50); // Reduced delay for better responsiveness and less race condition window
+                }, 300); // Increased delay for hosting reliability to ensure Alpine finishes rendering
             }
 
             // Initial check
