@@ -1,4 +1,29 @@
-<div class="space-y-4">
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('listeningPart2Form', () => ({
+            descriptions: @js($question->metadata['descriptions'] ?? array_fill(0, 4, '')),
+            items: @js($question->metadata['items'] ?? ['Speaker A', 'Speaker B', 'Speaker C', 'Speaker D']),
+            choices: @js($question->metadata['choices'] ?? array_fill(0, 6, '')),
+            correctAnswers: @js($question->metadata['correct_answers'] ?? array_fill(0, 4, '')),
+            
+            init() {
+                if (!Array.isArray(this.descriptions)) {
+                    this.descriptions = Object.values(this.descriptions || {});
+                }
+                while (this.descriptions.length < 4) this.descriptions.push('');
+                
+                // Sync with parent if needed
+                this.$watch('descriptions', (val) => {
+                    if (window.questionMetadata) {
+                        window.questionMetadata.descriptions = val;
+                    }
+                }, { deep: true });
+            }
+        }));
+    });
+</script>
+
+<div x-data="listeningPart2Form" class="space-y-4">
     <!-- Question (Stem) -->
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Question (Stem)</label>
