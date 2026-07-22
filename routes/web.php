@@ -28,12 +28,27 @@ Route::get('/', function () {
     return view('welcome', compact('feedbacks', 'highScores', 'settings'));
 })->name('home');
 
+// Thanh toán (truy cập được cả khi chưa đăng nhập — mua/gia hạn).
+// Trang QR có chữ ký để không ai dò được đơn của người khác qua id.
+Route::get('/thanh-toan/{order}', [\App\Http\Controllers\PaymentController::class, 'show'])
+    ->middleware('signed')->name('payment.show');
+Route::get('/thanh-toan/{order}/thanh-cong', [\App\Http\Controllers\PaymentController::class, 'return'])->name('payment.return');
+Route::get('/thanh-toan/{order}/huy', [\App\Http\Controllers\PaymentController::class, 'cancel'])->name('payment.cancel');
+// Webhook PayOS — public, không CSRF (đã loại trừ ở bootstrap/app.php).
+Route::post('/webhooks/payos', [\App\Http\Controllers\PaymentController::class, 'webhook'])->name('payment.webhook');
+// 🧪 Giả lập thanh toán — chỉ chạy khi PAYOS_FAKE=true (controller tự chặn).
+Route::get('/thanh-toan/{order}/gia-lap', [\App\Http\Controllers\PaymentController::class, 'devFulfill'])->name('payment.dev-fulfill');
+
+// Chính sách thanh toán & hoàn tiền (công khai).
+Route::view('/chinh-sach-hoan-tien', 'policy.refund')->name('policy.refund');
+
 // Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    // Đăng ký = chọn gói + trả phí (thay cho flow cũ redirect Zalo).
+    Route::get('/register', [\App\Http\Controllers\RegistrationController::class, 'create'])->name('register');
+    Route::post('/register', [\App\Http\Controllers\RegistrationController::class, 'store'])->name('register.store');
 });
 
 // Authenticated routes
@@ -59,6 +74,11 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     Route::post('/practice/{set}/attempt', [App\Http\Controllers\PracticeController::class, 'store'])
         ->middleware(['throttle:10,1'])
         ->name('practice.store');
+    // Releases one question's answer key at a time, for instant feedback.
+    // Throttled so the endpoint cannot be walked to harvest a whole set.
+    Route::post('/practice/{set}/check', [App\Http\Controllers\PracticeController::class, 'check'])
+        ->middleware(['throttle:60,1'])
+        ->name('practice.check');
     
     // AI Writing Features
     Route::get('/ai/usage-status', [App\Http\Controllers\PracticeController::class, 'getAiUsageStatus'])->name('ai.usage-status');
@@ -90,6 +110,27 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
 
     // Leaderboard
     Route::get('/leaderboard', [\App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.index');
+
+    // Đổi mật khẩu (buộc đổi lần đầu với tài khoản tạo tự động)
+    Route::get('/doi-mat-khau', [\App\Http\Controllers\PasswordChangeController::class, 'edit'])->name('password.change');
+    Route::post('/doi-mat-khau', [\App\Http\Controllers\PasswordChangeController::class, 'update'])->name('password.update');
+
+    // Buổi hướng dẫn thứ 7
+    Route::get('/buoi-huong-dan', [\App\Http\Controllers\GuidanceController::class, 'index'])->name('guidance.index');
+    Route::post('/buoi-huong-dan', [\App\Http\Controllers\GuidanceController::class, 'store'])->name('guidance.store');
+
+    // Records a DevTools detection and ends the session. Throttled so a
+    // misbehaving client cannot spam the log.
+    Route::post('/security/devtools-flag', [\App\Http\Controllers\SecurityController::class, 'flagDevtools'])
+        ->middleware('throttle:5,1')
+        ->name('security.devtools-flag');
+
+    // Question audio. Signed on top of `auth`, so a copied link is useless to
+    // anyone not signed in and stops working once the signature expires.
+    Route::get('/media/questions/{question}/audio/{index?}', [\App\Http\Controllers\MediaController::class, 'questionAudio'])
+        ->middleware('signed')
+        ->whereNumber('index')
+        ->name('media.question-audio');
 });
 
 use App\Http\Controllers\Admin\WritingSetController;
@@ -124,6 +165,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::post('users/{user}/block', [UserController::class, 'block'])->name('users.block');
     Route::post('users/{user}/unblock', [UserController::class, 'unblock'])->name('users.unblock');
     Route::post('users/{user}/reset-violations', [UserController::class, 'resetViolations'])->name('users.reset-violations');
+    Route::post('users/{user}/toggle-devtools-guard', [UserController::class, 'toggleDevtoolsGuard'])->name('users.toggle-devtools-guard');
     Route::post('users/{user}/extend-expiration', [UserController::class, 'extendExpiration'])->name('users.extend-expiration');
     Route::post('users/{user}/reset-ai', [UserController::class, 'resetAi'])->name('users.reset-ai');
     Route::post('users/{user}/reset-speaking-ai', [UserController::class, 'resetSpeakingAi'])->name('users.reset-speaking-ai');
@@ -165,4 +207,10 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     // Settings
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+
+    // Security review queue (DevTools detections)
+    Route::get('security-flags', [\App\Http\Controllers\Admin\SecurityFlagController::class, 'index'])->name('security-flags.index');
+
+    // Doanh số
+    Route::get('revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('revenue.index');
 });

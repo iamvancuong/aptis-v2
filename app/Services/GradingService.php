@@ -203,13 +203,30 @@ class GradingService
                     return ($correctCount / $totalItems) * $maxPoints;
 
                 case 2: // Ordering
+                    // Graded by comparing the submitted sentences against the
+                    // order stored in the database. The index the client sends
+                    // alongside each sentence is deliberately ignored: it used
+                    // to be the whole basis for scoring, which let anyone post
+                    // a perfectly numbered sequence and take full marks without
+                    // reading a single sentence.
                     if (!is_array($userAnswer)) return 0;
 
-                    foreach ($userAnswer as $idx => $item) {
-                        if (!isset($item['originalIndex']) || $item['originalIndex'] !== ($idx + 1)) {
+                    $expected = array_slice($metadata['sentences'] ?? [], 1);
+
+                    if (empty($expected) || count($userAnswer) !== count($expected)) {
+                        return 0;
+                    }
+
+                    foreach ($expected as $idx => $sentence) {
+                        $submitted = is_array($userAnswer[$idx] ?? null)
+                            ? ($userAnswer[$idx]['text'] ?? null)
+                            : ($userAnswer[$idx] ?? null);
+
+                        if ($submitted === null || trim((string) $submitted) !== trim((string) $sentence)) {
                             return 0;
                         }
                     }
+
                     return $maxPoints;
 
                 default:

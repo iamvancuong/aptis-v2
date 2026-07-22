@@ -8,6 +8,7 @@ use App\Models\WritingAiUsage;
 use App\Jobs\ProcessWritingGrading;
 use App\Services\AiService;
 use App\Services\GradingService;
+use App\Services\QuestionSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +17,8 @@ class PracticeController extends Controller
 {
     public function __construct(
         private GradingService $gradingService,
-        private AiService $aiService
+        private AiService $aiService,
+        private QuestionSanitizer $sanitizer
     ) {}
 
     public function show(Set $set)
@@ -37,7 +39,40 @@ class PracticeController extends Controller
             }
         }
 
-        return view('practice.show', compact('set'));
+        // Questions go to the browser without their answer keys; the keys are
+        // released one question at a time by check() once the learner answers.
+        $questionsJson = $this->sanitizer->collectionForClient($set->questions);
+
+        return view('practice.show', compact('set', 'questionsJson'));
+    }
+
+    /**
+     * Grade a single question and release its answer key, so the practice UI
+     * can show instant feedback without the whole answer key ever sitting in
+     * the page source.
+     */
+    public function check(Request $request, Set $set)
+    {
+        $data = $request->validate([
+            'question_id' => 'required|integer',
+            'answer'      => 'nullable',
+        ]);
+
+        $question = $set->questions()->whereKey($data['question_id'])->first();
+
+        if (! $question) {
+            return response()->json(['message' => 'Question not found in this set.'], 404);
+        }
+
+        $payload = ['answer_key' => $this->sanitizer->answerKeyFor($question)];
+
+        if (array_key_exists('answer', $data) && $data['answer'] !== null) {
+            $result = $this->gradingService->gradeQuestion($question, $data['answer']);
+            $payload['is_correct'] = $result['is_correct'];
+            $payload['score']      = $result['score'];
+        }
+
+        return response()->json($payload);
     }
 
     public function store(Request $request, Set $set)

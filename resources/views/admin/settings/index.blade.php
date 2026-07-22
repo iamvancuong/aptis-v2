@@ -195,6 +195,26 @@
                 </div>
             </div>
 
+            {{-- DevTools guard master switch --}}
+            <div class="pt-6 mt-2 border-t border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-1">🛡️ Chống mở Developer Tools</h3>
+                <p class="text-xs text-gray-500 mb-3 leading-snug">
+                    Khi bật: học viên (không phải admin) mở DevTools sẽ bị cảnh báo và
+                    đăng xuất sau 10 giây, đồng thời được ghi vào trang Cảnh báo bảo mật.
+                    Có thể miễn trừ từng tài khoản ở trang Quản lý người dùng.
+                </p>
+                <div class="flex items-start gap-2">
+                    <div class="flex items-center h-5">
+                        <input id="devtools_guard_enabled" name="devtools_guard_enabled" type="checkbox" value="1"
+                               {{ \App\Models\Setting::bool('devtools_guard_enabled', true) ? 'checked' : '' }}
+                               class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                    </div>
+                    <label for="devtools_guard_enabled" class="text-sm font-medium text-gray-700 cursor-pointer">
+                        Bật chức năng chặn DevTools cho toàn hệ thống
+                    </label>
+                </div>
+            </div>
+
             <div class="flex justify-end pt-4 border-t border-gray-100">
                 <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-sm transition-colors cursor-pointer">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>

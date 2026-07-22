@@ -78,7 +78,7 @@
                         @else
                             <a href="{{ route('login') }}" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Đăng nhập</a>
                             <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-semibold text-blue-600 transition-all bg-blue-50 rounded-lg hover:bg-blue-100 ring-1 ring-inset ring-blue-600/20">
-                                Đăng ký miễn phí
+                                Đăng ký ngay
                             </a>
                         @endauth
                     </div>
@@ -110,7 +110,7 @@
                         <a href="{{ route('dashboard') }}" class="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700">Vào học ngay</a>
                     @else
                         <a href="{{ route('login') }}" class="block w-full text-center px-4 py-3 rounded-md text-base font-medium text-blue-600 bg-blue-50 hover:bg-blue-100">Đăng nhập</a>
-                        <a href="{{ route('register') }}" class="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700">Đăng ký miễn phí</a>
+                        <a href="{{ route('register') }}" class="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700">Đăng ký ngay</a>
                     @endauth
                 </div>
             </div>
@@ -149,7 +149,7 @@
                         </a>
                     @else
                         <a href="{{ route('register') }}" class="inline-flex justify-center items-center px-8 py-4 text-base font-bold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1">
-                            Bắt đầu thi thử miễn phí
+                            Xem bảng giá & đăng ký
                             <svg class="w-5 h-5 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                         </a>
                         <a href="#features" class="inline-flex justify-center items-center px-8 py-4 text-base font-bold text-slate-700 transition-all bg-white rounded-xl shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 hover:ring-slate-300">
@@ -247,18 +247,6 @@
                             <div>
                                 <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Hotline</p>
                                 <p class="text-slate-900 font-bold">{{ $settings['contact_hotline'] }}</p>
-                            </div>
-                        </a>
-                        @endif
-
-                        @if($settings['zalo_contact_number_2'] ?? null)
-                        <a href="https://zalo.me/{{ str_replace([' ', '.', '-'], '', $settings['zalo_contact_number_2']) }}" target="_blank" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-all hover:shadow-md hover:bg-orange-50/50 group">
-                            <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shrink-0 group-hover:scale-110 transition-transform">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.002 2C6.477 2 2 6.477 2 12.002c0 5.525 4.477 10.002 10.002 10.002 5.525 0 10.002-4.477 10.002-10.002C22.004 6.477 17.527 2 12.002 2zm0 18.004c-4.413 0-8.002-3.589-8.002-8.002 0-4.413 3.589-8.002 8.002-8.002 4.413 0 8.002 3.589 8.002 8.002 0 4.413-3.589 8.002-8.002 8.002zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Zalo Phụ</p>
-                                <p class="text-slate-900 font-bold">{{ $settings['zalo_contact_number_2'] }}</p>
                             </div>
                         </a>
                         @endif
@@ -375,7 +363,7 @@
                         <div class="w-24 h-24 mx-auto bg-white border-4 border-blue-100 rounded-full flex items-center justify-center relative z-10 shadow-sm">
                             <span class="text-3xl font-extrabold text-blue-600">1</span>
                         </div>
-                        <h3 class="mt-6 text-xl font-bold text-slate-900">Tạo tài khoản miễn phí</h3>
+                        <h3 class="mt-6 text-xl font-bold text-slate-900">Tạo tài khoản ngay</h3>
                         <p class="mt-2 text-slate-600">Đăng ký bằng email chỉ trong 30 giây để truy cập hệ thống thi thử.</p>
                     </div>
 
@@ -568,52 +556,51 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <!-- Free Plan -->
-                <div class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm flex flex-col items-center text-center">
-                    <h3 class="text-xl font-bold text-slate-900">Trải nghiệm Miễn phí</h3>
-                    <p class="text-slate-500 mt-2 text-sm">Phù hợp để làm quen với format thi</p>
-                    <div class="my-6">
-                        <span class="text-5xl font-extrabold text-slate-900">0đ</span>
-                    </div>
-                    <ul class="space-y-4 text-slate-600 text-left w-full mb-8">
-                        <li class="flex items-start">
-                            <svg class="h-6 w-6 text-emerald-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Thi thử Reading, Listening & Grammar
-                        </li>
-                        <li class="flex items-start text-slate-400">
-                            <svg class="h-6 w-6 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            Không bao gồm Writing & Speaking AI
-                        </li>
-                    </ul>
-                    <a href="{{ route('register') }}" class="w-full mt-auto inline-block py-3 px-4 bg-white text-blue-600 font-semibold rounded-xl border border-blue-200 hover:bg-blue-50 transition-colors">
-                        Đăng ký ngay
-                    </a>
-                </div>
+                @foreach(config('pricing.packages') as $key => $p)
+                    @php $isPopular = $p['popular'] ?? false; @endphp
+                    <div class="rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden
+                                {{ $isPopular
+                                    ? 'bg-gradient-to-b from-blue-600 to-indigo-700 shadow-2xl shadow-blue-500/30 transform md:-translate-y-4'
+                                    : 'bg-white border border-slate-200 shadow-sm' }}">
+                        @if($isPopular)
+                            <span class="absolute top-4 right-4 bg-emerald-400 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Phổ biến</span>
+                        @endif
 
-                <!-- Pro Plan -->
-                <div class="bg-gradient-to-b from-blue-600 to-indigo-700 rounded-3xl p-8 shadow-2xl shadow-blue-500/30 flex flex-col items-center text-center relative overflow-hidden transform md:-translate-y-4">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
-                    <span class="absolute top-4 right-4 bg-emerald-400 text-slate-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Phổ biến</span>
-                    <h3 class="text-xl font-bold text-white">Gói Pro Aptis</h3>
-                    <p class="text-blue-100 mt-2 text-sm">Trải nghiệm Full kỹ năng như thật</p>
-                    <div class="my-6">
-                        <span class="text-5xl font-extrabold text-white">???</span>
-                        <span class="text-blue-200">/ 3 tháng</span>
+                        <h3 class="text-xl font-bold {{ $isPopular ? 'text-white' : 'text-slate-900' }}">{{ $p['label'] }}</h3>
+
+                        <div class="my-6">
+                            <span class="text-5xl font-extrabold {{ $isPopular ? 'text-white' : 'text-slate-900' }}">{{ number_format($p['price'], 0, ',', '.') }}đ</span>
+                            <span class="{{ $isPopular ? 'text-blue-200' : 'text-slate-500' }}">/ {{ $p['unit'] }}</span>
+                        </div>
+
+                        <ul class="space-y-4 text-left w-full mb-8 {{ $isPopular ? 'text-blue-50' : 'text-slate-600' }}">
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 {{ $isPopular ? 'text-emerald-400' : 'text-emerald-500' }} mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Thi thử Full 4 kỹ năng &amp; Grammar
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 {{ $isPopular ? 'text-emerald-400' : 'text-emerald-500' }} mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Chấm Writing AI &amp; feedback chi tiết
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 {{ $isPopular ? 'text-emerald-400' : 'text-emerald-500' }} mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Buổi hướng dẫn học 19h30 thứ 7 hàng tuần
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 {{ $isPopular ? 'text-emerald-400' : 'text-emerald-500' }} mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Mua nhiều {{ $p['unit'] }} — cộng dồn thời hạn
+                            </li>
+                        </ul>
+
+                        <a href="{{ route('register', ['goi' => $key]) }}"
+                           class="w-full mt-auto inline-block py-3 px-4 font-bold rounded-xl transition-all
+                                  {{ $isPopular
+                                      ? 'bg-white text-blue-600 hover:bg-slate-50 shadow-lg hover:-translate-y-0.5'
+                                      : 'bg-blue-600 text-white hover:bg-blue-700' }}">
+                            Chọn {{ $p['label'] }}
+                        </a>
                     </div>
-                    <ul class="space-y-4 text-blue-50 text-left w-full mb-8">
-                        <li class="flex items-start">
-                            <svg class="h-6 w-6 text-emerald-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Thi thử Full 4 kỹ năng & Grammar
-                        </li>
-                        <li class="flex items-start">
-                            <svg class="h-6 w-6 text-emerald-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Chấm điểm Writing AI, Speaking chấm trực tiếp giáo viên & Feedback
-                        </li>
-                    </ul>
-                    <a href="{{ route('register') }}" class="w-full mt-auto inline-block py-3 px-4 bg-white text-blue-600 font-bold rounded-xl hover:bg-slate-50 shadow-lg transition-transform hover:-translate-y-0.5">
-                        Bắt đầu bản Pro
-                    </a>
-                </div>
+                @endforeach
             </div>
         </div>
     </section>
@@ -626,7 +613,7 @@
             <h2 class="text-3xl sm:text-4xl font-extrabold mb-6 tracking-tight">Sẵn sàng đạt điểm C1 cùng Milaedu?</h2>
             <p class="text-lg sm:text-xl text-blue-100 mb-10">Đừng để rào cản tiếng Anh cản bước bạn. Luyện tập ngay hôm nay.</p>
             <a href="{{ route('register') }}" class="inline-flex justify-center items-center px-10 py-4 text-lg font-bold text-slate-900 bg-white rounded-xl shadow-xl hover:bg-slate-50 transition-all hover:scale-105 hover:shadow-2xl">
-                Tạo tài khoản miễn phí
+                Tạo tài khoản ngay
             </a>
         </div>
     </section>
@@ -638,7 +625,10 @@
                 <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">A</div>
                 <span class="font-bold text-xl text-slate-800">Milaedu</span>
             </div>
-            <p class="text-slate-500 text-sm">&copy; 2026 Milaedu. Tự hào nền tảng luyện thi hàng đầu.</p>
+            <div class="text-slate-500 text-sm text-center md:text-right">
+                <p>&copy; 2026 Milaedu. Tự hào nền tảng luyện thi hàng đầu.</p>
+                <a href="{{ route('policy.refund') }}" class="text-slate-400 hover:text-blue-600 underline">Chính sách thanh toán &amp; hoàn tiền</a>
+            </div>
         </div>
     </footer>
 

@@ -66,10 +66,7 @@
 
         {{-- Grading Request Section (writing/speaking) --}}
         @if(($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') && $attempts->first())
-            @php
-                $limitKey = $mockTest->skill . '_grading_limit';
-                $maxLimit = \App\Models\Setting::where('key', $limitKey)->value('value') ?? 2;
-            @endphp
+            @php $gradingPrice = (int) config('pricing.grading_price'); @endphp
             <div class="mt-8 pt-8 border-t border-gray-100 bg-indigo-50/30 -mx-8 -mb-8 px-8 pb-8 rounded-b-2xl">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div class="flex-1">
@@ -79,11 +76,9 @@
                         </h3>
                         <p class="text-sm text-gray-600">
                             @if(auth()->user()->isAdmin())
-                                Tài khoản Admin có thể gửi yêu cầu chấm điểm <strong>không giới hạn</strong>.
-                                Hiện tại bạn đã gửi <strong>{{ $gradingRequestsCount }}</strong> lượt.
+                                Tài khoản Admin gửi chấm <strong>miễn phí</strong>.
                             @else
-                                Bạn có tối đa <strong>{{ $maxLimit }} lần</strong> yêu cầu giáo viên chấm điểm chi tiết cho kỹ năng này.
-                                Hiện tại bạn đã dùng <strong>{{ $gradingRequestsCount }}/{{ $maxLimit }}</strong> lượt.
+                                Giáo viên chấm chi tiết + nhận xét. Phí <strong>{{ number_format($gradingPrice, 0, ',', '.') }}đ</strong> cho mỗi bài.
                             @endif
                         </p>
                     </div>
@@ -92,16 +87,18 @@
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                             Đã gởi yêu cầu
                         </div>
-                    @elseif(auth()->user()->isAdmin() || $gradingRequestsCount < $maxLimit)
+                    @else
                         <form action="{{ route('attempts.request-grading', $attempts->first()->id) }}" method="POST">
                             @csrf
                             <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2 transform active:scale-95">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Gởi yêu cầu chấm bài này
+                                @if(auth()->user()->isAdmin())
+                                    Gửi chấm bài này
+                                @else
+                                    Thanh toán {{ number_format($gradingPrice, 0, ',', '.') }}đ &amp; gửi chấm
+                                @endif
                             </button>
                         </form>
-                    @else
-                        <div class="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-bold cursor-not-allowed">Đã hết lượt yêu cầu</div>
                     @endif
                 </div>
             </div>

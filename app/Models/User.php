@@ -19,6 +19,8 @@ class User extends Authenticatable
         'role',
         'status',
         'violation_count',
+        'devtools_guard_disabled',
+        'must_change_password',
         'ai_reset_version',
         'speaking_ai_reset_version',
         'ai_extra_uses',
@@ -48,6 +50,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'expires_at' => 'datetime',
+            'devtools_guard_disabled' => 'boolean',
+            'must_change_password' => 'boolean',
         ];
     }
 
@@ -71,6 +75,16 @@ class User extends Authenticatable
         return $this->hasMany(WritingAiUsage::class);
     }
 
+    public function securityFlags()
+    {
+        return $this->hasMany(SecurityFlag::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -84,6 +98,19 @@ class User extends Authenticatable
     public function isExpired(): bool
     {
         return $this->expires_at && $this->expires_at->isPast();
+    }
+
+    /**
+     * Chỉ tài khoản đã MUA GÓI qua PayOS (có đơn đăng ký đã thanh toán) mới
+     * được đặt buổi hướng dẫn. Tài khoản cũ — kể cả khi được admin đặt hạn thủ
+     * công — không có đơn nên không thấy tính năng này.
+     */
+    public function canBookGuidance(): bool
+    {
+        return $this->orders()
+            ->where('type', Order::TYPE_REGISTRATION)
+            ->where('status', Order::STATUS_PAID)
+            ->exists();
     }
 
     public function expirationStatus(): string

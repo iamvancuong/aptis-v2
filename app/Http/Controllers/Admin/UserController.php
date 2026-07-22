@@ -80,6 +80,11 @@ class UserController extends Controller
             }
         }
 
+        // Count DevTools detections per user so the list can flag repeat offenders.
+        $query->withCount(['securityFlags as devtools_flag_count' => function ($q) {
+            $q->where('type', 'devtools');
+        }]);
+
         $users = $query->orderBy('created_at', 'desc')
                       ->paginate($perPage)
                       ->withQueryString();
@@ -246,6 +251,20 @@ class UserController extends Controller
         $user->update(['violation_count' => 0]);
 
         return redirect()->back()->with('success', 'Violations have been reset successfully.');
+    }
+
+    /**
+     * Exempt this account from the DevTools guard, or put it back under it.
+     */
+    public function toggleDevtoolsGuard(User $user)
+    {
+        $user->update(['devtools_guard_disabled' => ! $user->devtools_guard_disabled]);
+
+        $message = $user->devtools_guard_disabled
+            ? "Đã TẮT chặn DevTools cho {$user->email}."
+            : "Đã BẬT lại chặn DevTools cho {$user->email}.";
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function resetAi(User $user)

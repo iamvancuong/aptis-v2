@@ -7,12 +7,16 @@ use Illuminate\Support\Facades\Log;
 
 class AiService
 {
-    protected string $apiKey;
+    // Nullable: the key is optional, and gradeWriting() already returns a
+    // friendly error when it is missing. Typing this as a plain string made
+    // the container throw while building any controller that injects this
+    // service, which took the whole practice page down.
+    protected ?string $apiKey;
     protected string $model = 'gpt-4o-mini';
 
     public function __construct()
     {
-        $this->apiKey = config('services.openai.key', env('OPENAI_API_KEY'));
+        $this->apiKey = config('services.openai.key');
     }
 
     public function gradeWriting(array $data, ?string $targetLevel = 'B2'): array

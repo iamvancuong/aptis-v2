@@ -4,6 +4,7 @@
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+@include('partials.watermark')
 
 <div class="min-h-screen bg-gray-50 flex flex-col" x-data="mockTestExam()">
 

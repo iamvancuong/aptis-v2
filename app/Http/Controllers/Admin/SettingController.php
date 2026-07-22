@@ -104,6 +104,15 @@ class SettingController extends Controller
              \App\Models\User::query()->update(['max_devices' => $request->default_max_devices]);
         }
 
+        // Unchecked checkboxes are simply absent from the request.
+        Setting::updateOrCreate(
+            ['key' => 'devtools_guard_enabled'],
+            [
+                'value' => $request->has('devtools_guard_enabled') ? '1' : '0',
+                'label' => 'Bật chức năng chặn DevTools',
+            ]
+        );
+
         return redirect()->route('admin.settings.index')->with('success', 'Đã cập nhật cài đặt thành công!');
     }
 }

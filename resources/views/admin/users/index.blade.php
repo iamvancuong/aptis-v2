@@ -101,6 +101,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Violations</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DevTools</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày thi</th>
             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Quick Extend</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -131,6 +132,38 @@
                     <span class="{{ $user->violation_count >= $user->max_devices ? 'text-red-600 font-bold' : '' }}">
                         {{ $user->violation_count }}/{{ $user->max_devices }}
                     </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    @if($user->isAdmin())
+                        <span class="text-xs text-gray-400">Miễn trừ (admin)</span>
+                    @else
+                        <div class="flex items-center gap-2">
+                            {{-- Số lần bị phát hiện mở DevTools --}}
+                            @if(($user->devtools_flag_count ?? 0) > 0)
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-xs font-bold"
+                                      title="Số lần bị phát hiện mở DevTools">
+                                    ⚠ {{ $user->devtools_flag_count }}
+                                </span>
+                            @else
+                                <span class="text-xs text-gray-400">—</span>
+                            @endif
+
+                            {{-- Trạng thái guard + nút bật/tắt --}}
+                            <form action="{{ route('admin.users.toggle-devtools-guard', $user) }}" method="POST" class="inline-block"
+                                  onsubmit="return confirm('{{ $user->devtools_guard_disabled ? 'Bật lại' : 'Tắt' }} chặn DevTools cho {{ $user->email }}?')">
+                                @csrf
+                                @if($user->devtools_guard_disabled)
+                                    <button type="submit"
+                                            class="px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-300 transition-colors"
+                                            title="Đang tắt — bấm để bật lại chặn DevTools">Tắt</button>
+                                @else
+                                    <button type="submit"
+                                            class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors"
+                                            title="Đang bật — bấm để miễn trừ tài khoản này">Bật</button>
+                                @endif
+                            </form>
+                        </div>
+                    @endif
                 </td>
                 <td class="px-6 py-4">
                     @php
@@ -259,7 +292,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+                <td colspan="11" class="px-6 py-8 text-center text-gray-500">
                     No users found.
                 </td>
             </tr>

@@ -84,9 +84,12 @@ class SessionLimit
 
         $response = $next($request);
         
-        // Attach the device ID cookie if it's new
+        // Attach the device ID cookie if it's new.
+        // Set it on the headers rather than via withCookie(), which only exists
+        // on Laravel's own response classes — streamed and file responses (such
+        // as question audio) are plain Symfony responses and would fatal here.
         if ($isNewDevice) {
-            $response->withCookie(cookie()->forever('aptis_device_id', $deviceId));
+            $response->headers->setCookie(cookie()->forever('aptis_device_id', $deviceId));
         }
 
         return $response;

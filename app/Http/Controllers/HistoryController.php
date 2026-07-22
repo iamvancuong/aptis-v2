@@ -181,26 +181,35 @@ class HistoryController extends Controller
             return back()->with('info', 'Bài này đã được yêu cầu chấm điểm.');
         }
 
-        if (!auth()->user()->isAdmin()) {
-            // Check limit of configured key per skill
-            $limitKey = $attempt->skill . '_grading_limit';
-            $maxLimit = \App\Models\Setting::where('key', $limitKey)->value('value') ?? 2;
+        // Admin: chấm miễn phí, bật cờ ngay.
+        if (auth()->user()->isAdmin()) {
+            $attempt->update([
+                'is_grading_requested' => true,
+                'grading_requested_at' => now(),
+            ]);
 
-            $count = Attempt::where('user_id', auth()->id())
-                ->where('skill', $attempt->skill)
-                ->where('is_grading_requested', true)
-                ->count();
-
-            if ($count >= $maxLimit) {
-                return back()->with('error', "Bạn đã dùng hết lượt yêu cầu chấm điểm cho kỹ năng " . ucfirst($attempt->skill) . " (Tối đa {$maxLimit} lần).");
-            }
+            return back()->with('success', 'Đã gởi yêu cầu chấm điểm cho giáo viên thành công!');
         }
 
-        $attempt->update([
-            'is_grading_requested' => true,
-            'grading_requested_at' => now(),
+        // Học viên: mỗi lần gửi giáo viên chấm là một đơn 100k.
+        // Nếu đã có đơn chờ thanh toán cho bài này thì dùng lại, tránh tạo trùng.
+        $existing = \App\Models\Order::where('user_id', auth()->id())
+            ->where('type', \App\Models\Order::TYPE_GRADING)
+            ->where('status', \App\Models\Order::STATUS_PENDING)
+            ->where('meta->attempt_id', $attempt->id)
+            ->latest()
+            ->first();
+
+        $order = $existing ?? \App\Models\Order::create([
+            'order_code' => \App\Models\Order::generateCode(),
+            'email'      => auth()->user()->email,
+            'type'       => \App\Models\Order::TYPE_GRADING,
+            'amount'     => (int) config('pricing.grading_price'),
+            'status'     => \App\Models\Order::STATUS_PENDING,
+            'user_id'    => auth()->id(),
+            'meta'       => ['attempt_id' => $attempt->id, 'skill' => $attempt->skill],
         ]);
 
-        return back()->with('success', 'Đã gởi yêu cầu chấm điểm cho giáo viên thành công!');
+        return redirect()->to(\Illuminate\Support\Facades\URL::signedRoute('payment.show', $order));
     }
 }

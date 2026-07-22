@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 flex flex-col" x-data="practiceSession({{ $set->questions }})" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
+@include('partials.watermark')
+<div class="min-h-screen bg-gray-50 flex flex-col" x-data="practiceSession(@js($questionsJson), '{{ route('practice.check', $set) }}')" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
     {{-- Premium Header --}}
     <header class="bg-white/90 backdrop-blur-md sticky top-0 z-30 border-b border-gray-100 shadow-sm transition-all duration-300">
         <div class="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 w-full">
@@ -172,10 +173,11 @@
 </div>
 
 <script>
-    function practiceSession(questions) {
+    function practiceSession(questions, checkUrl) {
         return {
             step: 'practice',
             questions: questions,
+            checkUrl: checkUrl,
             isFullTest: false,
             currentIndex: 0,
             answers: {},
@@ -444,10 +446,15 @@
             
             submitPart2() {
                 const qId = this.currentQuestion.id;
-                
+
+                // The pool arrives shuffled by the server, so a sentence's
+                // position in it says nothing about where it belongs. Compare
+                // the text against the correct order revealed on check.
+                const correctOrder = this.currentQuestion.metadata.sentences || [];
+
                 let isCorrect = true;
                 this.part2Slots.forEach((item, idx) => {
-                    if (!item || item.originalIndex !== idx + 1) isCorrect = false;
+                    if (!item || item.text !== correctOrder[idx + 1]) isCorrect = false;
                 });
 
                 this.answers = { ...this.answers, [qId]: [...this.part2Slots] };
@@ -955,6 +962,39 @@
                 return text;
             },
 
+            /**
+             * Answer keys are not embedded in the page — they are fetched for a
+             * single question at the moment the learner checks it. Once merged
+             * into that question's metadata, every existing feedback helper
+             * below keeps working exactly as before.
+             */
+            async revealAnswerKey(q) {
+                if (q._revealed) return true;
+
+                try {
+                    const res = await fetch(this.checkUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({ question_id: q.id }),
+                    });
+
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                    const data = await res.json();
+                    Object.assign(q.metadata, data.answer_key || {});
+                    q._revealed = true;
+                    this.questions = [...this.questions];
+                    return true;
+                } catch (e) {
+                    alert('Không lấy được kết quả. Vui lòng kiểm tra kết nối và thử lại.');
+                    return false;
+                }
+            },
+
             // --- Unified Footer Action ---
             async handleFooterAction() {
                 const q = this.currentQuestion;
@@ -962,6 +1002,12 @@
 
                 // Step 1: If not answered yet, submit/check
                 if (!this.hasAnswered(qId)) {
+                    // Auto-graded skills need their answer key before the
+                    // feedback helpers below can run.
+                    if (['reading', 'listening', 'grammar'].includes(q.skill)) {
+                        if (!await this.revealAnswerKey(q)) return;
+                    }
+
                     if (q.skill === 'reading') {
                         switch (q.part) {
                             case 1: this.submitPart1(); break;

@@ -34,6 +34,15 @@
                         </svg>
                         <span class="whitespace-nowrap">Hướng dẫn</span>
                     </a>
+
+                    @if(auth()->user()->canBookGuidance())
+                    <a href="{{ route('guidance.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('guidance.*') ? 'text-blue-600' : '' }}">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span class="whitespace-nowrap">Buổi hướng dẫn</span>
+                    </a>
+                    @endif
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-4">
                     @if(auth()->user()->isAdmin())
@@ -72,6 +81,8 @@
 
         @yield('content')
     </main>
+
+    @include('partials.devtools-guard')
 
     @stack('scripts')
 </body>

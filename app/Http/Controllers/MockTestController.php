@@ -6,6 +6,7 @@ use App\Models\MockTest;
 use App\Models\Quiz;
 use App\Models\Set;
 use App\Services\GradingService;
+use App\Services\QuestionSanitizer;
 use App\Jobs\ProcessWritingGrading;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +15,8 @@ use Illuminate\Support\Facades\DB;
 class MockTestController extends Controller
 {
     public function __construct(
-        private GradingService $gradingService
+        private GradingService $gradingService,
+        private QuestionSanitizer $sanitizer
     ) {}
 
     /**
@@ -185,6 +187,9 @@ class MockTestController extends Controller
                 'index' => $s['index'],
                 'part' => $s['part'],
                 'set_id' => $s['set_id'],
+                // Answer keys are stripped here: this is a graded, timed exam,
+                // so nothing the learner could score from may reach the browser.
+                // Answers are revealed by the result page after submission.
                 'questions' => $questions->map(function ($q) {
                     return [
                         'id' => $q->id,
@@ -192,8 +197,10 @@ class MockTestController extends Controller
                         'part' => $q->part,
                         'stem' => $q->stem,
                         'audio_path' => $q->audio_path,
+                        'audio_url' => $this->sanitizer->audioUrl($q),
+                        'audio_urls' => $this->sanitizer->audioUrls($q),
                         'image_path' => $q->image_path,
-                        'metadata' => $q->metadata,
+                        'metadata' => $this->sanitizer->metadataForClient($q),
                         'point' => $q->point,
                         'title' => $q->title,
                     ];

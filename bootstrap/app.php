@@ -20,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Check account expiration for all web routes
         $middleware->web(append: [
             \App\Http\Middleware\CheckAccountExpiration::class,
+            \App\Http\Middleware\MustChangePassword::class,
+        ]);
+
+        // PayOS gọi webhook server-to-server, không có CSRF token.
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/payos',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
