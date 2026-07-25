@@ -20,9 +20,7 @@
             <div class="text-lg font-bold text-gray-900">
                 Thứ 7 ngày {{ $booking->session_date->format('d/m/Y') }} — {{ config('guidance.time') }}
             </div>
-            @if($booking->zoom_link)
-                <a href="{{ $booking->zoom_link }}" target="_blank" class="inline-block mt-2 text-sm text-blue-600 font-medium hover:underline">Vào phòng Zoom →</a>
-            @endif
+            <p class="text-sm text-blue-700 mt-1">📧 Link Zoom sẽ được gửi qua email của bạn trước buổi học.</p>
             <p class="text-xs text-gray-500 mt-2">Bạn có thể đổi sang buổi khác bên dưới.</p>
         </div>
     @endif

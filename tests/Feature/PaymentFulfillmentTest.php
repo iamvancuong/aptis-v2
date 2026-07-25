@@ -129,7 +129,8 @@ class PaymentFulfillmentTest extends TestCase
         $payload = $this->signedPayload($order);
         $payload['signature'] = 'tampered';
 
-        $this->postJson(route('payment.webhook'), $payload)->assertStatus(400);
+        // Ack 200 (để PayOS không disable webhook) nhưng KHÔNG xử lý.
+        $this->postJson(route('payment.webhook'), $payload)->assertOk();
 
         $this->assertSame('pending', $order->fresh()->status);
         $this->assertNull(User::where('email', $order->email)->first());

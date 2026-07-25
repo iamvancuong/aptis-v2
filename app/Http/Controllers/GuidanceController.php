@@ -52,15 +52,15 @@ class GuidanceController extends Controller
             ]);
         }
 
-        $booking = GuidanceBooking::updateOrCreate(
+        GuidanceBooking::updateOrCreate(
             ['user_id' => $user->id],
-            ['session_date' => $chosen, 'zoom_link' => config('guidance.zoom_link')],
+            ['session_date' => $chosen],
         );
 
+        // Chỉ xác nhận — link Zoom gửi riêng trước buổi (xem GuidanceSessionService).
         Mail::to($user->email)->send(new GuidanceBookingMail(
             email: $user->email,
             sessionAt: Carbon::parse($chosen)->setTimeFromTimeString(config('guidance.time')),
-            zoomLink: $booking->zoom_link,
         ));
 
         return redirect()->route('guidance.index')

@@ -27,6 +27,10 @@ return [
     // PAYOS_FAKE=true ở .env local; PRODUCTION để trống/false.
     'fake'         => filter_var(env('PAYOS_FAKE', false), FILTER_VALIDATE_BOOL),
 
+    // ⚠️ CHỈ để test PayOS thật từ localhost Windows (thiếu CA bundle).
+    // PRODUCTION PHẢI để true. Đặt PAYOS_VERIFY_SSL=false chỉ ở .env local.
+    'verify_ssl'   => filter_var(env('PAYOS_VERIFY_SSL', true), FILTER_VALIDATE_BOOL),
+
     // Endpoint REST của PayOS (ít khi đổi).
     'base_url'     => env('PAYOS_BASE_URL', 'https://api-merchant.payos.vn'),
 

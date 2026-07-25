@@ -14,6 +14,6 @@ return [
     'time'       => '19:30',
     'time_label' => '19h30 thứ 7 hàng tuần',
 
-    // Link Zoom giả — thay ở P7.
-    'zoom_link'  => env('GUIDANCE_ZOOM_LINK', 'https://zoom.us/j/0000000000?pwd=milaedu-demo'),
+    // Gửi link Zoom trước buổi bao nhiêu giờ (cron dùng để quyết định gửi).
+    'send_before_hours' => (int) env('GUIDANCE_SEND_BEFORE_HOURS', 6),
 ];

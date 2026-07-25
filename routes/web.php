@@ -213,4 +213,8 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
 
     // Doanh số
     Route::get('revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('revenue.index');
+
+    // Buổi hướng dẫn (tạo phòng Zoom + gửi link)
+    Route::get('guidance-sessions', [\App\Http\Controllers\Admin\GuidanceSessionController::class, 'index'])->name('guidance-sessions.index');
+    Route::post('guidance-sessions/activate', [\App\Http\Controllers\Admin\GuidanceSessionController::class, 'activate'])->name('guidance-sessions.activate');
 });

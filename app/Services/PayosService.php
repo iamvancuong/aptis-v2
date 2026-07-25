@@ -55,7 +55,9 @@ class PayosService
         $response = Http::withHeaders([
             'x-client-id' => config('payos.client_id'),
             'x-api-key'   => config('payos.api_key'),
-        ])->post(rtrim(config('payos.base_url'), '/') . '/v2/payment-requests', $body);
+        ])
+            ->withOptions(['verify' => config('payos.verify_ssl', true)])
+            ->post(rtrim(config('payos.base_url'), '/') . '/v2/payment-requests', $body);
 
         if (! $response->successful() || ($response->json('code') !== '00')) {
             throw new RuntimeException('PayOS tạo link thất bại: ' . $response->body());
@@ -67,6 +69,35 @@ class PayosService
             'checkoutUrl'   => $data['checkoutUrl'] ?? '',
             'qrCode'        => $data['qrCode'] ?? '',
             'paymentLinkId' => $data['paymentLinkId'] ?? '',
+        ];
+    }
+
+    /**
+     * Hỏi PayOS trạng thái một đơn (backstop khi webhook không tới).
+     *
+     * @return array{status:string, amountPaid:int, raw:array}
+     */
+    public function getPaymentInfo(int $orderCode): array
+    {
+        $this->assertConfigured();
+
+        $response = Http::withHeaders([
+            'x-client-id' => config('payos.client_id'),
+            'x-api-key'   => config('payos.api_key'),
+        ])
+            ->withOptions(['verify' => config('payos.verify_ssl', true)])
+            ->get(rtrim(config('payos.base_url'), '/') . '/v2/payment-requests/' . $orderCode);
+
+        if (! $response->successful() || $response->json('code') !== '00') {
+            throw new RuntimeException('PayOS truy vấn đơn thất bại: ' . $response->body());
+        }
+
+        $data = $response->json('data', []);
+
+        return [
+            'status'     => $data['status'] ?? 'UNKNOWN',   // PAID / PENDING / CANCELLED / EXPIRED
+            'amountPaid' => (int) ($data['amountPaid'] ?? 0),
+            'raw'        => $data,
         ];
     }
 

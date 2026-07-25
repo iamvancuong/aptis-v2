@@ -9,30 +9,30 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-/**
- * Email xác nhận đặt lịch buổi hướng dẫn: thông tin tài khoản + link Zoom.
- */
-class GuidanceBookingMail extends Mailable
+/** Gửi học viên link vào phòng Zoom (join_url) trước buổi hướng dẫn. */
+class GuidanceLinkMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public string $email,
         public Carbon $sessionAt,
+        public string $joinUrl,
+        public ?string $passcode,
     ) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Milaedu — Xác nhận buổi hướng dẫn học');
+        return new Envelope(subject: 'Milaedu — Link buổi hướng dẫn ' . $this->sessionAt->format('d/m'));
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.guidance-booking',
+            markdown: 'mail.guidance-link',
             with: [
-                'email'     => $this->email,
                 'sessionAt' => $this->sessionAt,
+                'joinUrl'   => $this->joinUrl,
+                'passcode'  => $this->passcode,
             ],
         );
     }

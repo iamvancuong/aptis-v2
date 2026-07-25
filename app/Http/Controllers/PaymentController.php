@@ -90,12 +90,16 @@ class PaymentController extends Controller
     {
         $payload = $request->all();
 
+        Log::info('PayOS webhook nhận được', ['payload' => $payload]);
+
+        // Luôn trả 200 để PayOS chấp nhận webhook (kể cả ping xác thực khi đăng
+        // ký URL). Chỉ FULFILL khi chữ ký + số tiền hợp lệ — nên ack an toàn.
         if (! $this->payos->verifyWebhook($payload)) {
-            Log::warning('PayOS webhook chữ ký không hợp lệ', ['payload' => $payload]);
-            return response()->json(['error' => 'invalid signature'], 400);
+            Log::warning('PayOS webhook chữ ký không hợp lệ (ack, không xử lý)', ['payload' => $payload]);
+            return response()->json(['success' => true]);
         }
 
-        $data = $payload['data'];
+        $data = $payload['data'] ?? [];
 
         // PayOS gửi webhook thử với orderCode giả khi xác nhận URL → ack êm.
         $order = Order::where('order_code', $data['orderCode'] ?? 0)->first();
