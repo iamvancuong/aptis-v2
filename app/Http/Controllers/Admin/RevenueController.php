@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 /**
  * Doanh số — tính hoàn toàn từ bảng `orders` đã thanh toán.
@@ -24,11 +25,12 @@ class RevenueController extends Controller
 
         $paid = Order::where('status', Order::STATUS_PAID);
 
+        // So sánh datetime (không bọc DATE()) để tận dụng index paid_at.
         if (! empty($filters['from'])) {
-            $paid->whereDate('paid_at', '>=', $filters['from']);
+            $paid->where('paid_at', '>=', Carbon::parse($filters['from'])->startOfDay());
         }
         if (! empty($filters['to'])) {
-            $paid->whereDate('paid_at', '<=', $filters['to']);
+            $paid->where('paid_at', '<=', Carbon::parse($filters['to'])->endOfDay());
         }
 
         // Tổng theo loại (clone để không đụng nhau).

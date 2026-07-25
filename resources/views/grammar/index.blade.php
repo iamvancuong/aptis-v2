@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Grammar & Vocabulary – APTIS Practice')
+@section('title', 'Grammar & Vocabulary – Milaedu')
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 py-8">

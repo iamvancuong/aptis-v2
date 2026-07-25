@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $set->title . ' - APTIS Practice')
+@section('title', $set->title . ' - Milaedu')
 
 @section('content')
 <div class="mb-6">

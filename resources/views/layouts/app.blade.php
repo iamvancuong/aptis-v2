@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'APTIS Practice')</title>
+    <title>@yield('title', 'Milaedu')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         /* Restore Tailwind's reset styles for CKEditor content */
         .ck-content strong { font-weight: bold; }
@@ -26,7 +25,7 @@
         <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center space-x-4 sm:space-x-6">
-                    <a href="{{ route('dashboard') }}" class="text-base sm:text-lg md:text-xl font-bold text-blue-600 whitespace-nowrap">APTIS Practice</a>
+                    <a href="{{ route('dashboard') }}" class="text-base sm:text-lg md:text-xl font-bold text-blue-600 whitespace-nowrap">Milaedu</a>
                     
                     <a href="{{ route('instructions.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('instructions.*') ? 'text-blue-600' : '' }}">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -77,6 +76,10 @@
 
         @if(session('error'))
             <x-alert type="error" class="mb-4">{{ session('error') }}</x-alert>
+        @endif
+
+        @if(session('info'))
+            <x-alert type="info" class="border-blue-200 bg-blue-50 text-blue-800 mb-4">{{ session('info') }}</x-alert>
         @endif
 
         @yield('content')

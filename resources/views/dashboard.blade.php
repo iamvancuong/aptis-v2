@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard - APTIS Practice')
+@section('title', 'Dashboard - Milaedu')
 
 @section('content')
 <div class="mb-8">

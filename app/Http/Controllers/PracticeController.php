@@ -300,11 +300,14 @@ class PracticeController extends Controller
                  return response()->json(['message' => 'Bài này đã được chấm thủ công.'], 400);
             }
 
+            // Key phải khớp với AiService::gradeWriting (question_stem/student_answer/
+            // word_limit) — trước đây truyền 'question'/'answer' nên AI nhận bài rỗng.
             $data = [
-                'part' => $answer->question->part,
-                'question' => $answer->question->stem,
-                'metadata' => $answer->question->metadata,
-                'answer' => $answer->answer
+                'part'           => $answer->question->part,
+                'question_stem'  => $answer->question->stem,
+                'word_limit'     => $answer->question->metadata['word_limit'] ?? null,
+                'metadata'       => $answer->question->metadata,
+                'student_answer' => $answer->answer,
             ];
 
             $targetLevel = $user->target_level ?? 'B2';

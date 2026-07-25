@@ -25,7 +25,7 @@
         value="{{ old($name, $value) }}"
         placeholder="{{ $placeholder }}"
         {{ $required ? 'required' : '' }}
-        {{ $attributes->merge(['class' => 'w-full px-4 py-2.5 text-sm border ' . ($error ? 'border-red-500' : 'border-gray-300') . ' rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200']) }}
+        {{ $attributes->merge(['class' => 'w-full px-4 py-2.5 text-sm border ' . ($error ? 'border-red-500' : 'border-slate-300') . ' rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200']) }}
     >
 
     @if($error)

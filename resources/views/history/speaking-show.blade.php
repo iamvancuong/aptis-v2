@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Chi tiết bài làm Speaking - APTIS Practice')
+@section('title', 'Chi tiết bài làm Speaking - Milaedu')
 
 @section('content')
 <div class="space-y-6 max-w-5xl mx-auto">

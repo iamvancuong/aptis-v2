@@ -12,28 +12,25 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 use App\Models\Feedback;
-use App\Models\HighScore;
 
 Route::get('/', function () {
-    $feedbacks = Feedback::where('is_active', true)->latest()->take(6)->get();
-    $highScores = HighScore::where('is_active', true)->latest()->take(8)->get();
-    
-    $settings = \App\Models\Setting::whereIn('key', [
-        'zalo_contact_number', 
-        'zalo_contact_number_2', 
-        'contact_email', 
-        'contact_hotline'
-    ])->pluck('value', 'key');
-    
-    return view('welcome', compact('feedbacks', 'highScores', 'settings'));
+    // Home rút gọn: chỉ cần vài cảm nhận học viên cho mục testimonials.
+    $feedbacks = Feedback::where('is_active', true)->latest()->take(3)->get();
+
+    return view('welcome', compact('feedbacks'));
 })->name('home');
 
 // Thanh toán (truy cập được cả khi chưa đăng nhập — mua/gia hạn).
 // Trang QR có chữ ký để không ai dò được đơn của người khác qua id.
 Route::get('/thanh-toan/{order}', [\App\Http\Controllers\PaymentController::class, 'show'])
     ->middleware('signed')->name('payment.show');
-Route::get('/thanh-toan/{order}/thanh-cong', [\App\Http\Controllers\PaymentController::class, 'return'])->name('payment.return');
-Route::get('/thanh-toan/{order}/huy', [\App\Http\Controllers\PaymentController::class, 'cancel'])->name('payment.cancel');
+// return/cancel cũng ký chữ ký để không ai dò đơn người khác qua id, đồng thời
+// bỏ qua các query PayOS tự gắn khi redirect về (code/id/cancel/status/orderCode)
+// để chữ ký không bị các tham số đó làm sai lệch.
+Route::get('/thanh-toan/{order}/thanh-cong', [\App\Http\Controllers\PaymentController::class, 'return'])
+    ->middleware('signed:code,id,cancel,status,orderCode')->name('payment.return');
+Route::get('/thanh-toan/{order}/huy', [\App\Http\Controllers\PaymentController::class, 'cancel'])
+    ->middleware('signed:code,id,cancel,status,orderCode')->name('payment.cancel');
 // Webhook PayOS — public, không CSRF (đã loại trừ ở bootstrap/app.php).
 Route::post('/webhooks/payos', [\App\Http\Controllers\PaymentController::class, 'webhook'])->name('payment.webhook');
 // 🧪 Giả lập thanh toán — chỉ chạy khi PAYOS_FAKE=true (controller tự chặn).
@@ -41,6 +38,51 @@ Route::get('/thanh-toan/{order}/gia-lap', [\App\Http\Controllers\PaymentControll
 
 // Chính sách thanh toán & hoàn tiền (công khai).
 Route::view('/chinh-sach-hoan-tien', 'policy.refund')->name('policy.refund');
+
+// Trang nội dung SEO (công khai).
+Route::view('/gioi-thieu', 'pages.gioi-thieu')->name('about');
+Route::view('/luyen-thi-aptis', 'pages.luyen-thi-aptis')->name('aptis');
+
+// Sitemap XML cho công cụ tìm kiếm — chỉ liệt kê trang công khai, index được.
+Route::get('/sitemap.xml', function () {
+    $now = now()->toAtomString();
+    $urls = [
+        ['loc' => route('home'),          'priority' => '1.0', 'freq' => 'weekly'],
+        ['loc' => route('aptis'),         'priority' => '0.9', 'freq' => 'monthly'],
+        ['loc' => route('about'),         'priority' => '0.8', 'freq' => 'monthly'],
+        ['loc' => route('register'),      'priority' => '0.9', 'freq' => 'weekly'],
+        ['loc' => route('policy.refund'), 'priority' => '0.3', 'freq' => 'yearly'],
+    ];
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    foreach ($urls as $u) {
+        $xml .= "  <url><loc>{$u['loc']}</loc><lastmod>{$now}</lastmod>"
+              . "<changefreq>{$u['freq']}</changefreq><priority>{$u['priority']}</priority></url>\n";
+    }
+    $xml .= '</urlset>';
+
+    return response($xml, 200, ['Content-Type' => 'application/xml']);
+})->name('sitemap');
+
+// robots.txt động để dòng Sitemap luôn là URL tuyệt đối theo APP_URL (chuẩn hơn
+// URL tương đối). Đã bỏ file tĩnh public/robots.txt để route này được gọi.
+Route::get('/robots.txt', function () {
+    $lines = [
+        'User-agent: *',
+        'Allow: /',
+        '# Khu vực riêng tư / không cần index',
+        'Disallow: /admin',
+        'Disallow: /dashboard',
+        'Disallow: /thanh-toan',
+        'Disallow: /doi-mat-khau',
+        'Disallow: /buoi-huong-dan',
+        '',
+        'Sitemap: ' . route('sitemap'),
+    ];
+
+    return response(implode("\n", $lines) . "\n", 200, ['Content-Type' => 'text/plain']);
+});
 
 // Guest routes
 Route::middleware('guest')->group(function () {

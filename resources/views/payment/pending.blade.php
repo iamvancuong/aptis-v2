@@ -1,6 +1,7 @@
-@extends('layouts.guest')
+@extends('layouts.auth')
 
-@section('title', 'Thanh toán - Milaedu')
+@section('title', 'Thanh toán')
+@section('noindex', '1')
 
 @section('content')
 <x-card>
@@ -37,11 +38,9 @@
         </div>
     </div>
 
-    @if(session('error'))
-        <div class="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{{ session('error') }}</div>
-    @endif
+    @php($state = $state ?? 'unconfigured')
 
-    @if(config('payos.fake'))
+    @if($state === 'fake')
         {{-- 🧪 Chế độ giả lập (chỉ hiện khi PAYOS_FAKE=true) --}}
         <div class="mt-6 rounded-xl bg-purple-50 border border-purple-200 p-4 text-sm text-purple-800">
             <strong>🧪 Chế độ giả lập (không mất tiền).</strong> Bấm nút dưới để mô phỏng
@@ -51,8 +50,18 @@
            class="mt-4 block text-center py-3 px-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors">
             Giả lập đã thanh toán ✓
         </a>
+    @elseif($state === 'error')
+        {{-- ⚠️ Lỗi tạm thời khi tạo liên kết PayOS (chậm/timeout/lỗi mạng). --}}
+        <div class="mt-6 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+            <strong>Chưa kết nối được cổng thanh toán.</strong> Có thể do mạng chập chờn.
+            Vui lòng bấm <em>Thử lại</em>; nếu vẫn lỗi, liên hệ hỗ trợ để được hướng dẫn chuyển khoản.
+        </div>
+        <a href="{{ $retryUrl }}"
+           class="mt-4 block text-center py-3 px-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors">
+            Thử lại thanh toán ↻
+        </a>
     @else
-        {{-- ⚠️ Hiển thị khi CHƯA cấu hình khóa PayOS. --}}
+        {{-- Hiển thị khi CHƯA cấu hình khóa PayOS. --}}
         <div class="mt-6 rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
             <strong>Đang hoàn thiện cổng thanh toán.</strong> QR PayOS sẽ hiển thị sau
             khi khóa PayOS được cấu hình.

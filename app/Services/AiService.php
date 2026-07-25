@@ -44,7 +44,10 @@ class AiService
 
         try {
             $response = Http::withToken($this->apiKey)
-                ->timeout(90)
+                // 45s/lần × tối đa 2 lần ≈ 92s xấu nhất. gpt-4o-mini thường trả
+                // dưới 15s; hạ từ 90s để một lệnh chấm thủ công (chạy đồng bộ trong
+                // HTTP request) không giữ PHP-FPM worker quá lâu trên shared hosting.
+                ->timeout(45)
                 ->retry(2, 2000, function ($exception, $request) {
                     // Retry on rate limit (429) or timeout (ConnectException)
                     return $exception->getCode() === 429

@@ -65,6 +65,11 @@ class User extends Authenticatable
         return $this->hasMany(Attempt::class);
     }
 
+    public function mockTests()
+    {
+        return $this->hasMany(MockTest::class);
+    }
+
     public function writingReviews()
     {
         return $this->hasMany(WritingReview::class, 'reviewer_id');

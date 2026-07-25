@@ -83,10 +83,37 @@ class RegistrationFlowTest extends TestCase
         ]);
 
         $this->get(route('payment.dev-fulfill', $order))
-            ->assertRedirect(route('payment.return', $order));
+            ->assertRedirect(URL::signedRoute('payment.return', $order));
 
         $this->assertSame('paid', $order->fresh()->status);
         $this->assertNotNull(\App\Models\User::where('email', 'fake@example.test')->first());
+    }
+
+    public function test_return_page_requires_signature_but_allows_payos_params(): void
+    {
+        $order = \App\Models\Order::create([
+            'order_code' => 555001, 'email' => 'r@example.test', 'type' => 'registration',
+            'package' => 'month', 'quantity' => 1, 'amount' => 699000, 'status' => 'pending',
+        ]);
+
+        // Không chữ ký → chặn (chống dò đơn người khác).
+        $this->get(route('payment.return', $order))->assertForbidden();
+
+        // Có chữ ký + các query PayOS tự gắn khi redirect về → vẫn hợp lệ.
+        $signed = URL::signedRoute('payment.return', $order);
+        $withPayosParams = $signed . '&code=00&id=abc123&cancel=false&status=PAID&orderCode=' . $order->order_code;
+        $this->get($withPayosParams)->assertOk();
+    }
+
+    public function test_canceled_order_cannot_reopen_payment(): void
+    {
+        $order = \App\Models\Order::create([
+            'order_code' => 555002, 'email' => 'c@example.test', 'type' => 'registration',
+            'package' => 'month', 'quantity' => 1, 'amount' => 699000, 'status' => 'canceled',
+        ]);
+
+        $this->get(URL::signedRoute('payment.show', $order))
+            ->assertRedirect(route('register'));
     }
 
     public function test_fake_route_is_blocked_when_flag_off(): void
@@ -111,6 +138,16 @@ class RegistrationFlowTest extends TestCase
 
         // Không có chữ ký → chặn (chống dò đơn người khác).
         $this->get(route('payment.show', $order))->assertForbidden();
+    }
+
+    public function test_duplicate_submit_reuses_pending_order(): void
+    {
+        $payload = ['email' => 'dup@example.test', 'package' => 'month', 'quantity' => 1];
+
+        $this->post(route('register.store'), $payload);
+        $this->post(route('register.store'), $payload); // bấm lại / double-submit
+
+        $this->assertSame(1, \App\Models\Order::where('email', 'dup@example.test')->count());
     }
 
     public function test_store_validates_input(): void

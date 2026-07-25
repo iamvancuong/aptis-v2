@@ -1,11 +1,49 @@
 @import 'tailwindcss';
 
+/* Font tiếng Việt self-host (thay Google Fonts CDN — không phụ thuộc mạng ngoài,
+   không render-blocking, hỗ trợ đầy đủ dấu tiếng Việt). */
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+@import '@fontsource/be-vietnam-pro/700.css';
+@import '@fontsource/be-vietnam-pro/800.css';
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Blob nền hero: các class animate-blob / animation-delay-* được dùng trong
+   welcome.blade.php nhưng trước đây chưa định nghĩa → blob đứng yên. Chuyển động
+   rất chậm, nhẹ để trang có chiều sâu mà không gây mất tập trung. */
+@keyframes blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -30px) scale(1.05); }
+    66%      { transform: translate(-15px, 15px) scale(0.97); }
+}
+.animate-blob { animation: blob 14s ease-in-out infinite; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-blob { animation: none; }
+}
+
+/* Alpine x-cloak: ẩn phần tử cho tới khi Alpine khởi tạo (menu mobile…). */
+[x-cloak] { display: none !important; }
+
+/* Chuyển trang mượt (cross-fade) giữa các trang cùng miền — chuẩn web, không JS,
+   không đụng Alpine/form/thanh toán. Trình duyệt chưa hỗ trợ sẽ điều hướng bình
+   thường (thoái lui êm). */
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) { animation: none !important; }
 }

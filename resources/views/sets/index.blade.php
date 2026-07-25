@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ucfirst($skill) . ' Part ' . $part . ' - APTIS Practice')
+@section('title', ucfirst($skill) . ' Part ' . $part . ' - Milaedu')
 
 @section('content')
 <div class="mb-8">

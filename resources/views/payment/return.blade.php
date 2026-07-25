@@ -1,6 +1,7 @@
-@extends('layouts.guest')
+@extends('layouts.auth')
 
-@section('title', 'Đã nhận thanh toán - Milaedu')
+@section('title', 'Đã nhận thanh toán')
+@section('noindex', '1')
 
 @section('content')
 <x-card>

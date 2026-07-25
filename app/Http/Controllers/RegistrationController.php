@@ -44,15 +44,30 @@ class RegistrationController extends Controller
         $quantity = min($data['quantity'], $package['max']);
         $amount   = $package['price'] * $quantity;
 
-        $order = Order::create([
-            'order_code' => Order::generateCode(),
-            'email'      => $data['email'],
-            'type'       => Order::TYPE_REGISTRATION,
-            'package'    => $data['package'],
-            'quantity'   => $quantity,
-            'amount'     => $amount,
-            'status'     => Order::STATUS_PENDING,
-        ]);
+        // Chống double-submit / bấm lại: nếu đã có đơn pending y hệt (email + gói
+        // + số lượng + số tiền) tạo trong thời gian gần, dùng lại thay vì đẻ đơn
+        // rác mới. Cùng tinh thần với dedupe ở luồng xin chấm bài.
+        $order = Order::where('email', $data['email'])
+            ->where('type', Order::TYPE_REGISTRATION)
+            ->where('package', $data['package'])
+            ->where('quantity', $quantity)
+            ->where('amount', $amount)
+            ->where('status', Order::STATUS_PENDING)
+            ->where('created_at', '>=', now()->subHours(2))
+            ->latest()
+            ->first();
+
+        if (! $order) {
+            $order = Order::create([
+                'order_code' => Order::generateCode(),
+                'email'      => $data['email'],
+                'type'       => Order::TYPE_REGISTRATION,
+                'package'    => $data['package'],
+                'quantity'   => $quantity,
+                'amount'     => $amount,
+                'status'     => Order::STATUS_PENDING,
+            ]);
+        }
 
         return redirect()->to(URL::signedRoute('payment.show', $order));
     }

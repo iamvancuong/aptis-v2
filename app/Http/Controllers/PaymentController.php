@@ -7,6 +7,7 @@ use App\Services\OrderFulfillmentService;
 use App\Services\PayosService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class PaymentController extends Controller
 {
@@ -25,20 +26,33 @@ class PaymentController extends Controller
             return redirect()->route('login')->with('success', 'Đơn đã được thanh toán. Vui lòng kiểm tra email.');
         }
 
+        // Đơn đã hủy/hết hạn thì không cho mở lại để tạo link mới — tránh thanh
+        // toán cho một đơn "chết". Điều hướng khách tạo đơn mới.
+        if (in_array($order->status, [Order::STATUS_CANCELED, Order::STATUS_EXPIRED], true)) {
+            $reason = $order->status === Order::STATUS_CANCELED ? 'đã bị hủy' : 'đã hết hạn';
+
+            return redirect()->route('register')
+                ->with('error', "Đơn {$order->order_code} {$reason}. Vui lòng chọn gói và tạo đơn mới.");
+        }
+
         $package = config("pricing.packages.{$order->package}");
 
-        // 🧪 Chế độ giả lập hoặc chưa cấu hình PayOS: hiện trang đơn (kèm nút
-        // giả lập nếu đang bật PAYOS_FAKE) thay vì gọi PayOS thật.
-        if (config('payos.fake') || ! $this->payos->isConfigured()) {
-            return view('payment.pending', compact('order', 'package'));
+        // 🧪 Chế độ giả lập: hiện nút "giả lập đã thanh toán".
+        if (config('payos.fake')) {
+            return view('payment.pending', ['order' => $order, 'package' => $package, 'state' => 'fake']);
+        }
+
+        // Chưa cấu hình khóa PayOS: báo đang hoàn thiện cổng (khác với lỗi tạm thời).
+        if (! $this->payos->isConfigured()) {
+            return view('payment.pending', ['order' => $order, 'package' => $package, 'state' => 'unconfigured']);
         }
 
         try {
             $link = $this->payos->createPaymentLink(
                 $order,
                 description: 'Thanh toan Milaedu',      // ≤ 25 ký tự theo yêu cầu PayOS
-                returnUrl: route('payment.return', $order),
-                cancelUrl: route('payment.cancel', $order),
+                returnUrl: URL::signedRoute('payment.return', $order),
+                cancelUrl: URL::signedRoute('payment.cancel', $order),
             );
 
             $order->update(['payos_link_id' => $link['paymentLinkId']]);
@@ -47,8 +61,14 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             Log::error('PayOS create link failed', ['order' => $order->id, 'error' => $e->getMessage()]);
 
-            return view('payment.pending', compact('order', 'package'))
-                ->with('error', 'Không tạo được liên kết thanh toán. Vui lòng thử lại sau.');
+            // Lỗi hạ tầng tạm thời (PayOS chậm/timeout) — báo đúng bản chất và cho
+            // nút thử lại, KHÔNG hiện "đang hoàn thiện cổng" gây hiểu nhầm.
+            return view('payment.pending', [
+                'order'    => $order,
+                'package'  => $package,
+                'state'    => 'error',
+                'retryUrl' => URL::signedRoute('payment.show', $order),
+            ]);
         }
     }
 
@@ -64,7 +84,7 @@ class PaymentController extends Controller
             $this->fulfillment->fulfill($order);
         }
 
-        return redirect()->route('payment.return', $order);
+        return redirect()->to(URL::signedRoute('payment.return', $order));
     }
 
     public function return(Order $order)

@@ -14,10 +14,19 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        $attempts = \App\Models\Attempt::where('user_id', $user->id)
-            ->whereNotNull('score')
+        $baseQuery = \App\Models\Attempt::where('user_id', $user->id)->whereNotNull('score');
+
+        // Tổng số bài & điểm trung bình tính bằng aggregate query (rẻ, dùng index),
+        // không kéo toàn bộ rows về PHP.
+        $totalAttempts = (clone $baseQuery)->count();
+        $avgScore      = $totalAttempts > 0 ? round((clone $baseQuery)->avg('score'), 1) : null;
+
+        // Biểu đồ tiến độ chỉ hiển thị tối đa 20 mốc gần nhất mỗi kỹ năng, nên chỉ
+        // cần dữ liệu gần đây + đúng các cột dùng tới (tránh nạp cả nghìn dòng/đủ cột).
+        $attempts = (clone $baseQuery)
+            ->where('finished_at', '>=', now()->subMonths(6))
             ->orderBy('finished_at', 'asc')
-            ->get();
+            ->get(['skill', 'mode', 'score', 'finished_at', 'metadata']);
 
         $groupedStats = [
             'reading'   => [],
@@ -92,9 +101,7 @@ class DashboardController extends Controller
             }
         }
 
-        // --- Quick Stats ---
-        $totalAttempts = $attempts->count();
-        $avgScore      = $totalAttempts > 0 ? round($attempts->avg('score'), 1) : null;
+        // Quick Stats ($totalAttempts, $avgScore) đã tính bằng aggregate query ở đầu.
 
         // AI usage: check against current reset_version (overall usage)
         $aiRemaining = $user->getRemainingWritingAiCredits();

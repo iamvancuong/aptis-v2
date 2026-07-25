@@ -22,11 +22,6 @@ class OrderFulfillmentService
 
     public function fulfill(Order $order): void
     {
-        // Đã xử lý rồi thì thôi (chống webhook trùng).
-        if ($order->isPaid() && $order->user_id) {
-            return;
-        }
-
         if ($order->type === Order::TYPE_REGISTRATION) {
             $this->fulfillRegistration($order);
             return;
@@ -37,30 +32,54 @@ class OrderFulfillmentService
 
     /**
      * Đơn chấm bài đã trả → bật cờ để bài vào hàng đợi giáo viên chấm.
+     *
+     * Khoá đơn và re-check trong transaction: nếu webhook + reconcile chạy song
+     * song trên cùng đơn, chỉ tiến trình đầu tiên bật cờ, tiến trình sau bỏ qua.
      */
     private function fulfillGrading(Order $order): void
     {
-        $attemptId = $order->meta['attempt_id'] ?? null;
+        DB::transaction(function () use ($order) {
+            $order = Order::whereKey($order->getKey())->lockForUpdate()->first();
 
-        if ($attemptId) {
-            Attempt::where('id', $attemptId)->update([
-                'is_grading_requested' => true,
-                'grading_requested_at' => now(),
+            // Đã xử lý rồi (tiến trình song song đã fulfill) → bỏ qua.
+            if (! $order || $order->isPaid()) {
+                return;
+            }
+
+            $attemptId = $order->meta['attempt_id'] ?? null;
+
+            if ($attemptId) {
+                Attempt::where('id', $attemptId)->update([
+                    'is_grading_requested' => true,
+                    'grading_requested_at' => now(),
+                ]);
+            }
+
+            $order->update([
+                'status'  => Order::STATUS_PAID,
+                'paid_at' => now(),
             ]);
-        }
-
-        $order->update([
-            'status'  => Order::STATUS_PAID,
-            'paid_at' => now(),
-        ]);
+        });
     }
 
     private function fulfillRegistration(Order $order): void
     {
         $days = $order->durationDays();
 
-        [$user, $isNew, $password] = DB::transaction(function () use ($order, $days) {
-            $user = User::where('email', $order->email)->first();
+        // Toàn bộ phần đổi trạng thái + cấp/gia hạn tài khoản nằm trong 1
+        // transaction có khoá row đơn. Webhook và reconcile (hoặc 2 webhook)
+        // chạy song song trên cùng đơn sẽ bị tuần tự hoá: tiến trình đầu fulfill,
+        // các tiến trình sau đọc lại thấy đơn đã `paid` → trả về null → không cộng
+        // hạn/gửi mail lần hai. Email gửi SAU commit để không giữ khoá khi gọi SMTP.
+        $mailData = DB::transaction(function () use ($order, $days) {
+            $order = Order::whereKey($order->getKey())->lockForUpdate()->first();
+
+            if (! $order || $order->isPaid()) {
+                return null;
+            }
+
+            // Khoá luôn user (nếu có) để 2 đơn cùng email không cộng dồn đè nhau.
+            $user = User::where('email', $order->email)->lockForUpdate()->first();
 
             if ($user) {
                 // Gia hạn: cộng dồn từ mốc còn hạn (nếu còn) hoặc từ hiện tại.
@@ -98,6 +117,13 @@ class OrderFulfillmentService
 
             return $result;
         });
+
+        // Đơn đã được tiến trình khác fulfill → không gửi mail lần hai.
+        if ($mailData === null) {
+            return;
+        }
+
+        [$user, $isNew, $password] = $mailData;
 
         Mail::to($user->email)->send(new AccountCredentialsMail(
             email: $user->email,

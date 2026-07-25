@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($title ?? 'Lịch sử làm bài') . ' - APTIS Practice')
+@section('title', ($title ?? 'Lịch sử làm bài') . ' - Milaedu')
 
 @section('content')
 <div class="mb-6">

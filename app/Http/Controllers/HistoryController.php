@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class HistoryController extends Controller
 {
@@ -22,8 +23,8 @@ class HistoryController extends Controller
         if ($mode === 'practice')   $query->where('mode', 'practice');
         elseif ($mode === 'mock_test') $query->where('mode', 'mock_test');
         if ($scoreMin !== null && $scoreMin !== '') $query->where('score', '>=', (float) $scoreMin);
-        if ($dateFrom) $query->whereDate('finished_at', '>=', $dateFrom);
-        if ($dateTo)   $query->whereDate('finished_at', '<=', $dateTo);
+        if ($dateFrom) $query->where('finished_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+        if ($dateTo)   $query->where('finished_at', '<=', Carbon::parse($dateTo)->endOfDay());
 
         $attempts = $query->latest()->paginate(20)->appends(request()->only('mode','score_min','date_from','date_to'));
 
@@ -82,8 +83,8 @@ class HistoryController extends Controller
         if ($mode === 'practice')   $query->where('mode', 'practice');
         elseif ($mode === 'mock_test') $query->where('mode', 'mock_test');
         if ($scoreMin !== null && $scoreMin !== '') $query->where('score', '>=', (float) $scoreMin);
-        if ($dateFrom) $query->whereDate('finished_at', '>=', $dateFrom);
-        if ($dateTo)   $query->whereDate('finished_at', '<=', $dateTo);
+        if ($dateFrom) $query->where('finished_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+        if ($dateTo)   $query->where('finished_at', '<=', Carbon::parse($dateTo)->endOfDay());
 
         $attempts = $query->latest()->paginate(20)->appends(request()->only('mode','score_min','date_from','date_to'));
 
@@ -132,8 +133,8 @@ class HistoryController extends Controller
         if ($mode === 'practice')   $query->where('mode', 'practice');
         elseif ($mode === 'mock_test') $query->where('mode', 'mock_test');
         if ($scoreMin !== null && $scoreMin !== '') $query->where('score', '>=', (float) $scoreMin);
-        if ($dateFrom) $query->whereDate('finished_at', '>=', $dateFrom);
-        if ($dateTo)   $query->whereDate('finished_at', '<=', $dateTo);
+        if ($dateFrom) $query->where('finished_at', '>=', Carbon::parse($dateFrom)->startOfDay());
+        if ($dateTo)   $query->where('finished_at', '<=', Carbon::parse($dateTo)->endOfDay());
 
         $attempts = $query->latest()->paginate(20)->appends(request()->only('mode','score_min','date_from','date_to'));
 

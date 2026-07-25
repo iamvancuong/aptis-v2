@@ -1,0 +1,17 @@
+{
+    "name": "Milaedu — Luyện thi Aptis online",
+    "short_name": "Milaedu",
+    "description": "Luyện thi Aptis online: đề thi thử sát thật, chấm chữa Writing & Speaking chi tiết.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0b2b52",
+    "theme_color": "#0b2b52",
+    "lang": "vi",
+    "icons": [
+        { "src": "/favicon-16.png", "sizes": "16x16", "type": "image/png" },
+        { "src": "/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+        { "src": "/favicon-48.png", "sizes": "48x48", "type": "image/png" },
+        { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+        { "src": "/favicon.svg", "type": "image/svg+xml", "purpose": "any" }
+    ]
+}

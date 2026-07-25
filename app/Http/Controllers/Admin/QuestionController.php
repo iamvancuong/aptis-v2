@@ -29,9 +29,8 @@ class QuestionController extends Controller
         $questions = $this->questionService->getQuestions($request->all());
         
         if ($questions instanceof \Illuminate\Pagination\LengthAwarePaginator) {
-             $questions->getCollection()->each(function ($question) {
-                 $question->load('sets');
-             });
+             // Batch eager-load: 1 query whereIn cho cả trang thay vì 1 query/câu hỏi.
+             $questions->getCollection()->load('sets');
         }
 
         $quizzes = Quiz::where('skill', 'reading')->orderBy('title')->get();
@@ -49,9 +48,8 @@ class QuestionController extends Controller
         $questions = $this->questionService->getQuestions($request->all());
         
         if ($questions instanceof \Illuminate\Pagination\LengthAwarePaginator) {
-             $questions->getCollection()->each(function ($question) {
-                 $question->load('sets');
-             });
+             // Batch eager-load: 1 query whereIn cho cả trang thay vì 1 query/câu hỏi.
+             $questions->getCollection()->load('sets');
         }
 
         $quizzes = Quiz::where('skill', 'listening')->orderBy('title')->get();
