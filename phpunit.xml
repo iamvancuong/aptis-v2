@@ -31,11 +31,10 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
-        <!-- Cô lập test khỏi khóa PayOS/Zoom thật trong .env -->
+        <!-- Cô lập test khỏi khóa PayOS thật trong .env -->
         <env name="PAYOS_CLIENT_ID" value=""/>
         <env name="PAYOS_API_KEY" value=""/>
         <env name="PAYOS_CHECKSUM_KEY" value=""/>
         <env name="PAYOS_FAKE" value="false"/>
-        <env name="ZOOM_FAKE" value="false"/>
     </php>
 </phpunit>

@@ -105,19 +105,6 @@ class User extends Authenticatable
         return $this->expires_at && $this->expires_at->isPast();
     }
 
-    /**
-     * Chỉ tài khoản đã MUA GÓI qua PayOS (có đơn đăng ký đã thanh toán) mới
-     * được đặt buổi hướng dẫn. Tài khoản cũ — kể cả khi được admin đặt hạn thủ
-     * công — không có đơn nên không thấy tính năng này.
-     */
-    public function canBookGuidance(): bool
-    {
-        return $this->orders()
-            ->where('type', Order::TYPE_REGISTRATION)
-            ->where('status', Order::STATUS_PAID)
-            ->exists();
-    }
-
     public function expirationStatus(): string
     {
         if (!$this->expires_at) return 'never';

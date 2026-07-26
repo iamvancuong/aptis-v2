@@ -1,11 +1,19 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 26/07/2026 · Nhánh git: `feature/milaedu-commerce` · **85 test pass**
+> Cập nhật: 26/07/2026 · Nhánh git: `feature/milaedu-commerce` · **74 test pass**
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
-> Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/Zoom/chấm bài/doanh số) ·
-> **(C) hiệu năng + SEO + redesign UI trang public** (phiên 26/07 — xem **§10**).
+> Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
+> **(C) hiệu năng + SEO + redesign UI trang public** (phiên 26/07 — xem **§10**) ·
+> **(D) GỠ ZOOM + tính năng "buổi hướng dẫn"** (phiên này — xem **§13**).
+>
+> ▶️ **RELEASE HIỆN TẠI = CHỈ BÁN TÀI KHOẢN.** Thanh toán → tạo tài khoản học → KHÔNG có buổi học online.
+> Zoom đã bị **gỡ sạch**. Sẵn sàng đẩy production (chưa merge/push — bạn tự merge vào `main`).
+>
+> ⏸️ **Việc PENDING (không làm cho tới khi bạn nhắc):**
+> - **Buổi học online bằng Google Meet** — thay cho Zoom cũ, code mới hoàn toàn khi cần (§11).
+> - **Chấm bài Nói bằng AI** — đã khảo sát, kế hoạch + chi phí ở **§12** (đọc là code được ngay).
 
 ---
 
@@ -28,11 +36,10 @@ trang thanh toán ký (signed URL) → QR PayOS thật → khách chuyển kho�
 - Đăng ký **dedupe** đơn pending trùng (email+gói+SL+amount trong 2h) — chống double-submit (§10 #L1b).
 - `payment.show` chặn đơn `canceled`/`expired` mở lại (§10 #F4). Route `return`/`cancel` **có chữ ký** (§10 #L2/#L3).
 
-### Buổi hướng dẫn thứ 7 (Zoom)
-Chỉ tài khoản **đã mua gói qua PayOS** (có đơn `registration` đã `paid`) mới thấy `/buoi-huong-dan` →
-chọn 1 thứ 7 trong hạn → email xác nhận (KHÔNG kèm link). **Trước buổi**, admin bấm "Tạo phòng & gửi"
-(hoặc cron `guidance:dispatch`) → tạo 1 phòng Zoom riêng (waiting room + passcode) → gửi `join_url`
-cho học viên + `start_url` cho admin (người dạy). **🔴 CHƯA có khóa Zoom — xem §7.**
+### Buổi học online — ⏸️ ĐÃ GỠ (Zoom bỏ hoàn toàn, Meet để sau)
+Toàn bộ tính năng "buổi hướng dẫn" (đặt lịch + tạo phòng + gửi link) **đã bị xóa sạch** ở phiên này (§13).
+Release hiện tại chỉ bán tài khoản: mua gói → tạo tài khoản luyện thi, **không** có lớp học online.
+Khi cần, sẽ dựng lại bằng **Google Meet** (code mới — §11), không khôi phục code Zoom cũ.
 
 ### Chấm bài
 - **Giáo viên chấm tay (tính phí):** bài mock Writing/Speaking → "Thanh toán 99.000đ & gửi chấm" → đơn `grading` → trả tiền → bật `is_grading_requested`. Admin chấm miễn phí.
@@ -56,22 +63,22 @@ doanh thu CHẤM BÀI để **riêng 100% Cô Dung**. Không thuế. Lọc theo 
 
 ## 4. KIẾN TRÚC — FILE QUAN TRỌNG
 
-**Config:** `config/pricing.php` · `config/payos.php` · `config/zoom.php` · `config/guidance.php` · **`config/seo.php`** (mới — SEO tập trung, xem §10)
+**Config:** `config/pricing.php` · `config/payos.php` · **`config/seo.php`** (mới — SEO tập trung, xem §10)
+> (Đã xóa `config/zoom.php` + `config/guidance.php` ở §13.)
 
 **Services:**
 - `app/Services/PayosService.php` — createPaymentLink (ký HMAC), verifyWebhook, **getPaymentInfo**
 - `app/Services/OrderFulfillmentService.php` — tạo/gia hạn tài khoản + email; **idempotent CÓ LOCK** (§10 #L1)
-- `app/Services/ZoomService.php` — token S2S OAuth + createMeeting + fake mode
-- `app/Services/GuidanceSessionService.php` — activateAndSend
 - `app/Services/AiService.php` — chấm Writing qua OpenAI (timeout 45s)
 - `app/Services/QuestionSanitizer.php` — lọc đáp án khỏi payload client
 - `app/Jobs/ProcessWritingGrading.php` — chấm AI Writing tự động (queue)
+> (Đã xóa `ZoomService` + `GuidanceSessionService` ở §13.)
 
-**Controllers:** `PaymentController` (show/return/cancel/**webhook**/devFulfill) · `RegistrationController` · `PracticeController` · `Admin/ReportController` · `Admin/RevenueController` · `Admin/QuestionController` · `Admin/GuidanceSessionController` · `DashboardController` · `HistoryController` · `GuidanceController` · …
+**Controllers:** `PaymentController` (show/return/cancel/**webhook**/devFulfill) · `RegistrationController` · `PracticeController` · `Admin/ReportController` · `Admin/RevenueController` · `Admin/QuestionController` · `DashboardController` · `HistoryController` · …
 
-**Commands (lên lịch ở `routes/console.php`):** `payos:reconcile` (2 phút) · `guidance:dispatch` (hourly) · **`queue:work --stop-when-empty`** (mỗi phút — §10 #P4)
+**Commands (lên lịch ở `routes/console.php`):** `payos:reconcile` (2 phút) · **`queue:work --stop-when-empty`** (mỗi phút — §10 #P4)
 
-**Models:** `Order` · `GuidanceBooking` · `GuidanceSession` · `SecurityFlag` · `User` (thêm `mockTests()` relation)
+**Models:** `Order` · `SecurityFlag` · `User` (thêm `mockTests()` relation)
 
 ### 🎨 KIẾN TRÚC UI TRANG PUBLIC (phiên 26/07 — chỉ còn 2 layout)
 - **`layouts/marketing.blade.php`** — header (logo + nav Trang chủ/Giới thiệu/Luyện thi Aptis/Bảng giá, auth-aware) + footer (có tên giảng viên) + SEO head.
@@ -86,7 +93,7 @@ doanh thu CHẤM BÀI để **riêng 100% Cô Dung**. Không thuế. Lọc theo 
 **Pages:** `pages/gioi-thieu.blade.php` · `pages/luyen-thi-aptis.blade.php`
 
 **Route công khai mới:** `/gioi-thieu` (name `about`) · `/luyen-thi-aptis` (name `aptis`) · `/sitemap.xml` · `/robots.txt` (động)
-**Route đáng nhớ:** `/register` · `/thanh-toan/{order}` (signed) · `/thanh-toan/{order}/thanh-cong` & `/huy` (signed) · `/webhooks/payos` (CSRF-excluded) · `/thanh-toan/{order}/gia-lap` (fake) · `/admin/revenue` · `/admin/guidance-sessions`
+**Route đáng nhớ:** `/register` · `/thanh-toan/{order}` (signed) · `/thanh-toan/{order}/thanh-cong` & `/huy` (signed) · `/webhooks/payos` (CSRF-excluded) · `/thanh-toan/{order}/gia-lap` (fake) · `/admin/revenue`
 
 ---
 
@@ -116,9 +123,7 @@ SEO_INSTRUCTOR_NAME / SEO_INSTRUCTOR_TITLE / SEO_INSTRUCTOR_BIO  # 🔴 nên đi
 # Email: Gmail SMTP (gửi thật OK nhưng hay vào SPAM)
 MAIL_* (milaedu.hn@gmail.com)
 
-# Zoom (🔴 CHƯA có khóa)
-ZOOM_ACCOUNT_ID / ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET / ZOOM_HOST_USER / ZOOM_ADMIN_EMAIL
-ZOOM_FAKE=true
+# (ĐÃ XÓA toàn bộ ZOOM_* — không còn code nào đọc, xem §13.)
 ```
 **Test không mất tiền:** `PAYOS_FAKE=true`.
 **Test CK thật ở local:** trả tiền → `php artisan payos:reconcile`.
@@ -138,19 +143,16 @@ ZOOM_FAKE=true
 ### ✅ ĐÃ TEST THẬT
 - CK thật 2.000đ qua PayOS → tài khoản tự tạo + email. PayOS link OK · Email Gmail OK (⚠️ spam).
 
-### 🧪 ZOOM — ĐANG DỞ (việc trước mắt, cần bạn)
-Code xong, chạy giả lập. **Cần bạn:**
-1. marketplace.zoom.us → Develop → Build App → **Server-to-Server OAuth** → Create.
-2. Copy **Account ID / Client ID / Client Secret**.
-3. Scopes: `meeting:write:admin` + `user:read:admin`. Activate.
-4. Gửi 3 khóa + `ZOOM_HOST_USER` → `.env`, `ZOOM_FAKE=false` → test tạo phòng thật.
-   ⚠️ Chưa vá race tạo trùng phòng (guidance:dispatch + nút admin) — nên thêm unique `session_date` + `withoutOverlapping` khi làm tiếp Zoom.
+### ⏸️ BUỔI HỌC ONLINE — ĐÃ GỠ (không còn việc dở)
+Zoom + tính năng "buổi hướng dẫn" đã xóa sạch (§13). Không còn khóa Zoom cần cấp.
+Nếu sau này cần lớp online → dựng lại bằng **Google Meet** (code mới, §11).
 
-### 🔴 DEPLOY PRODUCTION (để sau)
+### 🟢 DEPLOY PRODUCTION (sẵn sàng — release "chỉ bán tài khoản")
 Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=false`, `PAYOS_VERIFY_SSL=true`, `PRICE_WEEK=399000`) →
 `composer install` · `php artisan migrate` · **`npm run build`** · `config:cache route:cache view:cache` →
-⭐ **Cron `* * * * * php artisan schedule:run`** — giờ CHẠY thêm `queue:work` nên **chấm AI tự động mới hoạt động** (trước đây job nằm chết) →
+⭐ **Cron `* * * * * php artisan schedule:run`** — chạy `payos:reconcile` + `queue:work` (chấm AI tự động) →
 (tùy chọn) đăng ký webhook PayOS → test 1 giao dịch thật.
+> ⚠️ Nhớ merge `feature/milaedu-commerce` → `main` trước khi deploy (phiên này chưa merge/push).
 
 ### 💡 NÊN LÀM
 - Đổi email sang dịch vụ chuyên (SendGrid/SES/Mailgun) + SPF/DKIM.
@@ -212,9 +214,83 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 ---
 
 ## 11. 🔴 CẦN BẠN / VIỆC CÒN MỞ
-- **Zoom:** cấp khóa S2S OAuth (xem §7) — việc dở lớn nhất.
+- ⏸️ **PENDING — Buổi học online (Google Meet):** Zoom đã gỡ. Khi cần lớp online, code MỚI bằng Google Meet
+  (Calendar API tạo link Meet, hoặc link phòng cố định) — không khôi phục code Zoom cũ. Chỉ làm khi bạn nhắc.
 - **Nội dung thật (SEO):** bio THẬT của cô (sửa `config/seo.php` hoặc env `SEO_INSTRUCTOR_BIO`) · testimonial + số liệu thật (hiện KHÔNG bịa) · ảnh giảng viên thật (đang dùng ô chữ "D").
 - **Off-page SEO:** Google Search Console (submit sitemap) · Google Business Profile · backlink.
 - ⬜ **Tùy chọn — Turbo (SPA thật):** chuyển tab không reload cho khu marketing. Chưa bật vì app dùng Alpine dày (form/thanh toán/admin) → cần cấu hình lại vòng đời Alpine + **test trình duyệt thật**. Đã đặt sẵn `data-turbo="false"` ở các link ra ngoài khu marketing. (Hiện dùng View Transitions — mượt, an toàn.)
 - ⬜ Đồng bộ tông cho `layouts/app` (khu học viên) + `layouts/admin` cho khớp public.
 - ⬜ Rà mobile tổng thể.
+
+---
+
+## 12. 🎤 CHẤM BÀI NÓI BẰNG AI — KHẢO SÁT & KẾ HOẠCH (⏸️ PENDING — chưa code, chỉ làm khi bạn nhắc)
+
+**Kết luận khảo sát (26/07):** Khả thi cao, độ khó trung bình. Cái khó KHÔNG phải kỹ thuật (hạ tầng gần như có sẵn) mà là **độ chính xác chấm phát âm / độ trôi chảy** → định vị điểm AI là **NHÁP tham khảo, giáo viên xác nhận** (đúng triết lý dự án). Về cơ bản = **nhân bản luồng Writing AI + thêm bước xử lý âm thanh**.
+
+### Hạ tầng ĐÃ CÓ (tái dùng — quan trọng)
+- OpenAI đã tích hợp: `config/services.php` → `openai.key` = env `OPENAI_API_KEY`. `AiService::gradeWriting` (gpt-4o-mini, JSON output, có mock mode khi thiếu key).
+- Queue worker đã chạy (cron `queue:work` — §10 #P4).
+- **Audio bài nói đã ghi + lưu sẵn:** client ghi (thường `webm`) → upload field `speaking_audio[qId]` → `store('speaking_attempts','public')` → path (mảng) lưu vào `AttemptAnswer.answer`. Xem `PracticeController` (~173–190) và `MockTestController@submit` (~234–300).
+- **Chấm tay đã có:** `Admin/SpeakingReviewController` — mỗi `AttemptAnswer` có `score`(0–10) + `feedback` + `grading_status`; overall % ở `Attempt.score`. View giáo viên: `admin/speaking-reviews/show`; học viên xem: `history/speaking-show`.
+- **Credit Speaking AI đã có scaffold sẵn:** cột `users.speaking_ai_reset_version`, `Admin/UserController::resetSpeakingAi`/`resetAllAi`, setting `speaking_grading_limit`. (Chỉ thiếu hàm `User::recordSpeakingAiUsage` — thêm giống `recordWritingAiUsage`.)
+- **Mẫu để copy:** `app/Jobs/ProcessWritingGrading.php` (job queue → lưu `ai_metadata` trên `AttemptAnswer`).
+
+### Cách làm (2 bước)
+1. **Audio → text:** Whisper (`whisper-1` hoặc `gpt-4o-transcribe`). Rẻ, ≤25MB/file (bài nói ngắn → ok).
+2. **Chấm điểm** — chọn theo tham vọng:
+   - **(A) GPT-4o-mini chấm transcript** → nội dung/từ vựng/ngữ pháp/mạch lạc. **KHÔNG chấm được phát âm/fluency.** ← MVP.
+   - **(B) `gpt-4o-audio` nghe trực tiếp** → thêm phát âm/fluency. Phase 2.
+   - **(C) Azure Pronunciation / Speechace / ELSA** → chính xác phát âm nhất, thêm vendor.
+
+### Chi phí (ước tính — VERIFY lại giá OpenAI trước khi làm)
+- **Cách A ≈ $0.03/bài (~750đ)** (chủ yếu Whisper). 100 bài ≈ $3 · 500 ≈ $15 · 1.000 ≈ $30 (~750k)/tháng.
+- Cách B ≈ $0.1–0.5/bài. Cách C ≈ $0.08/bài.
+- Là chi phí **trả theo lượng dùng trên tài khoản OpenAI**, tách khỏi tiền hosting.
+
+### Hosting hiện tại: AZDIGI Premium Business (shared cPanel) — 2 core / 4GB RAM / 30GB NVMe / 21 web / băng thông ∞
+**Đủ cho Phase 1** vì phần nặng (AI) chạy trên OpenAI; hosting chỉ nhận file + gọi HTTPS + lưu kết quả. Lưu ý:
+- ⚠️ **Phải test outbound HTTPS tới `api.openai.com` 1 lần** (shared host đôi khi chặn/thiếu CA). PayOS gọi ra ngoài OK ở production → khả năng cao OpenAI cũng OK.
+- ⚠️ **Cần chính sách dọn file audio cũ** (30GB chia 21 web sẽ đầy dần) — thêm command xóa audio đã chấm sau X ngày.
+- ✅ Giữ chấm **async qua queue** (`queue:work --max-time=50` đã hợp giới hạn shared).
+- Không self-host Whisper (cần GPU/VPS) — dùng OpenAI API nên không cần. Quy mô lớn hẳn mới cần lên VPS.
+- Quyền riêng tư: audio giọng học viên gửi lên OpenAI — cân nhắc/thông báo trong điều khoản.
+
+### Phase 1 — MVP (việc code cụ thể, ~2–4 ngày)
+1. `AiService::transcribe($path): string` (Whisper) + `AiService::gradeSpeaking($transcript, $question, $targetLevel): array` (GPT JSON, khung giống `gradeWriting`).
+2. Job `ProcessSpeakingGrading` (copy `ProcessWritingGrading`) — dispatch khi nộp mock Speaking (nhánh speaking trong `MockTestController@submit`). Trong job: đọc path audio từ `AttemptAnswer.answer` → transcribe → grade → lưu `ai_metadata`.
+3. Hiển thị `ai_metadata` ở `history/speaking-show` (học viên) + **pre-fill form `admin/speaking-reviews/show`** cho giáo viên xác nhận. Mục phát âm/fluency ghi "cần giáo viên xác nhận".
+4. `User::recordSpeakingAiUsage()` dùng `speaking_ai_reset_version` (đã có cột).
+5. (Nên) command `speaking:cleanup-audio` + lên lịch — dọn 30GB.
+
+### 🔴 QUYẾT ĐỊNH CẦN CHỐT TRƯỚC KHI CODE
+1. Bản đầu dùng **(A) transcript** hay **(B) audio-native**? → khuyến nghị **(A)** (rẻ, dễ, đủ hữu ích).
+2. **Tính phí** (như chấm tay 99k) hay **miễn phí theo credit** (như Writing AI)?
+3. Xác nhận: điểm AI là **nháp tham khảo, giáo viên xác nhận** (không phải điểm cuối chính thức).
+
+> 💡 Gợi ý mở màn phiên mới: viết 1 script test nhỏ gọi Whisper + GPT trên 1 file audio mẫu trong `storage/app/public/speaking_attempts/` để **kiểm chứng outbound HTTPS + chất lượng** trước khi làm đầy đủ.
+
+---
+
+## 13. 🧹 PHIÊN 26/07 (D) — GỠ ZOOM + TÍNH NĂNG "BUỔI HƯỚNG DẪN"
+
+**Mục tiêu:** Release "chỉ bán tài khoản". Bỏ Zoom hoàn toàn; lớp học online để sau (Google Meet, code mới). Sau thanh toán chỉ tạo tài khoản luyện thi, KHÔNG gửi link học.
+
+**Đã xóa (21 file):**
+- Zoom: `app/Services/ZoomService.php`, `config/zoom.php`.
+- Guidance service/command/controller: `GuidanceSessionService`, `SendGuidanceLinks` (command `guidance:dispatch`), `Admin/GuidanceSessionController`, `GuidanceController`, `config/guidance.php`.
+- Mail (3 class + 3 view): `GuidanceBookingMail` / `GuidanceLinkMail` / `GuidanceHostMail` + `resources/views/mail/guidance-{booking,link,host}.blade.php`.
+- Models + migrations: `GuidanceBooking`, `GuidanceSession` + `2026_03_06_000400_*` (bookings) + `2026_03_06_000500_*` (sessions).
+- Views: `resources/views/guidance/index.blade.php`, `resources/views/admin/guidance-sessions/index.blade.php`.
+- Tests: `GuidanceBookingTest`, `GuidanceSessionTest`.
+
+**Đã sửa (9 file):**
+- `routes/web.php` — bỏ 2 route `/buoi-huong-dan` (học viên) + 2 route `admin/guidance-sessions` + dòng `Disallow: /buoi-huong-dan` trong robots.txt.
+- `routes/console.php` — bỏ `Schedule::command('guidance:dispatch')`.
+- `app/Models/User.php` — bỏ `canBookGuidance()`.
+- `resources/views/layouts/app.blade.php` + `layouts/admin.blade.php` — bỏ nav "Buổi hướng dẫn".
+- `phpunit.xml` — bỏ env `ZOOM_FAKE` + sửa comment; `.env.example` + `.env` — bỏ block `ZOOM_*`.
+
+**Kiểm chứng:** `optimize:clear` OK · `route:list` không còn route guidance · **`php artisan test` = 74 pass** (trước 85; chênh 11 = 2 file test guidance đã xóa) · `npm run build` OK · migrate sạch (test RefreshDatabase pass → không FK mồ côi).
+
+**Bàn giao:** commit trên `feature/milaedu-commerce`, **chưa merge/push** — bạn tự merge vào `main` rồi deploy (checklist §7).

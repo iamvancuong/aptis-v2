@@ -76,7 +76,6 @@ Route::get('/robots.txt', function () {
         'Disallow: /dashboard',
         'Disallow: /thanh-toan',
         'Disallow: /doi-mat-khau',
-        'Disallow: /buoi-huong-dan',
         '',
         'Sitemap: ' . route('sitemap'),
     ];
@@ -156,10 +155,6 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     // Đổi mật khẩu (buộc đổi lần đầu với tài khoản tạo tự động)
     Route::get('/doi-mat-khau', [\App\Http\Controllers\PasswordChangeController::class, 'edit'])->name('password.change');
     Route::post('/doi-mat-khau', [\App\Http\Controllers\PasswordChangeController::class, 'update'])->name('password.update');
-
-    // Buổi hướng dẫn thứ 7
-    Route::get('/buoi-huong-dan', [\App\Http\Controllers\GuidanceController::class, 'index'])->name('guidance.index');
-    Route::post('/buoi-huong-dan', [\App\Http\Controllers\GuidanceController::class, 'store'])->name('guidance.store');
 
     // Records a DevTools detection and ends the session. Throttled so a
     // misbehaving client cannot spam the log.
@@ -255,8 +250,4 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
 
     // Doanh số
     Route::get('revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('revenue.index');
-
-    // Buổi hướng dẫn (tạo phòng Zoom + gửi link)
-    Route::get('guidance-sessions', [\App\Http\Controllers\Admin\GuidanceSessionController::class, 'index'])->name('guidance-sessions.index');
-    Route::post('guidance-sessions/activate', [\App\Http\Controllers\Admin\GuidanceSessionController::class, 'activate'])->name('guidance-sessions.activate');
 });
