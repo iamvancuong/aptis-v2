@@ -134,7 +134,7 @@
 @if(config('seo.contact.facebook'))
 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
     <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 via-white to-indigo-50 ring-1 ring-slate-200/70 px-6 sm:px-12 py-14">
-        <div class="relative grid lg:grid-cols-2 gap-10 items-center">
+        <div class="relative grid md:grid-cols-2 gap-8 md:gap-10 items-center">
             <div>
                 <p class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 mb-4">
                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>Cộng đồng Milaedu
