@@ -165,6 +165,38 @@ class PracticeAnswerLeakTest extends TestCase
             ->assertJsonPath('answer_key.correct_answers', [0]);
     }
 
+    /**
+     * The explanation/transcript lives in a top-level `explanation` COLUMN
+     * (production shape), not in metadata. It must be hidden on initial load
+     * (it spells out the answer) yet released by the check endpoint afterwards,
+     * so the feedback panel can show it. This is the Reading Part 3 bug fix.
+     */
+    public function test_check_endpoint_releases_the_explanation_column(): void
+    {
+        $set = $this->setWithQuestion('reading', 3, [
+            'options'         => ['A text', 'B text', 'C text', 'D text'],
+            'questions'       => ['Who mentions the weather?'],
+            'correct_answers' => [2],
+        ]);
+        $question = $set->questions()->first();
+        $question->update(['explanation' => 'SECRET_EXPLANATION_TEXT']);
+
+        $learner = $this->learner();
+
+        // Not shipped on the initial page load…
+        $html = $this->actingAs($learner)
+            ->get(route('practice.show', $set))
+            ->assertOk()
+            ->getContent();
+        $this->assertStringNotContainsString('SECRET_EXPLANATION_TEXT', $html);
+
+        // …but released by the check endpoint once the learner asks for it.
+        $this->actingAs($learner)
+            ->postJson(route('practice.check', $set), ['question_id' => $question->id])
+            ->assertOk()
+            ->assertJsonPath('answer_key.explanation', 'SECRET_EXPLANATION_TEXT');
+    }
+
     /** A question outside this set cannot be used to fish for answers. */
     public function test_check_endpoint_rejects_a_question_from_another_set(): void
     {

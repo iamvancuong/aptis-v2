@@ -21,7 +21,7 @@
                     <div class="p-3 rounded-lg border-2 border-dashed min-h-[56px] transition-all cursor-pointer touch-action-pan-y"
                          :class="[
                             hasAnswered(currentQuestion.id) 
-                                ? (slot && slot.originalIndex === slotIdx + 1 ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50')
+                                ? (slot && slot.text === currentQuestion.metadata.sentences[slotIdx + 1] ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50')
                                 : (slot ? 'border-gray-300 bg-white' : 'border-gray-300 bg-gray-50'),
                             p2DragOverSlot === slotIdx && !hasAnswered(currentQuestion.id) ? 'border-blue-500 bg-blue-50 scale-[1.02]' : '',
                             !hasAnswered(currentQuestion.id) && p2SelectedPoolIdx !== null && !slot ? 'border-blue-300 bg-blue-50/30' : ''
@@ -35,7 +35,7 @@
                         <div class="flex items-center gap-3">
                             <span class="font-bold w-6 text-center flex-shrink-0" 
                                   :class="hasAnswered(currentQuestion.id) && slot
-                                      ? (slot.originalIndex === slotIdx + 1 ? 'text-green-600' : 'text-red-600')
+                                      ? (slot.text === currentQuestion.metadata.sentences[slotIdx + 1] ? 'text-green-600' : 'text-red-600')
                                       : 'text-blue-600'"
                                   x-text="slotIdx + 1"></span>
                             
@@ -61,11 +61,11 @@
                         {{-- Row 2: Feedback (below sentence) --}}
                         <template x-if="hasAnswered(currentQuestion.id) && slot">
                             <div class="mt-2 ml-9 text-sm">
-                                <div x-show="slot.originalIndex === slotIdx + 1" class="flex items-center text-green-600 font-bold">
+                                <div x-show="slot.text === currentQuestion.metadata.sentences[slotIdx + 1]" class="flex items-center text-green-600 font-bold">
                                     <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                                     Correct
                                 </div>
-                                <div x-show="slot.originalIndex !== slotIdx + 1" class="flex items-start text-red-600">
+                                <div x-show="slot.text !== currentQuestion.metadata.sentences[slotIdx + 1]" class="flex items-start text-red-600">
                                     <svg class="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                     <span><span class="font-bold">Incorrect.</span> Answer: <span class="font-bold text-green-600" x-html="currentQuestion.metadata.sentences[slotIdx + 1]"></span></span>
                                 </div>

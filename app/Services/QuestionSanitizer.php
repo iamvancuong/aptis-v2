@@ -176,6 +176,15 @@ class QuestionSanitizer
             }
         }
 
+        // Explanation / transcript lives in a top-level column (not metadata),
+        // and metadataForClient() keeps it out of the initial payload because it
+        // spells out the answer. Release it here — after the learner has answered
+        // — so the feedback panel can show it. revealAnswerKey() merges this into
+        // metadata.explanation, which _feedback.blade.php renders.
+        if (filled($question->explanation)) {
+            $key['explanation'] = $question->explanation;
+        }
+
         // Reading Part 2 has no answer-key field: the correct order is the
         // stored order of `sentences`, minus the fixed opening sentence.
         if ($question->skill === 'reading' && (int) $question->part === 2) {
