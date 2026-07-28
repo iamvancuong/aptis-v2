@@ -73,6 +73,15 @@ class PayosService
     }
 
     /**
+     * Dựng lại URL trang thanh toán PayOS từ paymentLinkId. Dùng để TÁI DÙNG link
+     * đã tạo thay vì gọi tạo mới (PayOS cấm 2 link cùng một orderCode).
+     */
+    public function checkoutUrlFor(string $paymentLinkId): string
+    {
+        return rtrim(config('payos.checkout_base_url'), '/') . '/' . $paymentLinkId;
+    }
+
+    /**
      * Hỏi PayOS trạng thái một đơn (backstop khi webhook không tới).
      *
      * @return array{status:string, amountPaid:int, raw:array}

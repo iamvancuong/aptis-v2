@@ -47,6 +47,14 @@ class PaymentController extends Controller
             return view('payment.pending', ['order' => $order, 'package' => $package, 'state' => 'unconfigured']);
         }
 
+        // ♻️ Đơn PENDING đã có link PayOS → TÁI DÙNG, tuyệt đối không tạo link thứ 2.
+        // PayOS cấm 2 link cùng một orderCode, nên gọi createPaymentLink lần nữa sẽ
+        // bị từ chối và rơi vào màn "lỗi" — đây chính là bug khi khách back/mở lại
+        // trang thanh toán (dedupe đăng ký dùng lại đúng đơn pending đó).
+        if ($order->payos_link_id) {
+            return redirect()->away($this->checkoutUrl($order));
+        }
+
         try {
             $link = $this->payos->createPaymentLink(
                 $order,
@@ -55,11 +63,22 @@ class PaymentController extends Controller
                 cancelUrl: URL::signedRoute('payment.cancel', $order),
             );
 
-            $order->update(['payos_link_id' => $link['paymentLinkId']]);
+            $order->update([
+                'payos_link_id' => $link['paymentLinkId'],
+                'meta'          => array_merge((array) $order->meta, ['checkout_url' => $link['checkoutUrl']]),
+            ]);
 
             return redirect()->away($link['checkoutUrl']);
         } catch (\Throwable $e) {
             Log::error('PayOS create link failed', ['order' => $order->id, 'error' => $e->getMessage()]);
+
+            // 🛟 Lưới an toàn: nếu link ĐÃ tạo ở lần trước nhưng response bị mất giữa
+            // chừng (đơn vẫn chưa lưu payos_link_id), PayOS sẽ báo "orderCode đã tồn
+            // tại" ở mọi lần thử lại → kẹt vòng lỗi. Hỏi lại info để lấy paymentLinkId
+            // rồi tái dựng checkout URL, thay vì bắt khách chịu lỗi vĩnh viễn.
+            if ($recovered = $this->recoverExistingLink($order)) {
+                return redirect()->away($recovered);
+            }
 
             // Lỗi hạ tầng tạm thời (PayOS chậm/timeout) — báo đúng bản chất và cho
             // nút thử lại, KHÔNG hiện "đang hoàn thiện cổng" gây hiểu nhầm.
@@ -69,6 +88,40 @@ class PaymentController extends Controller
                 'state'    => 'error',
                 'retryUrl' => URL::signedRoute('payment.show', $order),
             ]);
+        }
+    }
+
+    /**
+     * URL checkout của đơn: ưu tiên URL đã lưu; nếu chưa có (đơn cũ trước bản vá)
+     * thì tái dựng từ payos_link_id.
+     */
+    private function checkoutUrl(Order $order): string
+    {
+        return $order->meta['checkout_url']
+            ?? $this->payos->checkoutUrlFor($order->payos_link_id);
+    }
+
+    /**
+     * Cố gắng lấy lại link PayOS đã tồn tại cho đơn (khi tạo mới bị từ chối trùng
+     * mã). Trả về checkout URL nếu phục hồi được, null nếu không.
+     */
+    private function recoverExistingLink(Order $order): ?string
+    {
+        try {
+            $linkId = $this->payos->getPaymentInfo($order->order_code)['raw']['id'] ?? null;
+            if (! $linkId) {
+                return null;
+            }
+
+            $checkoutUrl = $this->payos->checkoutUrlFor($linkId);
+            $order->update([
+                'payos_link_id' => $linkId,
+                'meta'          => array_merge((array) $order->meta, ['checkout_url' => $checkoutUrl]),
+            ]);
+
+            return $checkoutUrl;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 

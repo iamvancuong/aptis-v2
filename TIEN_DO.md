@@ -1,13 +1,14 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 28/07/2026 · Nhánh git: `main` (đã merge + đẩy production) · **75 test pass**
+> Cập nhật: 29/07/2026 · Nhánh git: `fix/payos-duplicate-payment-link` (**chưa merge vào `main`**) · **78 test pass**
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
 > **(C) hiệu năng + SEO + redesign UI trang public** (§10) ·
 > **(D) GỠ ZOOM + tính năng "buổi hướng dẫn"** (§13) ·
-> **(E) DEPLOY production + cộng đồng FB + responsive + vá bug Reading** (phiên 28/07 — xem **§14**).
+> **(E) DEPLOY production + cộng đồng FB + responsive + vá bug Reading** (phiên 28/07 — xem **§14**) ·
+> **(F) VÁ BUG "Chưa kết nối được cổng thanh toán" khi mở lại đơn** (phiên 29/07 — xem **§15**).
 >
 > ▶️ **ĐÃ LÊN PRODUCTION** tại **https://milaedu.com** — release **CHỈ BÁN TÀI KHOẢN** (thanh toán → tạo tài khoản học,
 > KHÔNG có buổi học online). Deploy qua **cPanel AZDIGI** (git pull trong Terminal + upload `public/build`) — quy trình ở **§14**.
@@ -344,3 +345,43 @@ Cron cPanel trước đây chạy thẳng `queue:work` → **`payos:reconcile` k
 - **Test:** thêm `PracticeAnswerLeakTest::test_check_endpoint_releases_the_explanation_column` (không lộ lúc load + release qua check). **Tổng 75 pass.**
 
 **File chạm:** `QuestionSanitizer.php`, `resources/views/practice/show.blade.php`, `practice/parts/_feedback.blade.php`, `practice/parts/reading-part2.blade.php`, `welcome.blade.php`, `partials/pricing.blade.php`, `config/seo.php`, `layouts/marketing.blade.php`, `tests/Feature/PracticeAnswerLeakTest.php`. Thêm mới: `DEPLOY.md`.
+
+---
+
+## 15. 🐞 PHIÊN 29/07/2026 (F) — VÁ BUG "Chưa kết nối được cổng thanh toán" KHI MỞ LẠI ĐƠN
+
+### Triệu chứng (khách báo)
+Màn "Chưa kết nối được cổng thanh toán… Thử lại" xuất hiện khi:
+- Thanh toán → hủy/back → **thanh toán lại**; hoặc
+- Vào trang thanh toán → **back** → chọn gói → thanh toán.
+
+### Nguyên nhân gốc
+`PaymentController@show` gọi `createPaymentLink()` **MỖI lần** mở trang. **PayOS cấm tạo 2 link cho cùng một `orderCode`** (mã duy nhất vĩnh viễn) → lần gọi thứ 2 bị từ chối → rơi vào nhánh `catch` = `state='error'`. Thông báo "mạng chập chờn" đổ oan cho mạng.
+Bị kích hoạt vì: khách **back/đóng tab** khiến đơn vẫn `pending` (đã có link), rồi **dedupe đăng ký** (§10 #L1b) dùng lại đúng đơn đó → `show()` tạo link lần 2 cùng orderCode. Nút **"Thử lại"** trỏ về cùng đơn → lỗi lặp vô hạn.
+(Nếu hủy qua **đúng nút Hủy** thì đơn thành `canceled`, đăng ký lại tạo đơn mới → không dính. Thủ phạm là đường back/đóng tab.)
+
+### Cách sửa — nguyên tắc **1 orderCode = 1 link, đã tạo thì TÁI DÙNG**
+- `PaymentController@show`: đơn `pending` **đã có `payos_link_id`** → **redirect thẳng link cũ**, KHÔNG gọi tạo mới. Khi tạo link lần đầu → **lưu `checkout_url` vào `meta`** (không cần migration).
+- Helper `checkoutUrl(Order)` (ưu tiên URL đã lưu, fallback dựng lại từ `payos_link_id` cho đơn cũ trước bản vá).
+- 🛟 **Lưới an toàn `recoverExistingLink()`:** nếu link đã tạo nhưng response mất giữa chừng (đơn chưa kịp lưu id) → PayOS từ chối "orderCode đã tồn tại" ở mọi lần thử → **hỏi lại `getPaymentInfo` lấy `id` (paymentLinkId) rồi tái dựng checkout URL**, tránh kẹt lỗi vĩnh viễn.
+- `PayosService::checkoutUrlFor($paymentLinkId)` — dựng `{checkout_base_url}/{id}`.
+- `config/payos.php`: thêm `checkout_base_url` (mặc định `https://pay.payos.vn/web/`, override qua env `PAYOS_CHECKOUT_BASE_URL`).
+
+### Kiểm chứng
+- Test mới `tests/Feature/PaymentLinkReuseTest.php` (3 ca): (1) mở lại đơn pending → **createPaymentLink chỉ gọi 1 lần**; (2) đơn cũ có link nhưng chưa lưu URL → tái dùng **không gọi API**; (3) tạo mới bị từ chối trùng mã → **tự phục hồi** qua getPaymentInfo. **Tổng 78 pass** (trước 75).
+- ⚠️ Bug chỉ tái hiện với **khóa PayOS thật** (`PAYOS_FAKE=false`); `.env` local đang fake sẽ không thấy.
+- Edge hiếm (không phải bug này): khách bấm Hủy **ngay trên UI PayOS** (không qua nút hủy của web) → link tái dùng hiện trang "đã hủy" của PayOS. Xử lý sau bằng cách check trạng thái nếu cần.
+
+**File chạm:** `app/Http/Controllers/PaymentController.php`, `app/Services/PayosService.php`, `config/payos.php`. Thêm mới: `tests/Feature/PaymentLinkReuseTest.php`.
+
+**Bàn giao:** commit trên nhánh `fix/payos-duplicate-payment-link` — **chưa merge/push**. Sửa Blade/PHP thuần (không đổi Tailwind/JS) → **deploy KHÔNG cần `npm run build`**: merge vào `main` → trên cPanel Terminal `git fetch origin && git reset --hard origin/main` → `php artisan optimize:clear && config:cache && route:cache && view:cache` (quy trình §14).
+
+---
+
+## 16. 🎥 GHI CHÚ TƯ VẤN — LỚP ONLINE GOOGLE MEET (⏸️ PENDING — chưa code, đã chốt hướng 29/07)
+Bổ sung cho §11 (Zoom đã gỡ, làm mới bằng Meet khi cần). Phiên 29/07 đã tư vấn + chốt sơ bộ:
+- **Chi phí:** chỉ trả license cho **tài khoản HOST** (Cô Dung ±1 co-host); **học sinh join miễn phí** bằng link, không cần license. Giới hạn người/phòng do **gói của host** quyết định.
+- **Gói (đã chốt):** ~300–500 học sinh vào **CÙNG 1 buổi** → **Business Plus (~$22/host·tháng, cap 500 người)**. Standard (150) không đủ. Nên 2 host (~$44/tháng). ⚠️ Trần cứng 500 → nếu vượt phải lên **Enterprise** (1.000).
+- **Email học sinh đa số Gmail** → Pha 1 dùng được `accessType=RESTRICTED` (mời đích danh, chống học chui chặt nhất).
+- **Chống "học chui":** enforce ở **tầng web Milaedu**, KHÔNG phải Meet — không gửi link trần, chỉ hiện nút "Vào lớp" cho tài khoản **đăng nhập + còn hạn**, trong **khung giờ**; host bật phòng chờ. Chống share tài khoản = bật **1 phiên/tài khoản** qua `LoginSession` sẵn có (Meet không chặn 1 account nhiều thiết bị).
+- **Hướng code (đã chọn Pha 0 MVP trước):** bảng `class_sessions` + admin dán link Meet thủ công + route `/lop-hoc/{session}/join` (check hạn+giờ rồi redirect, link không nằm trong HTML). **Pha 1** sau: Google Calendar/Meet REST API (service account + domain-wide delegation) tự sinh phòng + mời email còn hạn + gửi mail. → **Chưa bắt đầu code, chờ bạn nhắc.**

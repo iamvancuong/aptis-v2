@@ -34,6 +34,10 @@ return [
     // Endpoint REST của PayOS (ít khi đổi).
     'base_url'     => env('PAYOS_BASE_URL', 'https://api-merchant.payos.vn'),
 
+    // Trang checkout người dùng (dạng {base}/{paymentLinkId}). Dùng để TÁI DÙNG
+    // link cũ khi mở lại đơn — PayOS cấm tạo 2 link cùng orderCode.
+    'checkout_base_url' => env('PAYOS_CHECKOUT_BASE_URL', 'https://pay.payos.vn/web/'),
+
     // Trang người dùng quay về sau khi thanh toán (đường dẫn nội bộ).
     'return_path'  => '/thanh-toan/thanh-cong',
     'cancel_path'  => '/thanh-toan/huy',
