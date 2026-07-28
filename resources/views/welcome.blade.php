@@ -9,7 +9,7 @@
 
 @section('content')
 {{-- ===================== HERO ===================== --}}
-<section class="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white min-h-[calc(100vh-4rem)] flex items-center">
+<section class="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white lg:landscape:min-h-[calc(100vh-4rem)] flex items-center">
     <div class="absolute top-0 right-0 -mt-24 -mr-24 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" aria-hidden="true"></div>
     <div class="absolute -bottom-24 left-1/4 w-80 h-80 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" aria-hidden="true"></div>
 
