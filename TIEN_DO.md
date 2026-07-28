@@ -1,15 +1,16 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 26/07/2026 · Nhánh git: `feature/milaedu-commerce` · **74 test pass**
+> Cập nhật: 28/07/2026 · Nhánh git: `main` (đã merge + đẩy production) · **75 test pass**
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
-> **(C) hiệu năng + SEO + redesign UI trang public** (phiên 26/07 — xem **§10**) ·
-> **(D) GỠ ZOOM + tính năng "buổi hướng dẫn"** (phiên này — xem **§13**).
+> **(C) hiệu năng + SEO + redesign UI trang public** (§10) ·
+> **(D) GỠ ZOOM + tính năng "buổi hướng dẫn"** (§13) ·
+> **(E) DEPLOY production + cộng đồng FB + responsive + vá bug Reading** (phiên 28/07 — xem **§14**).
 >
-> ▶️ **RELEASE HIỆN TẠI = CHỈ BÁN TÀI KHOẢN.** Thanh toán → tạo tài khoản học → KHÔNG có buổi học online.
-> Zoom đã bị **gỡ sạch**. Sẵn sàng đẩy production (chưa merge/push — bạn tự merge vào `main`).
+> ▶️ **ĐÃ LÊN PRODUCTION** tại **https://milaedu.com** — release **CHỈ BÁN TÀI KHOẢN** (thanh toán → tạo tài khoản học,
+> KHÔNG có buổi học online). Deploy qua **cPanel AZDIGI** (git pull trong Terminal + upload `public/build`) — quy trình ở **§14**.
 >
 > ⏸️ **Việc PENDING (không làm cho tới khi bạn nhắc):**
 > - **Buổi học online bằng Google Meet** — thay cho Zoom cũ, code mới hoàn toàn khi cần (§11).
@@ -147,7 +148,7 @@ MAIL_* (milaedu.hn@gmail.com)
 Zoom + tính năng "buổi hướng dẫn" đã xóa sạch (§13). Không còn khóa Zoom cần cấp.
 Nếu sau này cần lớp online → dựng lại bằng **Google Meet** (code mới, §11).
 
-### 🟢 DEPLOY PRODUCTION (sẵn sàng — release "chỉ bán tài khoản")
+### ✅ DEPLOY PRODUCTION — ĐÃ LÊN (28/07, milaedu.com) · quy trình chi tiết ở §14
 Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=false`, `PAYOS_VERIFY_SSL=true`, `PRICE_WEEK=399000`) →
 `composer install` · `php artisan migrate` · **`npm run build`** · `config:cache route:cache view:cache` →
 ⭐ **Cron `* * * * * php artisan schedule:run`** — chạy `payos:reconcile` + `queue:work` (chấm AI tự động) →
@@ -294,3 +295,52 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 **Kiểm chứng:** `optimize:clear` OK · `route:list` không còn route guidance · **`php artisan test` = 74 pass** (trước 85; chênh 11 = 2 file test guidance đã xóa) · `npm run build` OK · migrate sạch (test RefreshDatabase pass → không FK mồ côi).
 
 **Bàn giao:** commit trên `feature/milaedu-commerce`, **chưa merge/push** — bạn tự merge vào `main` rồi deploy (checklist §7).
+
+---
+
+## 14. 🚀 PHIÊN 28/07/2026 (E) — DEPLOY PRODUCTION + CỘNG ĐỒNG + RESPONSIVE + VÁ BUG READING
+
+### A. ✅ ĐÃ DEPLOY LÊN PRODUCTION (milaedu.com)
+Merge `feature/milaedu-commerce` → `main` → chạy thật trên **AZDIGI cPanel**. Quy trình deploy chuẩn của dự án này:
+- **Hosting:** AZDIGI Premium Business (cPanel). Code ở **`/home/ujxmchhx/repositories/aptis-v2`**. Remote GitHub: `github.com/iamvancuong/aptis-v2`.
+- **Cập nhật code:** cPanel → **Terminal** (KHÔNG dùng nút cPanel Git Version Control — hay lỗi "could not contact remote"):
+  ```
+  cd /home/ujxmchhx/repositories/aptis-v2
+  git fetch origin && git reset --hard origin/main
+  composer install --no-dev --optimize-autoloader   # khi đổi package
+  php artisan migrate --force                        # khi có migration mới
+  php artisan storage:link                           # audio bài Nói
+  php artisan optimize:clear
+  php artisan config:cache && php artisan route:cache && php artisan view:cache
+  ```
+- ⚠️ **UI (CSS/JS Vite):** `public/build` **bị gitignore → `git pull` KHÔNG mang UI**. Phải `npm run build` ở LOCAL → nén `public/build` → upload + Extract vào `public/` trên cPanel. **CHỈ cần làm bước này khi đổi Tailwind class / JS trong `resources/`** — sửa Blade/PHP thuần thì KHÔNG cần build.
+  - ⚠️ Lỗi `npm` trên Windows (`npm.ps1 ... execution policy`): dùng `npm.cmd run build`, hoặc Git Bash.
+- **`.env` production** (khác `.env` local): `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://milaedu.com`, `LOG_LEVEL=error`, DB `ujxmchhx_aptis_v2`@`127.0.0.1`, PayOS keys thật, `MAIL_MAILER=smtp` Gmail, `OPENAI_API_KEY` thật. (Local trỏ DB test `ujxmchhx_aptis_test_2026`@`103.221.223.60`.)
+- **Runbook đầy đủ:** file **`DEPLOY.md`** ở gốc repo.
+
+### B. ⭐ CRON — QUAN TRỌNG (đã sửa)
+Cron cPanel trước đây chạy thẳng `queue:work` → **`payos:reconcile` không bao giờ chạy** → đơn đã trả tiền không tự tạo tài khoản (phải chạy tay). Đã đổi thành **đúng 1 dòng** chạy `schedule:run` (tự lo cả reconcile 2 phút + queue:work mỗi phút):
+```
+* * * * * /usr/local/bin/ea-php82 /home/ujxmchhx/repositories/aptis-v2/artisan schedule:run >> /dev/null 2>&1
+```
+> 500 "sau thanh toán" từng gặp = **migration chưa chạy** trên prod → `php artisan migrate --force` là hết. Đơn kẹt cứu bằng `php artisan payos:reconcile` (tạo tài khoản + gửi mail; tài khoản mặc định mật khẩu `12345678`).
+> PayOS: web báo `paid` nhưng ngân hàng chưa có tiền = **bình thường** — tiền ở ví PayOS, giải ngân về bank theo chu kỳ (xem my.payos.vn).
+
+### C. 🤝 Section cộng đồng Facebook (trang chủ)
+- Thêm section **"Cộng đồng Milaedu"** ở `welcome.blade.php` (giữa "Về giảng viên" và bảng giá) mời vào nhóm FB — **tông sáng** (nền gradient xanh nhạt, thẻ trắng), không phải khối xanh đậm chói.
+- Link nhóm ở `config/seo.php` → `contact.facebook` (đổi qua env `SEO_FACEBOOK_GROUP`).
+- Dọn 2 chỗ **quảng cáo nhầm tính năng đã gỡ**: feature card + quyền lợi bảng giá "Buổi hướng dẫn 19h30 thứ 7" → "Chấm Writing bằng AI".
+
+### D. 📱 Responsive (iPad/iPhone)
+- **Hero** trước ép `min-h-[calc(100vh-4rem)]` → trên iPad **dọc** thừa khoảng trắng rất dài. Đổi `lg:landscape:min-h-[...]`: chỉ full-màn ở **desktop ngang**, còn iPad/iPhone dọc **co theo nội dung**. (Verified 375 / 768 / 1024×1366 / 1280×800, không tràn ngang.)
+- Section cộng đồng: `md:grid-cols-2` — 2 cột từ iPad dọc, 1 cột iPhone.
+
+### E. 🐞 VÁ BUG READING (client hiển thị — điểm lưu DB vẫn đúng)
+- **Giải thích không hiện (mọi part):** `explanation` là **CỘT** của bảng `questions` (không phải metadata), mà `QuestionSanitizer` chưa bao giờ gửi cột này xuống client. **Fix:** `answerKeyFor()` release cột `explanation` sau khi trả lời → `revealAnswerKey()` merge vào `metadata.explanation` → `_feedback.blade.php` (`currentQuestion.metadata.explanation`) hiển thị. Vẫn KHÔNG lộ lúc load (bảo mật).
+- **Part 3/4 "làm đúng báo sai" (verdict tổng):** `submitPart3/4` dùng `correctCount === correct_answers.length`; `.length` = undefined khi `correct_answers` là object → luôn sai. **Fix:** mẫu số = số câu đã trả lời, so `String()===String()`.
+- **Part 2 câu đặt đúng vẫn đỏ:** per-slot chấm bằng `slot.originalIndex` (gán từ mảng đã **shuffle** server) → vô nghĩa. **Fix:** so **text** với `metadata.sentences[slotIdx+1]` (thứ tự thật sau reveal), khớp `submitPart2`.
+- **Part 2 câu đầu mờ oan:** `x-if="sentences[0]"` — giá trị trống-nhưng-non-null (dấu cách / `<p></p>`) vẫn mờ. **Fix:** helper `p2HasFixedStart()` (strip tag + `&nbsp;` + trim) → chỉ mờ khi Fixed Start có chữ thật.
+  - ⚠️ Nếu 1 câu vẫn mờ dù không muốn: ô "Sentence 1 (Fixed Start)" trong admin **thực sự có chữ** → xóa trống ô đó (dữ liệu, không phải code). qid 43/46 (DB test) bị gõ dư tiền tố "0. ".
+- **Test:** thêm `PracticeAnswerLeakTest::test_check_endpoint_releases_the_explanation_column` (không lộ lúc load + release qua check). **Tổng 75 pass.**
+
+**File chạm:** `QuestionSanitizer.php`, `resources/views/practice/show.blade.php`, `practice/parts/_feedback.blade.php`, `practice/parts/reading-part2.blade.php`, `welcome.blade.php`, `partials/pricing.blade.php`, `config/seo.php`, `layouts/marketing.blade.php`, `tests/Feature/PracticeAnswerLeakTest.php`. Thêm mới: `DEPLOY.md`.
