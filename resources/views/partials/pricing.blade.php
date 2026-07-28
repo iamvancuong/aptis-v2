@@ -2,7 +2,7 @@
     $features = [
         'Thi thử full 4 kỹ năng + Grammar',
         'Chấm chữa Writing & Speaking chi tiết',
-        'Buổi hướng dẫn 19h30 thứ 7 hàng tuần',
+        'Chấm Writing bằng AI ngay tức thì',
         'Mua nhiều — cộng dồn thời hạn',
     ];
 @endphp

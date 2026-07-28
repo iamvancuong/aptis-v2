@@ -99,7 +99,7 @@
             $features = [
                 ['d' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'title' => 'Đề thi thử sát thật', 'desc' => 'Mô phỏng đúng format Aptis 4 kỹ năng — làm bài như thi thật, quen áp lực thời gian.'],
                 ['d' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'title' => 'Chấm chữa chi tiết', 'desc' => 'Writing & Speaking được chấm và chữa từng lỗi, kèm gợi ý cải thiện cụ thể.'],
-                ['d' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', 'title' => 'Buổi hướng dẫn hàng tuần', 'desc' => 'Buổi hướng dẫn 19h30 thứ 7 để giải đáp và định hướng lộ trình học.'],
+                ['d' => 'M13 10V3L4 14h7v7l9-11h-7z', 'title' => 'Chấm Writing bằng AI tức thì', 'desc' => 'Nộp bài Writing, nhận điểm và gợi ý cải thiện từ AI ngay lập tức — luyện đến đâu biết đến đó.'],
             ];
         @endphp
         @foreach($features as $f)
@@ -129,6 +129,49 @@
         </a>
     </div>
 </section>
+
+{{-- ===================== CỘNG ĐỒNG ===================== --}}
+@if(config('seo.contact.facebook'))
+<section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 via-white to-indigo-50 ring-1 ring-slate-200/70 px-6 sm:px-12 py-14">
+        <div class="relative grid lg:grid-cols-2 gap-10 items-center">
+            <div>
+                <p class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 mb-4">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>Cộng đồng Milaedu
+                </p>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">Bạn không luyện thi một mình</h2>
+                <p class="mt-4 text-slate-600 leading-relaxed max-w-xl">
+                    Tham gia cộng đồng Milaedu trên Facebook — nơi những người đang ngày ngày cố gắng vì mục tiêu Aptis
+                    cùng chia sẻ tài liệu, hỏi đáp, động viên nhau và ăn mừng từng cột mốc tiến bộ.
+                    Có người đồng hành, hành trình ôn thi nhẹ nhàng hơn rất nhiều.
+                </p>
+                <a href="{{ config('seo.contact.facebook') }}" target="_blank" rel="noopener noreferrer"
+                   class="mt-7 inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-colors">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    Tham gia cộng đồng Facebook
+                </a>
+            </div>
+            <ul class="space-y-3">
+                @foreach([
+                    ['Chia sẻ tài liệu & kinh nghiệm', 'Tài liệu, mẹo làm bài và lộ trình ôn được chia sẻ mỗi ngày.'],
+                    ['Hỏi đáp cùng người học khác', 'Vướng ở đâu cứ hỏi — luôn có người sẵn sàng giải đáp.'],
+                    ['Động viên nhau mỗi ngày', 'Cùng giữ động lực, không ai bỏ cuộc giữa chừng.'],
+                ] as $item)
+                    <li class="flex items-start gap-4 rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm p-4">
+                        <span class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </span>
+                        <div>
+                            <p class="font-bold text-slate-900">{{ $item[0] }}</p>
+                            <p class="text-sm text-slate-500 mt-0.5">{{ $item[1] }}</p>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+</section>
+@endif
 
 {{-- ===================== BẢNG GIÁ ===================== --}}
 @include('partials.pricing')

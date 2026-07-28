@@ -41,7 +41,9 @@ return [
 
     // Liên hệ (dùng cho structured data + footer). Đọc từ Setting/env nếu có.
     'contact' => [
-        'email'   => env('SEO_CONTACT_EMAIL', env('MAIL_FROM_ADDRESS', 'milaedu.hn@gmail.com')),
-        'hotline' => env('SEO_CONTACT_HOTLINE', ''),
+        'email'    => env('SEO_CONTACT_EMAIL', env('MAIL_FROM_ADDRESS', 'milaedu.hn@gmail.com')),
+        'hotline'  => env('SEO_CONTACT_HOTLINE', ''),
+        // Nhóm cộng đồng Facebook (hiện ở footer + có thể dùng cho sameAs structured data).
+        'facebook' => env('SEO_FACEBOOK_GROUP', 'https://www.facebook.com/groups/351705076734456/'),
     ],
 ];
