@@ -17,10 +17,10 @@
                 <h3 class="text-sm font-medium" :class="feedback[currentQuestion.id]?.correct ? 'text-green-800' : 'text-red-800'">
                     <span x-text="feedback[currentQuestion.id]?.correct ? 'Well done!' : 'Review your answers above.'"></span>
                 </h3>
-                <div class="mt-4" x-show="currentQuestion.explanation">
+                <div class="mt-4" x-show="currentQuestion.metadata.explanation">
                     <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
                         <span class="font-semibold text-blue-800 block mb-2">Giải thích / Transcript:</span>
-                        <div class="text-sm text-gray-700 whitespace-pre-wrap" x-html="currentQuestion.explanation"></div>
+                        <div class="text-sm text-gray-700 whitespace-pre-wrap" x-html="currentQuestion.metadata.explanation"></div>
                     </div>
                 </div>
             </div>

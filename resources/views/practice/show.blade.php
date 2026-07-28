@@ -496,11 +496,16 @@
                     return;
                 }
                 const qId = this.currentQuestion.id;
-                const correctAnswers = this.currentQuestion.metadata.correct_answers;
-                const correctCount = this.part3Answers.filter((ans, idx) => ans == correctAnswers[idx]).length;
+                // correct_answers can arrive as an array [0,2,3] or a keyed object
+                // {"0":0,...} (e.g. after admin edits/imports). Compare per index by
+                // key and normalise types so "2" == 2, and use the number of answered
+                // items as the denominator — never correct_answers.length, which is
+                // undefined for objects and would mark a perfect attempt as wrong.
+                const correctAnswers = this.currentQuestion.metadata.correct_answers || {};
+                const correctCount = this.part3Answers.filter((ans, idx) => String(ans) === String(correctAnswers[idx])).length;
 
                 this.answers = { ...this.answers, [qId]: [...this.part3Answers] };
-                this.feedback = { ...this.feedback, [qId]: { correct: correctCount === correctAnswers.length } };
+                this.feedback = { ...this.feedback, [qId]: { correct: correctCount === this.part3Answers.length } };
             },
 
             // --- Part 4: Headings ---
@@ -510,11 +515,13 @@
                     return;
                 }
                 const qId = this.currentQuestion.id;
-                const correctAnswers = this.currentQuestion.metadata.correct_answers;
-                const correctCount = this.part4Answers.filter((ans, idx) => ans == correctAnswers[idx]).length;
+                // Same robustness as Part 3: object-or-array correct_answers,
+                // type-normalised compare, denominator = number of answered items.
+                const correctAnswers = this.currentQuestion.metadata.correct_answers || {};
+                const correctCount = this.part4Answers.filter((ans, idx) => String(ans) === String(correctAnswers[idx])).length;
 
                 this.answers = { ...this.answers, [qId]: [...this.part4Answers] };
-                this.feedback = { ...this.feedback, [qId]: { correct: correctCount === correctAnswers.length } };
+                this.feedback = { ...this.feedback, [qId]: { correct: correctCount === this.part4Answers.length } };
             },
 
             getPart4SelectStyle(pIdx) {
