@@ -444,6 +444,14 @@
                 this.part2Pool = [...this.part2Pool];
             },
             
+            // True only when the admin provided a REAL fixed opening sentence.
+            // A blank-but-non-null value (a stray space or an empty <p></p> from
+            // the editor) must NOT dim the first row / count as a fixed start.
+            p2HasFixedStart() {
+                const s = this.currentQuestion?.metadata?.sentences?.[0] || '';
+                return s.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length > 0;
+            },
+
             submitPart2() {
                 const qId = this.currentQuestion.id;
 

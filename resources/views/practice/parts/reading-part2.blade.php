@@ -9,7 +9,7 @@
                 <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-2">Your Order</h4>
                 
                 {{-- Fixed First Sentence --}}
-                <template x-if="currentQuestion.metadata.sentences[0]">
+                <template x-if="p2HasFixedStart()">
                     <div class="p-3 bg-gray-100 rounded-lg border border-gray-200 text-gray-500 flex gap-3 cursor-not-allowed opacity-80">
                         <span class="font-bold text-gray-400 w-6 text-center">0</span>
                         <span class="text-sm" x-html="currentQuestion.metadata.sentences[0]"></span>
@@ -114,7 +114,7 @@
         <div x-show="hasAnswered(currentQuestion.id) && feedback[currentQuestion.id] && !feedback[currentQuestion.id].correct" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h4 class="font-bold text-yellow-800 mb-2">✅ Correct Order:</h4>
             <ol class="list-decimal list-inside space-y-1 text-yellow-900 text-sm">
-                <template x-if="currentQuestion.metadata.sentences[0]">
+                <template x-if="p2HasFixedStart()">
                     <li x-text="currentQuestion.metadata.sentences[0]"></li>
                 </template>
                 <template x-for="(sentence, sIdx) in currentQuestion.metadata.sentences.slice(1)" :key="sIdx">
