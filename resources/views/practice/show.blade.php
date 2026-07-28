@@ -238,6 +238,10 @@
 
             // --- Lifecycle ---
             init() {
+                // Stamp each question with its position ONCE. The nav list reads
+                // q.originalIndex; doing it here means filteredQuestions() no longer
+                // has to clone every question (with its full metadata) on each call.
+                this.questions.forEach((q, i) => { q.originalIndex = i; });
                 this.loadQuestionState();
                 this.loadAiUsageStatus();
                 this.$watch('currentIndex', () => this.loadQuestionState());
@@ -1104,19 +1108,18 @@
 
             filteredQuestions() {
                 const query = this.searchQuery.toLowerCase().trim();
-                return this.questions
-                    .map((q, index) => ({ ...q, originalIndex: index }))
-                    .filter(q => {
-                        if (!query) return true;
-                        
-                        // Check if query matches question number directly
-                        if (!isNaN(query) && parseInt(query) === q.originalIndex + 1) return true;
 
-                        // Flexible multi-word search (Title primary, fallback to stem)
-                        const searchTarget = ((q.title || '') + ' ' + (q.stem || '')).toLowerCase();
-                        const searchWords = query.split(/\s+/);
-                        return searchWords.every(word => searchTarget.includes(word));
-                    });
+                // No search → return the array as-is (no clone, no filter work).
+                if (!query) return this.questions;
+
+                return this.questions.filter(q => {
+                    // Match by question number directly.
+                    if (!isNaN(query) && parseInt(query) === q.originalIndex + 1) return true;
+
+                    // Flexible multi-word search (Title primary, fallback to stem).
+                    const searchTarget = ((q.title || '') + ' ' + (q.stem || '')).toLowerCase();
+                    return query.split(/\s+/).every(word => searchTarget.includes(word));
+                });
             },
 
             finish() {
