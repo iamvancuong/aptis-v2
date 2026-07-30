@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 29/07/2026 · Nhánh git: `feature/sale-referral` (**chưa merge vào `main`**, nối tiếp `fix/payos-duplicate-payment-link`) · **86 test pass**
+> Cập nhật: 29/07/2026 · Nhánh git: `fix/remove-watermark` (**chưa merge vào `main`**, chồng lên `feature/sale-referral` → `fix/payos-duplicate-payment-link`) · **86 test pass**
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -410,3 +410,12 @@ Bổ sung cho §11 (Zoom đã gỡ, làm mới bằng Meet khi cần). Phiên 29
 **File chạm:** thêm `config/sales.php`, `app/Support/Sales.php`, migration, `tests/Feature/SaleReferralTest.php`. Sửa `routes/web.php`, `RegistrationController` (referral+create+store), `resources/views/auth/register.blade.php`, `PaymentController` (description), `app/Models/Order.php` (fillable), `Admin/RevenueController` + `admin/revenue/index.blade.php`.
 
 **Bàn giao:** nhánh `feature/sale-referral` (nối tiếp `fix/payos-duplicate-payment-link`) — **chưa merge/push**. Deploy: cần `php artisan migrate --force` (có migration mới); **không cần `npm run build`** (chỉ Blade/PHP; nút Copy dùng Alpine đã bundle sẵn). 🔴 Nhớ điền tên thật cho M1/M2 trong `config/sales.php`.
+
+---
+
+## 18. 🧽 PHIÊN 29/07/2026 (H) — BỎ WATERMARK (logo + gmail) TRÊN BÀI LÀM
+Watermark lát chữ `milaedu.com` + email học viên (mờ, phủ toàn trang) gây rối khi làm bài → **gỡ bỏ**.
+- Bỏ `@include('partials.watermark')` ở `resources/views/practice/show.blade.php` và `mock-test/show.blade.php`.
+- **Xoá** file `resources/views/partials/watermark.blade.php` (không còn nơi dùng).
+- Không đụng logic chấm/điểm. Test vẫn **86 pass**. Chỉ Blade → deploy không cần `npm run build`.
+- Nhánh `fix/remove-watermark` (chồng lên `feature/sale-referral`).

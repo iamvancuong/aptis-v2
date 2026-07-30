@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-@include('partials.watermark')
 <div class="min-h-screen bg-gray-50 flex flex-col" x-data="practiceSession(@js($questionsJson), '{{ route('practice.check', $set) }}')" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
     {{-- Premium Header --}}
     <header class="bg-white/90 backdrop-blur-md sticky top-0 z-30 border-b border-gray-100 shadow-sm transition-all duration-300">
