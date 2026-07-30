@@ -1,7 +1,7 @@
 @php
     $features = [
         'Thi thử full 4 kỹ năng + Grammar',
-        'Chấm chữa Writing & Speaking chi tiết',
+        'Chấm chữa Writing chi tiết',
         'Chấm Writing bằng AI ngay tức thì',
         'Mua nhiều — cộng dồn thời hạn',
     ];

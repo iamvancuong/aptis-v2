@@ -1,7 +1,7 @@
 @extends('layouts.marketing')
 
-@section('title', 'Luyện thi Aptis online có chấm chữa Writing & Speaking')
-@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng, chấm chữa Writing & Speaking chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.')
+@section('title', 'Luyện thi Aptis online có chấm chữa Writing')
+@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng, chấm chữa Writing chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.')
 
 @push('head')
     @include('partials.structured-data')
@@ -25,7 +25,7 @@
                     Chinh phục <span class="text-blue-700">Aptis</span> với đề thi thử sát thật &amp; chấm chữa
                 </h1>
                 <p class="mt-5 text-lg text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                    Luyện đủ 4 kỹ năng và được chấm chữa <strong>Writing &amp; Speaking</strong> chi tiết để tiến bộ thật, bám sát mục tiêu điểm của bạn.
+                    Luyện đủ 4 kỹ năng và được chấm chữa <strong>Writing</strong> chi tiết để tiến bộ thật, bám sát mục tiêu điểm của bạn.
                 </p>
                 <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                     @auth
@@ -98,7 +98,7 @@
         @php
             $features = [
                 ['d' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'title' => 'Đề thi thử sát thật', 'desc' => 'Mô phỏng đúng format Aptis 4 kỹ năng — làm bài như thi thật, quen áp lực thời gian.'],
-                ['d' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'title' => 'Chấm chữa chi tiết', 'desc' => 'Writing & Speaking được chấm và chữa từng lỗi, kèm gợi ý cải thiện cụ thể.'],
+                ['d' => 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', 'title' => 'Chấm chữa chi tiết', 'desc' => 'Writing được chấm và chữa từng lỗi, kèm gợi ý cải thiện cụ thể.'],
                 ['d' => 'M13 10V3L4 14h7v7l9-11h-7z', 'title' => 'Chấm Writing bằng AI tức thì', 'desc' => 'Nộp bài Writing, nhận điểm và gợi ý cải thiện từ AI ngay lập tức — luyện đến đâu biết đến đó.'],
             ];
         @endphp

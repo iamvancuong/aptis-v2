@@ -419,3 +419,13 @@ Watermark lát chữ `milaedu.com` + email học viên (mờ, phủ toàn trang)
 - **Xoá** file `resources/views/partials/watermark.blade.php` (không còn nơi dùng).
 - Không đụng logic chấm/điểm. Test vẫn **86 pass**. Chỉ Blade → deploy không cần `npm run build`.
 - Nhánh `fix/remove-watermark` (chồng lên `feature/sale-referral`).
+
+---
+
+## 19. ✍️ PHIÊN 29/07/2026 (I) — SỬA COPY: BỎ "SPEAKING" + VÁ LỖI `&amp;` TRÊN PREVIEW CHIA SẺ
+**Bối cảnh:** khi chia sẻ link milaedu.com, tiêu đề/preview hiện `Writing &amp; Speaking` (crawler Zalo/Messenger không giải mã entity `&amp;`). Đồng thời **tạm chưa chấm Speaking** nên mọi câu quảng cáo "chấm chữa Speaking" là sai.
+- **Cách xử lý:** bỏ hẳn dấu `&` trong copy (trùng luôn với việc bỏ Speaking) → vừa hết `&amp;` vừa đúng thực tế. Đổi mọi claim **"chấm chữa Writing & Speaking / Writing, Speaking"** → **"chấm chữa Writing"**.
+- **Giữ nguyên** các chỗ Speaking hợp lệ: mô tả format 4 kỹ năng (Reading/Listening/Writing/Speaking), keyword SEO "Aptis Speaking", mục luyện Speaking (đã bỏ câu "nhận nhận xét"), tính năng admin reset lượt chấm AI.
+- **File chạm:** `welcome.blade.php` (title/meta/hero/feature), `pages/gioi-thieu.blade.php` (×4), `pages/luyen-thi-aptis.blade.php` (FAQ×2 + meta + hero + mục Speaking), `partials/pricing.blade.php`, `layouts/marketing.blade.php` (footer), `config/seo.php` (default_description + bio giảng viên).
+- Chỉ Blade/PHP → deploy **không cần `npm run build`**. Test **86 pass**.
+- 💡 Khi có chấm Speaking trở lại → thêm "Speaking" vào các câu này; tránh viết dấu `&` trong `@section('title')`/`meta_description` (dùng chữ "và" hoặc liệt kê dấu phẩy) để không tái phát `&amp;` trên preview.

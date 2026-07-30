@@ -4,14 +4,14 @@
     $gv = config('seo.instructor');
     $faqs = [
         ['Aptis gồm những kỹ năng nào?', 'Aptis đánh giá 4 kỹ năng Nghe, Đọc, Viết, Nói cùng phần Ngữ pháp & Từ vựng, quy đổi theo khung CEFR (A1–C).'],
-        ['Luyện thi Aptis online có hiệu quả không?', 'Có, nếu bạn luyện đúng format và được chấm chữa. Milaedu cung cấp đề thi thử sát thật và chấm chữa Writing, Speaking chi tiết để bạn biết cần cải thiện gì.'],
+        ['Luyện thi Aptis online có hiệu quả không?', 'Có, nếu bạn luyện đúng format và được chấm chữa. Milaedu cung cấp đề thi thử sát thật và chấm chữa Writing chi tiết để bạn biết cần cải thiện gì.'],
         ['Bao lâu thì thi được Aptis?', 'Tùy trình độ và mục tiêu điểm. Việc luyện đề đều đặn và sửa lỗi theo phản hồi sẽ rút ngắn thời gian đáng kể.'],
-        ['Writing và Speaking được chấm thế nào?', 'Bài Writing và Speaking được chấm theo tiêu chí Aptis và chữa từng lỗi, kèm gợi ý cải thiện cụ thể.'],
+        ['Bài Writing được chấm thế nào?', 'Bài Writing được chấm theo tiêu chí Aptis và chữa từng lỗi, kèm gợi ý cải thiện cụ thể.'],
     ];
 @endphp
 
 @section('title', 'Luyện thi Aptis online — Đề thi thử & chấm chữa 4 kỹ năng')
-@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng Nghe, Đọc, Viết, Nói và chấm chữa Writing, Speaking chi tiết. Lộ trình bám sát mục tiêu điểm.')
+@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng Nghe, Đọc, Viết, Nói và chấm chữa Writing chi tiết. Lộ trình bám sát mục tiêu điểm.')
 @section('meta_keywords', 'luyện thi Aptis, luyện thi Aptis online, ôn thi Aptis, thi thử Aptis, Aptis Speaking, Aptis Writing, luyện thi Aptis cùng ' . $gv['name'])
 @section('og_type', 'article')
 
@@ -37,7 +37,7 @@
             Luyện thi Aptis online cùng Milaedu
         </h1>
         <p class="mt-5 text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            Đề thi thử sát thật cho cả 4 kỹ năng và <strong>chấm chữa Writing &amp; Speaking</strong> chi tiết —
+            Đề thi thử sát thật cho cả 4 kỹ năng và <strong>chấm chữa Writing</strong> chi tiết —
             luyện đúng cách để tiến bộ thật, bám sát mục tiêu điểm của bạn.
         </p>
         <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -55,7 +55,7 @@
             ['Listening (Nghe)', 'Luyện nghe theo đúng dạng câu hỏi Aptis, làm quen tốc độ và giọng đọc thật.'],
             ['Reading (Đọc)', 'Đề đọc sát format, rèn kỹ năng đọc lướt và đọc lấy ý chính trong thời gian giới hạn.'],
             ['Writing (Viết)', 'Luyện 4 phần viết và được chấm chữa từng lỗi ngữ pháp, từ vựng, mạch lạc.'],
-            ['Speaking (Nói)', 'Luyện nói theo từng phần và nhận nhận xét để cải thiện phát âm, ý tưởng, độ trôi chảy.'],
+            ['Speaking (Nói)', 'Luyện nói theo từng phần để cải thiện phát âm, ý tưởng và độ trôi chảy.'],
         ] as $skill)
             <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
                 <h3 class="font-bold text-slate-900 mb-2">{{ $skill[0] }}</h3>

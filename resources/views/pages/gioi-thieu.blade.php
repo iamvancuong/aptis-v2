@@ -3,7 +3,7 @@
 @php $gv = config('seo.instructor'); @endphp
 
 @section('title', 'Giới thiệu — Luyện thi Aptis cùng ' . $gv['name'])
-@section('meta_description', 'Tìm hiểu về Milaedu và ' . $gv['name'] . ' — ' . $gv['job_title'] . '. Luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing, Speaking chi tiết.')
+@section('meta_description', 'Tìm hiểu về Milaedu và ' . $gv['name'] . ' — ' . $gv['job_title'] . '. Luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing chi tiết.')
 @section('meta_keywords', $gv['name'] . ' Aptis, luyện thi Aptis cùng ' . $gv['name'] . ', giảng viên Aptis, luyện thi Aptis online, Milaedu')
 @section('og_type', 'article')
 
@@ -42,7 +42,7 @@
         </h1>
         <p class="mt-5 text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
             Milaedu là nền tảng luyện thi Aptis online, tập trung vào điều quan trọng nhất với người học:
-            luyện đúng format và được <strong>chấm chữa Writing &amp; Speaking</strong> chi tiết để tiến bộ thật.
+            luyện đúng format và được <strong>chấm chữa Writing</strong> chi tiết để tiến bộ thật.
         </p>
     </div>
 </section>
@@ -62,7 +62,7 @@
             <p class="text-slate-600 leading-relaxed mb-6">{{ $gv['bio'] }}</p>
             <ul class="space-y-3">
                 @foreach([
-                    'Trực tiếp chấm chữa bài Writing &amp; Speaking, chỉ ra lỗi và cách sửa cụ thể.',
+                    'Trực tiếp chấm chữa bài Writing, chỉ ra lỗi và cách sửa cụ thể.',
                     'Bám sát format Aptis 4 kỹ năng: Reading, Listening, Writing, Speaking.',
                     'Lộ trình theo mục tiêu điểm của từng học viên.',
                 ] as $item)
@@ -83,7 +83,7 @@
         <div class="grid sm:grid-cols-3 gap-6">
             @foreach([
                 ['Đề thi thử sát thật', 'Mô phỏng đúng format Aptis 4 kỹ năng, làm bài như thi thật.'],
-                ['Chấm chữa chi tiết', 'Writing &amp; Speaking được chấm và chữa từng lỗi, kèm gợi ý cải thiện.'],
+                ['Chấm chữa chi tiết', 'Writing được chấm và chữa từng lỗi, kèm gợi ý cải thiện.'],
                 ['Học mọi lúc, mọi nơi', 'Luyện tập online trên máy tính hoặc điện thoại, theo dõi tiến độ.'],
             ] as $card)
                 <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">

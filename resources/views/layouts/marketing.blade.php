@@ -71,7 +71,7 @@
                     <span class="font-bold text-xl text-white">Milaedu</span>
                 </div>
                 <p class="text-sm leading-relaxed max-w-md text-slate-400">
-                    Nền tảng luyện thi Aptis online: đề thi thử sát thật, chấm chữa Writing &amp; Speaking chi tiết.
+                    Nền tảng luyện thi Aptis online: đề thi thử sát thật, chấm chữa Writing chi tiết.
                     Đồng hành cùng {{ config('seo.instructor.name') }} — {{ config('seo.instructor.job_title') }}.
                 </p>
             </div>
