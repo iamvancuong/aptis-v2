@@ -24,6 +24,7 @@ class Order extends Model
         'amount',
         'status',
         'user_id',
+        'sale_code',
         'payos_link_id',
         'paid_at',
         'meta',

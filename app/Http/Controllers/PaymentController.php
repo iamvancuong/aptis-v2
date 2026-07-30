@@ -58,7 +58,7 @@ class PaymentController extends Controller
         try {
             $link = $this->payos->createPaymentLink(
                 $order,
-                description: 'Thanh toan Milaedu',      // ≤ 25 ký tự theo yêu cầu PayOS
+                description: $this->paymentDescription($order),
                 returnUrl: URL::signedRoute('payment.return', $order),
                 cancelUrl: URL::signedRoute('payment.cancel', $order),
             );
@@ -89,6 +89,16 @@ class PaymentController extends Controller
                 'retryUrl' => URL::signedRoute('payment.show', $order),
             ]);
         }
+    }
+
+    /**
+     * Nội dung chuyển khoản hiển thị trên PayOS. Có mã sale (nếu đơn đến từ link
+     * giới thiệu) để đối soát bằng mắt. ⚠️ PayOS giới hạn 25 ký tự — mã sale ngắn
+     * (VD "Milaedu M1" = 10) nên luôn vừa.
+     */
+    private function paymentDescription(Order $order): string
+    {
+        return $order->sale_code ? "Milaedu {$order->sale_code}" : 'Thanh toan Milaedu';
     }
 
     /**

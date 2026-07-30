@@ -83,6 +83,10 @@ Route::get('/robots.txt', function () {
     return response(implode("\n", $lines) . "\n", 200, ['Content-Type' => 'text/plain']);
 });
 
+// Link giới thiệu của sale (công khai, không cần đăng nhập). Gắn mã sale vào
+// session rồi chuyển tới trang đăng ký với gói chọn sẵn. VD: /dk/M1/thang
+Route::get('/dk/{sale}/{goi?}', [\App\Http\Controllers\RegistrationController::class, 'referral'])->name('referral');
+
 // Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

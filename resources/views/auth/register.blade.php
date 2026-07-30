@@ -21,6 +21,10 @@
 
     <form method="POST" action="{{ route('register.store') }}" @submit="submitting = true" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
         @csrf
+        {{-- Mã sale giới thiệu (nếu vào từ link /dk/...) — gắn công cho đúng bạn sale. --}}
+        @isset($sale)
+            @if($sale)<input type="hidden" name="sale" value="{{ $sale }}">@endif
+        @endisset
 
         {{-- Chọn gói --}}
         <div>

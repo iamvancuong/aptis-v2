@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Support\Sales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
@@ -14,6 +15,24 @@ use Illuminate\Support\Facades\URL;
  */
 class RegistrationController extends Controller
 {
+    /**
+     * Link giới thiệu của sale: /dk/{sale}/{goi?}. Ghi nhớ mã sale vào session
+     * (bền qua vài lần bấm loanh quanh) rồi chuyển tới trang đăng ký với gói
+     * chọn sẵn. Mã sai/không active → bỏ qua, đăng ký bình thường (không vỡ).
+     */
+    public function referral(Request $request, string $sale, ?string $goi = null)
+    {
+        if ($code = Sales::resolve($sale)) {
+            $request->session()->put('sale_code', $code);
+        }
+
+        // Slug tiếng Việt trong link → key gói. Thiếu/không khớp thì để trang tự mặc định.
+        $map  = ['thang' => 'month', 'tuan' => 'week'];
+        $goiKey = $map[strtolower((string) $goi)] ?? null;
+
+        return redirect()->route('register', $goiKey ? ['goi' => $goiKey] : []);
+    }
+
     public function create(Request $request)
     {
         $packages = config('pricing.packages');
@@ -27,6 +46,8 @@ class RegistrationController extends Controller
         return view('auth.register', [
             'packages' => $packages,
             'selected' => $selected,
+            // Mã sale (nếu đến từ link giới thiệu) — render vào input ẩn để gắn khi submit.
+            'sale'     => Sales::resolve($request->session()->get('sale_code')),
         ]);
     }
 
@@ -38,11 +59,17 @@ class RegistrationController extends Controller
             'email'    => 'required|email|max:255',
             'package'  => 'required|in:' . implode(',', array_keys($packages)),
             'quantity' => 'required|integer|min:1',
+            'sale'     => 'nullable|string|max:16',
         ]);
 
         $package  = $packages[$data['package']];
         $quantity = min($data['quantity'], $package['max']);
         $amount   = $package['price'] * $quantity;
+
+        // Mã sale: ưu tiên input ẩn của form, fallback session (link giới thiệu).
+        // Chỉ nhận mã hợp lệ + đang active; ngược lại đơn không gắn sale.
+        $saleCode = Sales::resolve($data['sale'] ?? null)
+            ?? Sales::resolve($request->session()->get('sale_code'));
 
         // Chống double-submit / bấm lại: nếu đã có đơn pending y hệt (email + gói
         // + số lượng + số tiền) tạo trong thời gian gần, dùng lại thay vì đẻ đơn
@@ -66,6 +93,7 @@ class RegistrationController extends Controller
                 'quantity'   => $quantity,
                 'amount'     => $amount,
                 'status'     => Order::STATUS_PENDING,
+                'sale_code'  => $saleCode,
             ]);
         }
 

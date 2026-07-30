@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Support\Sales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -55,8 +56,62 @@ class RevenueController extends Controller
             'con_lai'         => $conLai,
         ];
 
+        // Thống kê theo sale (chỉ doanh thu ĐĂNG KÝ đã thanh toán). "Số người" =
+        // số đơn đã thanh toán. Đơn không có mã sale gom vào nhóm null.
+        $bySaleRaw = (clone $paid)->where('type', Order::TYPE_REGISTRATION)
+            ->selectRaw('sale_code, COUNT(*) as orders_count, SUM(amount) as revenue')
+            ->groupBy('sale_code')
+            ->get()
+            ->keyBy('sale_code');
+
+        // Dựng bảng: mọi sale đang active luôn hiện (kể cả 0 đơn) + các mã lạ đã
+        // phát sinh trong dữ liệu + nhóm "không qua sale".
+        $saleRows = [];
+        foreach (array_keys(Sales::active()) as $code) {
+            $row = $bySaleRaw->get($code);
+            $saleRows[] = [
+                'code'    => $code,
+                'name'    => Sales::name($code),
+                'count'   => (int) ($row->orders_count ?? 0),
+                'revenue' => (int) ($row->revenue ?? 0),
+            ];
+        }
+        foreach ($bySaleRaw as $code => $row) {
+            if ($code === null || $code === '' || array_key_exists($code, Sales::active())) {
+                continue; // null xử lý riêng; active đã thêm ở trên.
+            }
+            $saleRows[] = [
+                'code'    => $code,
+                'name'    => Sales::name($code) . ' (đã ẩn)',
+                'count'   => (int) $row->orders_count,
+                'revenue' => (int) $row->revenue,
+            ];
+        }
+
+        $noSale = $bySaleRaw->first(fn ($r, $k) => $k === null || $k === '');
+
+        // Link giới thiệu sinh sẵn cho từng sale active — admin copy gửi cho sale.
+        $links = [];
+        foreach (Sales::active() as $code => $rep) {
+            $links[] = [
+                'code'  => $code,
+                'name'  => $rep['name'] ?? $code,
+                'thang' => url("/dk/{$code}/thang"),
+                'tuan'  => url("/dk/{$code}/tuan"),
+            ];
+        }
+
+        $sales = [
+            'rows'    => $saleRows,
+            'no_sale' => [
+                'count'   => (int) ($noSale->orders_count ?? 0),
+                'revenue' => (int) ($noSale->revenue ?? 0),
+            ],
+            'links'   => $links,
+        ];
+
         $orders = (clone $paid)->latest('paid_at')->paginate(30)->withQueryString();
 
-        return view('admin.revenue.index', compact('summary', 'orders', 'filters'));
+        return view('admin.revenue.index', compact('summary', 'orders', 'filters', 'sales'));
     }
 }

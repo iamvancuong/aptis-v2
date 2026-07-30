@@ -77,6 +77,64 @@
         </div>
     </div>
 
+    {{-- Doanh số theo Sale --}}
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-800">Doanh số theo Sale <span class="text-xs font-normal text-gray-400">(chỉ đơn đăng ký đã thanh toán)</span></div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b border-gray-100">
+                        <th class="px-5 py-3 font-medium">Sale</th>
+                        <th class="px-5 py-3 font-medium text-right">Số đơn</th>
+                        <th class="px-5 py-3 font-medium text-right">Doanh thu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($sales['rows'] as $row)
+                        <tr class="border-b border-gray-50">
+                            <td class="px-5 py-3 text-gray-800">
+                                <span class="font-semibold">{{ $row['name'] }}</span>
+                                <span class="ml-1 text-xs text-gray-400 font-mono">{{ $row['code'] }}</span>
+                            </td>
+                            <td class="px-5 py-3 text-right font-bold text-gray-900">{{ $row['count'] }}</td>
+                            <td class="px-5 py-3 text-right font-bold text-emerald-600">{{ $fmt($row['revenue']) }}</td>
+                        </tr>
+                    @endforeach
+                    <tr class="border-b border-gray-50 bg-gray-50/50">
+                        <td class="px-5 py-3 text-gray-500">Không qua sale</td>
+                        <td class="px-5 py-3 text-right text-gray-600">{{ $sales['no_sale']['count'] }}</td>
+                        <td class="px-5 py-3 text-right text-gray-600">{{ $fmt($sales['no_sale']['revenue']) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Link giới thiệu để admin copy gửi cho sale --}}
+        @if(!empty($sales['links']))
+            <div class="px-5 py-4 border-t border-gray-100 bg-slate-50" x-data="{ copied: '' }">
+                <div class="text-sm font-semibold text-gray-700 mb-3">🔗 Link gửi cho sale <span class="font-normal text-gray-400 text-xs">(bấm để copy)</span></div>
+                <div class="space-y-3">
+                    @foreach($sales['links'] as $lk)
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <div class="w-28 shrink-0 text-sm font-medium text-gray-800">{{ $lk['name'] }} <span class="text-gray-400 font-mono text-xs">{{ $lk['code'] }}</span></div>
+                            @foreach(['thang' => 'Gói tháng', 'tuan' => 'Gói tuần'] as $key => $lbl)
+                                <button type="button"
+                                        @click="navigator.clipboard.writeText('{{ $lk[$key] }}'); copied='{{ $lk['code'].$key }}'; setTimeout(() => copied='', 1500)"
+                                        class="group flex-1 min-w-0 flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-left hover:border-blue-400 transition">
+                                    <span class="shrink-0 text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">{{ $lbl }}</span>
+                                    <span class="truncate text-xs text-gray-500 font-mono">{{ $lk[$key] }}</span>
+                                    <span class="shrink-0 ml-auto text-xs font-medium"
+                                          :class="copied === '{{ $lk['code'].$key }}' ? 'text-emerald-600' : 'text-gray-400 group-hover:text-blue-600'"
+                                          x-text="copied === '{{ $lk['code'].$key }}' ? '✓ Đã copy' : 'Copy'"></span>
+                                </button>
+                            @endforeach
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+    </div>
+
     {{-- Lịch sử --}}
     <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-800">Lịch sử giao dịch</div>
@@ -104,6 +162,9 @@
                                         <span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs">Chấm bài</span>
                                     @else
                                         <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs">Đăng ký {{ $o->package }} ×{{ $o->quantity }}</span>
+                                    @endif
+                                    @if($o->sale_code)
+                                        <span class="ml-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-mono">{{ $o->sale_code }}</span>
                                     @endif
                                 </td>
                                 <td class="px-5 py-3 text-gray-400 font-mono text-xs">{{ $o->order_code }}</td>

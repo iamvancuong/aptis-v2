@@ -1,14 +1,15 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 29/07/2026 · Nhánh git: `fix/payos-duplicate-payment-link` (**chưa merge vào `main`**) · **78 test pass**
+> Cập nhật: 29/07/2026 · Nhánh git: `feature/sale-referral` (**chưa merge vào `main`**, nối tiếp `fix/payos-duplicate-payment-link`) · **86 test pass**
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
 > **(C) hiệu năng + SEO + redesign UI trang public** (§10) ·
 > **(D) GỠ ZOOM + tính năng "buổi hướng dẫn"** (§13) ·
 > **(E) DEPLOY production + cộng đồng FB + responsive + vá bug Reading** (phiên 28/07 — xem **§14**) ·
-> **(F) VÁ BUG "Chưa kết nối được cổng thanh toán" khi mở lại đơn** (phiên 29/07 — xem **§15**).
+> **(F) VÁ BUG "Chưa kết nối được cổng thanh toán" khi mở lại đơn** (phiên 29/07 — xem **§15**) ·
+> **(G) MÃ SALE GIỚI THIỆU (referral) — gắn công sale + doanh số theo sale** (phiên 29/07 — xem **§17**).
 >
 > ▶️ **ĐÃ LÊN PRODUCTION** tại **https://milaedu.com** — release **CHỈ BÁN TÀI KHOẢN** (thanh toán → tạo tài khoản học,
 > KHÔNG có buổi học online). Deploy qua **cPanel AZDIGI** (git pull trong Terminal + upload `public/build`) — quy trình ở **§14**.
@@ -385,3 +386,27 @@ Bổ sung cho §11 (Zoom đã gỡ, làm mới bằng Meet khi cần). Phiên 29
 - **Email học sinh đa số Gmail** → Pha 1 dùng được `accessType=RESTRICTED` (mời đích danh, chống học chui chặt nhất).
 - **Chống "học chui":** enforce ở **tầng web Milaedu**, KHÔNG phải Meet — không gửi link trần, chỉ hiện nút "Vào lớp" cho tài khoản **đăng nhập + còn hạn**, trong **khung giờ**; host bật phòng chờ. Chống share tài khoản = bật **1 phiên/tài khoản** qua `LoginSession` sẵn có (Meet không chặn 1 account nhiều thiết bị).
 - **Hướng code (đã chọn Pha 0 MVP trước):** bảng `class_sessions` + admin dán link Meet thủ công + route `/lop-hoc/{session}/join` (check hạn+giờ rồi redirect, link không nằm trong HTML). **Pha 1** sau: Google Calendar/Meet REST API (service account + domain-wide delegation) tự sinh phòng + mời email còn hạn + gửi mail. → **Chưa bắt đầu code, chờ bạn nhắc.**
+
+---
+
+## 17. 🏷️ PHIÊN 29/07/2026 (G) — MÃ SALE GIỚI THIỆU (referral attribution)
+
+**Mục tiêu:** 2 bạn sale (M1, M2) mỗi bạn có link để gửi học sinh; đơn mua qua link được **gắn công đúng sale**; nội dung chuyển khoản có mã sale; trang Doanh số có **thống kê theo sale**. Sale **KHÔNG cần đăng nhập** — admin lấy link ở trang Doanh số gửi cho sale.
+
+**Quyết định đã chốt:** chưa tính hoa hồng (chỉ thống kê) · "số người" = **số đơn đã thanh toán** · **4 link chọn sẵn gói** · sale **cứng trong `config/sales.php`** (không có bảng/CRUD).
+
+**Cách hoạt động:**
+- **Định nghĩa sale:** `config/sales.php` → `reps` = `['M1' => ['name','active'], ...]`. 🔴 **Cần đổi `name` thành tên thật.** Thêm sale mới = thêm 1 dòng + deploy.
+- **4 link gửi sale:** `/dk/{sale}/{goi?}` — `goi` slug tiếng Việt (`thang`→month, `tuan`→week):
+  `/dk/M1/thang` · `/dk/M1/tuan` · `/dk/M2/thang` · `/dk/M2/tuan`. Mã sai/`active=false` → bỏ qua, đăng ký bình thường.
+- **Gắn mã:** `/dk/...` lưu mã vào **session** → trang đăng ký chọn sẵn gói + input ẩn `sale` → `store()` validate (chỉ nhận mã active) rồi lưu `orders.sale_code`.
+- **Nội dung CK:** `description` PayOS = `"Milaedu M1"` khi có sale (giữ ≤25 ký tự). Nguồn quy công là cột `sale_code`; description chỉ để đối soát bằng mắt.
+- **Doanh số theo sale** ở `/admin/revenue`: bảng số đơn + doanh thu mỗi sale (đơn đăng ký đã thanh toán) + nhóm "Không qua sale"; kèm **hộp link copy-1-chạm** để admin gửi sale; lịch sử giao dịch thêm nhãn mã sale.
+
+**Kỹ thuật:** helper `App\Support\Sales` (chuẩn hoá mã CHỮ HOA, `resolve/name/active`). Mã sale lưu **chuỗi denormalized** (xoá sale khỏi config vẫn giữ lịch sử; bảng doanh số hiện "(đã ẩn)").
+
+**Kiểm chứng:** `tests/Feature/SaleReferralTest.php` (8 ca: link set session + chọn gói, không phân biệt hoa/thường, mã lạ/tắt bị bỏ, input ẩn, gắn đơn, chặn mã bịa, gộp doanh thu, description có mã). **Tổng 86 pass** (trước 78). Migration `2026_07_29_000001_add_sale_code_to_orders_table` (ĐÃ migrate local).
+
+**File chạm:** thêm `config/sales.php`, `app/Support/Sales.php`, migration, `tests/Feature/SaleReferralTest.php`. Sửa `routes/web.php`, `RegistrationController` (referral+create+store), `resources/views/auth/register.blade.php`, `PaymentController` (description), `app/Models/Order.php` (fillable), `Admin/RevenueController` + `admin/revenue/index.blade.php`.
+
+**Bàn giao:** nhánh `feature/sale-referral` (nối tiếp `fix/payos-duplicate-payment-link`) — **chưa merge/push**. Deploy: cần `php artisan migrate --force` (có migration mới); **không cần `npm run build`** (chỉ Blade/PHP; nút Copy dùng Alpine đã bundle sẵn). 🔴 Nhớ điền tên thật cho M1/M2 trong `config/sales.php`.
