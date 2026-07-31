@@ -1,23 +1,27 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 29/07/2026 · Nhánh git: `feature/writing-review-paid-badge` (**chưa merge**, gồm J+K) — F/G/H/I **đã gộp main + push GitHub** (chờ deploy cPanel) · **90 test pass**
+> Cập nhật: 29/07/2026 · GitHub `main` = `origin/main` (**mọi việc A–K đã gộp + push**) · **90 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
-> **(C) hiệu năng + SEO + redesign UI trang public** (§10) ·
-> **(D) GỠ ZOOM + tính năng "buổi hướng dẫn"** (§13) ·
-> **(E) DEPLOY production + cộng đồng FB + responsive + vá bug Reading** (phiên 28/07 — xem **§14**) ·
-> **(F) VÁ BUG "Chưa kết nối được cổng thanh toán" khi mở lại đơn** (§15) ·
-> **(G) MÃ SALE GIỚI THIỆU (referral)** (§17) · **(H) bỏ watermark** (§18) · **(I) sửa copy Speaking + `&amp;`** (§19) ·
-> **(J) NHÃN "CÓ PHÍ / MIỄN PHÍ" trên trang chấm Writing** (phiên 29/07 — xem **§20**).
+> **(C) hiệu năng + SEO + redesign UI public** (§10) · **(D) gỡ Zoom + "buổi hướng dẫn"** (§13) ·
+> **(E) deploy production + cộng đồng FB + responsive + vá Reading** (§14) ·
+> **(F) vá bug thanh toán khi mở lại đơn** (§15) · **(G) mã sale referral + doanh số theo sale** (§17) ·
+> **(H) bỏ watermark bài làm** (§18) · **(I) sửa copy bỏ Speaking + vá `&amp;` preview** (§19) ·
+> **(J) nhãn Có phí/Miễn phí trang chấm Writing** (§20) · **(K) vá "Chờ chấm" sót bài đã trả phí** (§21).
 >
-> ▶️ **ĐÃ LÊN PRODUCTION** tại **https://milaedu.com** — release **CHỈ BÁN TÀI KHOẢN** (thanh toán → tạo tài khoản học,
-> KHÔNG có buổi học online). Deploy qua **cPanel AZDIGI** (git pull trong Terminal + upload `public/build`) — quy trình ở **§14**.
+> ▶️ **PRODUCTION** tại **https://milaedu.com** — release **CHỈ BÁN TÀI KHOẢN** (thanh toán → tạo tài khoản luyện thi, KHÔNG có lớp online).
+> Deploy = **cPanel AZDIGI Terminal**: `git reset --hard origin/main` (+ `php artisan migrate --force` khi có migration mới; `npm run build` + upload `public/build` khi đổi Tailwind/JS). Quy trình đầy đủ **§14** + `DEPLOY.md`.
 >
-> ⏸️ **Việc PENDING (không làm cho tới khi bạn nhắc):**
-> - **Buổi học online bằng Google Meet** — thay cho Zoom cũ, code mới hoàn toàn khi cần (§11).
-> - **Chấm bài Nói bằng AI** — đã khảo sát, kế hoạch + chi phí ở **§12** (đọc là code được ngay).
+> 🟠 **GitHub đã có, cần KIỂM TRA & DEPLOY lên milaedu.com (G–K):**
+> - **G (mã sale) có MIGRATION `sale_code`** → bắt buộc `php artisan migrate --force`. H–K chỉ Blade/PHP (không migrate/build).
+> - 🔴 `config/sales.php` đã điền tên thật (M1 = Nguyệt Anh, M2 = Trinh). 4 link gửi sale: `/dk/M1|M2/thang|tuan`; admin copy ở `/admin/revenue`.
+>
+> ⏸️ **PENDING (chỉ làm khi bạn nhắc):**
+> - **Lớp online Google Meet** (thay Zoom) — đã chốt hướng: gói **Business Plus**, **Pha 0 MVP** dán link thủ công (§16) + kế hoạch §11.
+> - **Chấm Nói (Speaking) bằng AI** — đã khảo sát, kế hoạch + chi phí §12.
+> - **Chấm Speaking (giáo viên) đang TẠM TẮT trong quảng cáo** (§19). Khi bật lại: thêm "Speaking" vào copy + làm nhãn Có phí/Miễn phí + vá "Chờ chấm" cho `/admin/speaking-reviews` (hiện mới làm cho Writing — §20/§21).
 
 ---
 
@@ -25,7 +29,7 @@
 Aptis-v2 (Milaedu) — nền tảng luyện thi Aptis (Laravel 12 + PHP 8.2, dev SQLite, production MySQL cPanel).
 Domain thật: **https://milaedu.com**.
 
-**Đang ở giai đoạn DEV.** Bản production hiện tại vẫn chạy cho khách trên nhánh `main`. Toàn bộ việc mới nằm ở nhánh `feature/milaedu-commerce`. Deploy để sau.
+**PRODUCTION đang chạy cho khách** tại milaedu.com trên nhánh `main`. Việc mới làm trên nhánh ngắn hạn rồi **gộp vào `main`**; production cập nhật bằng cách pull `origin/main` trên cPanel (§14). (Nhánh `feature/milaedu-commerce` cũ đã hết vai trò — mọi thứ đã ở `main`.)
 
 ---
 
@@ -67,7 +71,7 @@ doanh thu CHẤM BÀI để **riêng 100% Cô Dung**. Không thuế. Lọc theo 
 
 ## 4. KIẾN TRÚC — FILE QUAN TRỌNG
 
-**Config:** `config/pricing.php` · `config/payos.php` · **`config/seo.php`** (mới — SEO tập trung, xem §10)
+**Config:** `config/pricing.php` · `config/payos.php` · **`config/seo.php`** (SEO tập trung, §10) · **`config/sales.php`** (mã sale referral M1/M2, §17)
 > (Đã xóa `config/zoom.php` + `config/guidance.php` ở §13.)
 
 **Services:**
@@ -78,7 +82,10 @@ doanh thu CHẤM BÀI để **riêng 100% Cô Dung**. Không thuế. Lọc theo 
 - `app/Jobs/ProcessWritingGrading.php` — chấm AI Writing tự động (queue)
 > (Đã xóa `ZoomService` + `GuidanceSessionService` ở §13.)
 
-**Controllers:** `PaymentController` (show/return/cancel/**webhook**/devFulfill) · `RegistrationController` · `PracticeController` · `Admin/ReportController` · `Admin/RevenueController` · `Admin/QuestionController` · `DashboardController` · `HistoryController` · …
+**Controllers:** `PaymentController` (show/return/cancel/**webhook**/devFulfill) · `RegistrationController` (thêm **`referral()`** — link /dk/{sale}, §17) · `PracticeController` · `Admin/ReportController` · `Admin/RevenueController` (thêm **doanh số theo sale**, §17) · `Admin/WritingReviewController` (nhãn Có phí + lọc "Chờ chấm", §20/§21) · `Admin/QuestionController` · `DashboardController` · `HistoryController` · …
+
+**Support:** `app/Support/Sales.php` — resolve/validate mã sale từ `config/sales.php` (§17).
+> (Watermark logo+email trên bài làm **đã gỡ** ở §18 — file `partials/watermark.blade.php` đã xóa.)
 
 **Commands (lên lịch ở `routes/console.php`):** `payos:reconcile` (2 phút) · **`queue:work --stop-when-empty`** (mỗi phút — §10 #P4)
 
@@ -96,15 +103,17 @@ doanh thu CHẤM BÀI để **riêng 100% Cô Dung**. Không thuế. Lọc theo 
 **Partials:** `partials/pricing.blade.php` (bảng giá dùng chung) · `partials/structured-data.blade.php` (JSON-LD home)
 **Pages:** `pages/gioi-thieu.blade.php` · `pages/luyen-thi-aptis.blade.php`
 
-**Route công khai mới:** `/gioi-thieu` (name `about`) · `/luyen-thi-aptis` (name `aptis`) · `/sitemap.xml` · `/robots.txt` (động)
+**Route công khai mới:** `/gioi-thieu` (name `about`) · `/luyen-thi-aptis` (name `aptis`) · `/sitemap.xml` · `/robots.txt` (động) · **`/dk/{sale}/{goi?}`** (link giới thiệu sale, §17)
 **Route đáng nhớ:** `/register` · `/thanh-toan/{order}` (signed) · `/thanh-toan/{order}/thanh-cong` & `/huy` (signed) · `/webhooks/payos` (CSRF-excluded) · `/thanh-toan/{order}/gia-lap` (fake) · `/admin/revenue`
 
 ---
 
 ## 5. BẢNG `orders` (nguồn sự thật cho thanh toán + doanh số)
 `order_code` (số, chuẩn PayOS) · `email` · `type` (registration|grading) · `package` (week|month) ·
-`quantity` · `amount` · `status` (pending|paid|canceled|expired) · `user_id` · `payos_link_id` · `paid_at` · `meta` (json)
-> Có index: `order_code`(unique), `email`, `type`, `status`, **`paid_at`** (thêm 26/07).
+`quantity` · `amount` · `status` (pending|paid|canceled|expired) · `user_id` · **`sale_code`** (mã sale referral, §17) · `payos_link_id` · `paid_at` · `meta` (json)
+> Có index: `order_code`(unique), `email`, `type`, `status`, **`paid_at`** (26/07), **`sale_code`** (§17).
+> `meta` (json): đơn grading lưu `{attempt_id, skill}`; đơn đăng ký có link PayOS lưu thêm `{checkout_url}` (§15).
+> Đơn **grading** = tiền chấm bài 99k: `type=grading`, `meta->attempt_id` trỏ tới bài; trả tiền → bật `is_grading_requested` (§20/§21).
 
 ---
 
@@ -132,7 +141,7 @@ MAIL_* (milaedu.hn@gmail.com)
 **Test không mất tiền:** `PAYOS_FAKE=true`.
 **Test CK thật ở local:** trả tiền → `php artisan payos:reconcile`.
 **Chạy nền local (cron + queue):** terminal riêng `php artisan schedule:work`.
-**Chạy test:** `php artisan test` (**85 pass**). `phpunit.xml` cô lập khóa PayOS/Zoom.
+**Chạy test:** `php artisan test` (**90 pass** — tính tới §21). `phpunit.xml` cô lập khóa PayOS.
 **Build UI:** `npm run build` (BẮT BUỘC sau khi kéo code — assets hash + font/Alpine bundled).
 
 ---
@@ -141,8 +150,9 @@ MAIL_* (milaedu.hn@gmail.com)
 
 ### ✅ ĐÃ XONG (code + test)
 - Bảo mật cốt lõi: lọc đáp án, vá chấm Reading Part 2, signed audio, chống DevTools.
-- Thương mại hóa: đăng ký-PayOS · buổi hướng dẫn · chấm bài 99k · doanh số · buộc đổi mật khẩu · không hoàn tiền.
-- **Phiên 26/07:** vá logic/bảo mật + hiệu năng + SEO nền tảng + redesign UI public (chi tiết **§10**).
+- Thương mại hóa: đăng ký-PayOS · chấm bài 99k · doanh số · buộc đổi mật khẩu · không hoàn tiền. *(Buổi hướng dẫn đã gỡ ở §13.)*
+- **Phiên 26/07:** vá logic/bảo mật + hiệu năng + SEO nền tảng + redesign UI public (**§10**).
+- **Phiên 29/07 (F–K), đã push `main`:** vá bug thanh toán mở lại đơn (§15) · mã sale referral + doanh số theo sale (§17) · bỏ watermark bài làm (§18) · bỏ "Speaking" trong copy + vá `&amp;` preview (§19) · nhãn Có phí/Miễn phí (§20) + vá "Chờ chấm" sót bài đã trả phí (§21) trên trang chấm Writing.
 
 ### ✅ ĐÃ TEST THẬT
 - CK thật 2.000đ qua PayOS → tài khoản tự tạo + email. PayOS link OK · Email Gmail OK (⚠️ spam).
@@ -156,7 +166,7 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 `composer install` · `php artisan migrate` · **`npm run build`** · `config:cache route:cache view:cache` →
 ⭐ **Cron `* * * * * php artisan schedule:run`** — chạy `payos:reconcile` + `queue:work` (chấm AI tự động) →
 (tùy chọn) đăng ký webhook PayOS → test 1 giao dịch thật.
-> ⚠️ Nhớ merge `feature/milaedu-commerce` → `main` trước khi deploy (phiên này chưa merge/push).
+> ✅ Đã merge + deploy 28/07. Các batch **F–K** (sau đó) đã ở `origin/main` — lần deploy tiếp nhớ `migrate --force` (G có migration). Xem 🟠 đầu file.
 
 ### 💡 NÊN LÀM
 - Đổi email sang dịch vụ chuyên (SendGrid/SES/Mailgun) + SPF/DKIM.
@@ -175,7 +185,9 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 - Chấm bài 99k chỉ cho giáo viên chấm tay; AI credit giữ nguyên.
 - Doanh số: 40/30/30 trên đăng ký; chấm bài riêng 100% Cô Dung; bỏ thuế + hóa đơn; thu tiền cá nhân.
 - Email trùng = cộng dồn hạn. Không hoàn tiền.
-- Buổi hướng dẫn: 1 thứ 7 trong hạn; chỉ tài khoản mua gói; mỗi buổi 1 phòng Zoom riêng.
+- ~~Buổi hướng dẫn: 1 thứ 7… phòng Zoom riêng.~~ **← ĐÃ HỦY/GỠ ở §13** (release chỉ bán tài khoản; lớp online sau này dùng Google Meet §16).
+- **Mã sale referral** (§17): cứng trong `config/sales.php`, chưa tính hoa hồng, "số người" = số đơn đã thanh toán, 4 link chọn sẵn gói.
+- **Chấm Speaking (giáo viên) TẠM TẮT** trong quảng cáo (§19) — copy chỉ nói "chấm chữa Writing" cho tới khi bật lại.
 - **Tên "Cô Dung" KHÔNG phô trương trên web nhưng PHẢI tìm ra web khi search** → đặt tên ở nội dung thật (structured data, trang giới thiệu, footer, meta) — KHÔNG giấu chữ cho bot (cloaking = bị Google phạt).
 - **KHÔNG bịa số liệu/review giả** — số liệu & testimonial phải thật (chờ bạn cấp), placeholder ghi rõ.
 
