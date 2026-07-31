@@ -17,7 +17,7 @@
 
 return [
     'reps' => [
-        'M1' => ['name' => 'Sale 1', 'active' => true],   // 🔴 đổi 'name' thành tên thật
-        'M2' => ['name' => 'Sale 2', 'active' => true],   // 🔴 đổi 'name' thành tên thật
+        'M1' => ['name' => 'Nguyệt Anh', 'active' => true],   // 🔴 đổi 'name' thành tên thật
+        'M2' => ['name' => 'Trinh', 'active' => true],   // 🔴 đổi 'name' thành tên thật
     ],
 ];

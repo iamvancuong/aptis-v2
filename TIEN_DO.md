@@ -1,15 +1,16 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 29/07/2026 · Nhánh git: `fix/remove-watermark` (**chưa merge vào `main`**, chồng lên `feature/sale-referral` → `fix/payos-duplicate-payment-link`) · **86 test pass**
+> Cập nhật: 29/07/2026 · Nhánh git: `feature/writing-review-paid-badge` (**chưa merge**) — F/G/H/I **đã gộp main + push GitHub** (chờ deploy cPanel) · **88 test pass**
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
 > **(C) hiệu năng + SEO + redesign UI trang public** (§10) ·
 > **(D) GỠ ZOOM + tính năng "buổi hướng dẫn"** (§13) ·
 > **(E) DEPLOY production + cộng đồng FB + responsive + vá bug Reading** (phiên 28/07 — xem **§14**) ·
-> **(F) VÁ BUG "Chưa kết nối được cổng thanh toán" khi mở lại đơn** (phiên 29/07 — xem **§15**) ·
-> **(G) MÃ SALE GIỚI THIỆU (referral) — gắn công sale + doanh số theo sale** (phiên 29/07 — xem **§17**).
+> **(F) VÁ BUG "Chưa kết nối được cổng thanh toán" khi mở lại đơn** (§15) ·
+> **(G) MÃ SALE GIỚI THIỆU (referral)** (§17) · **(H) bỏ watermark** (§18) · **(I) sửa copy Speaking + `&amp;`** (§19) ·
+> **(J) NHÃN "CÓ PHÍ / MIỄN PHÍ" trên trang chấm Writing** (phiên 29/07 — xem **§20**).
 >
 > ▶️ **ĐÃ LÊN PRODUCTION** tại **https://milaedu.com** — release **CHỈ BÁN TÀI KHOẢN** (thanh toán → tạo tài khoản học,
 > KHÔNG có buổi học online). Deploy qua **cPanel AZDIGI** (git pull trong Terminal + upload `public/build`) — quy trình ở **§14**.
@@ -429,3 +430,13 @@ Watermark lát chữ `milaedu.com` + email học viên (mờ, phủ toàn trang)
 - **File chạm:** `welcome.blade.php` (title/meta/hero/feature), `pages/gioi-thieu.blade.php` (×4), `pages/luyen-thi-aptis.blade.php` (FAQ×2 + meta + hero + mục Speaking), `partials/pricing.blade.php`, `layouts/marketing.blade.php` (footer), `config/seo.php` (default_description + bio giảng viên).
 - Chỉ Blade/PHP → deploy **không cần `npm run build`**. Test **86 pass**.
 - 💡 Khi có chấm Speaking trở lại → thêm "Speaking" vào các câu này; tránh viết dấu `&` trong `@section('title')`/`meta_description` (dùng chữ "và" hoặc liệt kê dấu phẩy) để không tái phát `&amp;` trên preview.
+
+---
+
+## 20. 💰 PHIÊN 29/07/2026 (J) — NHÃN "CÓ PHÍ / MIỄN PHÍ" TRÊN TRANG CHẤM WRITING
+**Bối cảnh:** `/admin/writing-reviews` trộn bài chấm **có thu phí** (học viên trả 99k) với **dữ liệu cũ / admin chấm miễn phí** → không phân biệt được. Thêm nhãn.
+- **Cách xác định:** bài **CÓ PHÍ** = tồn tại `Order` type=`grading`, `status=paid`, `meta->attempt_id` = attempt đó (đơn tạo ở `HistoryController@requestGrading`, meta `{attempt_id, skill}`). Không có = **MIỄN PHÍ** (admin bật cờ trực tiếp hoặc dữ liệu cũ trước khi có thu phí).
+- **Controller** `Admin/WritingReviewController@index`: sau phân trang, 1 truy vấn gộp lấy set `attempt_id` đã thanh toán trong trang (`whereIn('meta->attempt_id', $pageIds)` — chạy cả MySQL/SQLite), tránh N+1. Truyền `$paidAttemptIds` (flip để tra O(1)) ra view.
+- **View** `admin/writing-reviews/index.blade.php`: thêm cột **"Chấm phí"** với `<x-badge success>💰 Có phí</x-badge>` / `<x-badge default>Miễn phí</x-badge>`. Đơn **pending** (chưa trả) KHÔNG tính là có phí.
+- **Test** `WritingReviewPaidBadgeTest` (2 ca). **Tổng 88 pass** (trước 86). Chỉ đọc DB + Blade → deploy **không cần migrate / npm build**.
+- 💡 Trang **Speaking** (`/admin/speaking-reviews`) cùng cơ chế (đơn grading skill=speaking) — CHƯA thêm nhãn, làm tương tự khi cần.

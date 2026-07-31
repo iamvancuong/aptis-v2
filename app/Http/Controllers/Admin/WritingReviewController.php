@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attempt;
 use App\Models\AttemptAnswer;
+use App\Models\Order;
 use App\Models\WritingReview;
 use Illuminate\Http\Request;
 
@@ -76,7 +77,21 @@ class WritingReviewController extends Controller
 
         $attempts = $query->latest('grading_requested_at')->paginate(20)->appends($request->all());
 
-        return view('admin.writing-reviews.index', compact('attempts', 'filter', 'search'));
+        // Đánh dấu bài chấm CÓ PHÍ: tồn tại đơn `grading` đã thanh toán trỏ tới
+        // attempt này (meta->attempt_id). Không có = chấm miễn phí (admin/dữ liệu cũ).
+        $pageIds = $attempts->getCollection()->pluck('id')->all();
+        $paidAttemptIds = collect();
+        if ($pageIds) {
+            $paidAttemptIds = Order::where('type', Order::TYPE_GRADING)
+                ->where('status', Order::STATUS_PAID)
+                ->whereIn('meta->attempt_id', $pageIds)
+                ->get(['meta'])
+                ->pluck('meta.attempt_id')
+                ->map(fn ($id) => (int) $id)
+                ->flip();
+        }
+
+        return view('admin.writing-reviews.index', compact('attempts', 'filter', 'search', 'paidAttemptIds'));
     }
 
     /**

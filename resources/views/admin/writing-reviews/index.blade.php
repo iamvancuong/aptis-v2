@@ -82,6 +82,7 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Học sinh</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Set / Part</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày yêu cầu</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chấm phí</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điểm</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
@@ -119,6 +120,13 @@
                             {{ $attempt->grading_requested_at ? $attempt->grading_requested_at->format('d/m/Y H:i') : $attempt->created_at->format('d/m/Y H:i') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
+                            @if($paidAttemptIds->has($attempt->id))
+                                <x-badge variant="success">💰 Có phí</x-badge>
+                            @else
+                                <x-badge variant="default">Miễn phí</x-badge>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
                             @if($allGraded)
                                 <x-badge variant="success">✅ Đã chốt điểm</x-badge>
                             @elseif($allAiGraded)
@@ -143,7 +151,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center">
+                        <td colspan="8" class="px-6 py-12 text-center">
                             <div class="text-gray-400">
                                 <svg class="mx-auto w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
