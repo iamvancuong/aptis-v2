@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 29/07/2026 · Nhánh git: `feature/writing-review-paid-badge` (**chưa merge**) — F/G/H/I **đã gộp main + push GitHub** (chờ deploy cPanel) · **88 test pass**
+> Cập nhật: 29/07/2026 · Nhánh git: `feature/writing-review-paid-badge` (**chưa merge**, gồm J+K) — F/G/H/I **đã gộp main + push GitHub** (chờ deploy cPanel) · **90 test pass**
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -440,3 +440,13 @@ Watermark lát chữ `milaedu.com` + email học viên (mờ, phủ toàn trang)
 - **View** `admin/writing-reviews/index.blade.php`: thêm cột **"Chấm phí"** với `<x-badge success>💰 Có phí</x-badge>` / `<x-badge default>Miễn phí</x-badge>`. Đơn **pending** (chưa trả) KHÔNG tính là có phí.
 - **Test** `WritingReviewPaidBadgeTest` (2 ca). **Tổng 88 pass** (trước 86). Chỉ đọc DB + Blade → deploy **không cần migrate / npm build**.
 - 💡 Trang **Speaking** (`/admin/speaking-reviews`) cùng cơ chế (đơn grading skill=speaking) — CHƯA thêm nhãn, làm tương tự khi cần.
+
+---
+
+## 21. 🐞 PHIÊN 29/07/2026 (K) — VÁ BUG: bài ĐÃ TRẢ PHÍ không hiện trong "Chờ chấm" Writing
+**Triệu chứng:** học viên thanh toán nhờ chấm → admin mở tab "Chờ chấm" (`/admin/writing-reviews`) KHÔNG thấy bài.
+**Nguyên nhân:** vòng đời `grading_status` của answer Writing gồm `pending → ai_graded → graded`, **và `limit_reached`** khi học viên **hết lượt chấm AI** lúc nộp. Bộ lọc "Chờ chấm" cũ chỉ lấy `whereIn(['pending','ai_graded'])` → **bỏ sót `limit_reached`** (thậm chí lọt nhầm sang tab "Đã chấm"). Mà nhóm hết lượt AI chính là nhóm hay **trả phí** nhờ giáo viên chấm → gặp bug nhiều.
+**Sửa** (`Admin/WritingReviewController@index`): định nghĩa lại theo hướng chuẩn — "Chờ chấm" = còn ≥1 phần **chưa `graded`** (`grading_status != 'graded' OR NULL`); "Đã chấm" = tất cả đã `graded`. Nay `limit_reached`/`pending`/`ai_graded` đều nằm đúng "Chờ chấm".
+**Test** `WritingReviewQueueTest` (2 ca: limit_reached vào Chờ chấm & không ở Đã chấm; graded thì ngược lại). **Tổng 90 pass**. Chỉ PHP → deploy không cần migrate/build.
+> ⚠️ Nếu bài vẫn không hiện sau khi trả tiền → kiểm tra đơn đã `paid` chưa (webhook/`payos:reconcile` đã chạy để bật `is_grading_requested`). Đơn kẹt `pending` = vấn đề fulfillment (xem §14B), không phải bộ lọc này.
+> 💡 Trang Speaking cùng bộ lọc — nên vá y hệt khi đụng tới.

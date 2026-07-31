@@ -32,14 +32,18 @@ class WritingReviewController extends Controller
             });
         }
 
+        // "Chờ chấm" = còn ít nhất 1 phần CHƯA được giáo viên chốt điểm ('graded').
+        // Bao gồm cả 'limit_reached' (học viên hết lượt AI) và 'pending'/'ai_graded' —
+        // trước đây chỉ lấy pending/ai_graded nên bài limit_reached (thường là bài
+        // ĐÃ TRẢ PHÍ nhờ giáo viên chấm) bị lọt khỏi hàng đợi.
+        $notGraded = function ($q) {
+            $q->where('grading_status', '!=', 'graded')->orWhereNull('grading_status');
+        };
+
         if ($filter === 'pending') {
-            $query->whereHas('attemptAnswers', function ($q) {
-                $q->whereIn('grading_status', ['pending', 'ai_graded']);
-            });
+            $query->whereHas('attemptAnswers', $notGraded);
         } elseif ($filter === 'graded') {
-            $query->whereDoesntHave('attemptAnswers', function ($q) {
-                $q->whereIn('grading_status', ['pending', 'ai_graded']);
-            });
+            $query->whereDoesntHave('attemptAnswers', $notGraded);
         }
 
         // Filter by user expiration
