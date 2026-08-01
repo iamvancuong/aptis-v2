@@ -5,10 +5,21 @@
 @section('content')
 <div class="max-w-3xl mx-auto space-y-6">
 
+    @php
+        // Bài Viết/Nói không có điểm máy chấm lúc nộp, nên `mockTest->score` là 0.
+        // Điểm thật nằm ở `Attempt` (do job chấm AI hoặc giáo viên ghi vào).
+        $isEssaySkill = in_array($mockTest->skill, ['writing', 'speaking'], true);
+        $resultAttempt = $attempts->first();
+        $answersByPart = $resultAttempt
+            ? $resultAttempt->attemptAnswers->keyBy(fn ($a) => $a->question?->part ?? 0)
+            : collect();
+        $hasAiScore = $answersByPart->contains(fn ($a) => $a->grading_status === 'ai_graded');
+        $hasTeacherScore = $answersByPart->contains(fn ($a) => in_array($a->grading_status, ['graded', 'manually_graded'], true));
+    @endphp
+
     {{-- Header --}}
     <div>
-        <a href="{{ route('skills.show', $mockTest->skill) }}" class="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1 mb-3">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        <a href="{{ route('skills.show', $mockTest->skill) }}" class="text-blue-600 hover:text-blue-700 text-sm mb-3 inline-block">
             Quay lại {{ ucfirst($mockTest->skill) }}
         </a>
         <h1 class="text-3xl font-bold text-gray-900">Kết quả thi thử {{ ucfirst($mockTest->skill) }}</h1>
@@ -22,7 +33,9 @@
     <div class="bg-white rounded-2xl shadow-lg p-8">
         <div class="text-center">
             @php
-                $score = $mockTest->score ?? 0;
+                $score = $isEssaySkill && ($resultAttempt->score ?? 0) > 0
+                    ? $resultAttempt->score
+                    : ($mockTest->score ?? 0);
                 $scoreColor = $score >= 80 ? 'text-green-600' : ($score >= 50 ? 'text-amber-600' : 'text-red-600');
                 $scoreBg = $score >= 80 ? 'from-green-50 to-emerald-50' : ($score >= 50 ? 'from-amber-50 to-yellow-50' : 'from-red-50 to-orange-50');
             @endphp
@@ -59,8 +72,16 @@
                         <div class="text-xs font-semibold text-gray-500 mt-0.5">⬜ Bỏ</div>
                     </div>
                 </div>
+            @elseif($hasTeacherScore)
+                <p class="text-green-700 mt-2 text-sm font-semibold">Giảng viên đã chấm</p>
+            @elseif($hasAiScore)
+                <p class="text-amber-700 mt-2 text-sm font-semibold">Điểm nháp do AI chấm</p>
+                <p class="text-gray-500 text-sm mt-1">
+                    Máy đánh giá nội dung, từ vựng, ngữ pháp, mạch lạc —
+                    <strong>không chấm phát âm và độ trôi chảy</strong>. Đây chưa phải điểm chính thức.
+                </p>
             @else
-                <p class="text-amber-600 mt-2">⏳ Bài thi đang chờ giáo viên chấm điểm</p>
+                <p class="text-amber-600 mt-2 text-sm">Bài thi đang chờ chấm điểm</p>
             @endif
         </div>
 
@@ -70,10 +91,7 @@
             <div class="mt-8 pt-8 border-t border-gray-100 bg-indigo-50/30 -mx-8 -mb-8 px-8 pb-8 rounded-b-2xl">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div class="flex-1">
-                        <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            Yêu cầu giáo viên chấm điểm
-                        </h3>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">Yêu cầu giáo viên chấm điểm</h3>
                         <p class="text-sm text-gray-600">
                             @if(auth()->user()->isAdmin())
                                 Tài khoản Admin gửi chấm <strong>miễn phí</strong>.
@@ -83,15 +101,13 @@
                         </p>
                     </div>
                     @if($attempts->first()->is_grading_requested)
-                        <div class="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-bold flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                            Đã gởi yêu cầu
+                        <div class="shrink-0 px-5 py-3 rounded-xl bg-green-50 border border-green-200 text-green-800 font-semibold text-center">
+                            Đã gửi yêu cầu
                         </div>
                     @else
-                        <form action="{{ route('attempts.request-grading', $attempts->first()->id) }}" method="POST">
+                        <form action="{{ route('attempts.request-grading', $attempts->first()->id) }}" method="POST" class="shrink-0 w-full md:w-auto">
                             @csrf
-                            <button type="submit" class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2 transform active:scale-95">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <button type="submit" class="w-full md:w-auto px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">
                                 @if(auth()->user()->isAdmin())
                                     Gửi chấm bài này
                                 @else
@@ -131,8 +147,23 @@
                         @endif
                     </div>
                     <div class="text-right shrink-0">
-                        @if($mockTest->skill === 'writing' || $mockTest->skill === 'speaking')
-                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">⏳ Chờ chấm</span>
+                        @if($isEssaySkill)
+                            @php $partAnswer = $answersByPart[$section['part']] ?? null; @endphp
+                            @if($partAnswer && in_array($partAnswer->grading_status, ['graded', 'manually_graded'], true))
+                                <span class="text-2xl font-black text-green-600">{{ number_format($partAnswer->score ?? 0, 1) }}</span>
+                                <span class="text-sm text-gray-400">/10</span>
+                                <div class="text-xs text-gray-500 mt-0.5">Giảng viên chấm</div>
+                            @elseif($partAnswer && $partAnswer->grading_status === 'ai_graded')
+                                <span class="text-2xl font-black text-amber-600">{{ number_format($partAnswer->score ?? 0, 1) }}</span>
+                                <span class="text-sm text-gray-400">/10</span>
+                                <div class="text-xs text-gray-500 mt-0.5">AI chấm nháp</div>
+                            @elseif($partAnswer && $partAnswer->grading_status === 'ai_failed')
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Chấm tự động lỗi</span>
+                            @elseif($partAnswer && $partAnswer->grading_status === 'limit_reached')
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Hết lượt AI</span>
+                            @else
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">Chờ chấm</span>
+                            @endif
                         @elseif($sectionScore !== null)
                             @php $color = $sectionScore >= 80 ? 'green' : ($sectionScore >= 50 ? 'amber' : 'red'); @endphp
                             <span class="text-2xl font-black text-{{ $color }}-600">{{ number_format($sectionScore, 0) }}%</span>
@@ -499,24 +530,23 @@
     @endif
 
     {{-- Actions --}}
-    <div class="flex flex-col sm:flex-row gap-4">
-        @if(($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') && $attempts->first())
+    <div class="flex flex-col sm:flex-row gap-3">
+        @if($isEssaySkill && $resultAttempt)
             @php
                 $detailRoute = $mockTest->skill === 'writing' ? 'writingHistory.show' : 'speakingHistory.show';
             @endphp
-            <a href="{{ route($detailRoute, $attempts->first()->id) }}"
-               class="flex-1 text-center px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-md flex items-center justify-center gap-2">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Xem chi tiết đánh giá
+            <a href="{{ route($detailRoute, $resultAttempt->id) }}"
+               class="flex-1 text-center px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">
+                Xem nhận xét chi tiết
             </a>
         @endif
         <a href="{{ route('mock-test.create', $mockTest->skill) }}"
-           class="flex-1 text-center px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-            🔄 Thi lại
+           class="flex-1 text-center px-6 py-3 rounded-xl bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
+            Thi lại
         </a>
         <a href="{{ route('skills.show', $mockTest->skill) }}"
-           class="flex-1 text-center px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
-            ← Quay lại Skill
+           class="flex-1 text-center px-6 py-3 rounded-xl bg-white border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors">
+            Quay lại {{ ucfirst($mockTest->skill) }}
         </a>
     </div>
 
