@@ -649,3 +649,15 @@ viết mù rồi đẩy lên production là liều — code này quyết định
 
 > 💡 Trước khi code: test **outbound HTTPS từ cPanel tới `www.googleapis.com`** — cùng loại rủi ro
 > đã nêu ở `PLAN_CHAM_SPEAKING_AI.md` với `api.openai.com`. Shared host đôi khi chặn.
+
+> ⚠️ **BẪY: class Tailwind mới KHÔNG có trong `public/build` cũ.**
+> Tailwind chỉ biên dịch class thực sự xuất hiện trong mã nguồn. `public/build` bị gitignore nên
+> `git pull` KHÔNG mang CSS mới — dùng một class chưa từng có ở lần build trước thì **production
+> mất sạch style chỗ đó** mà không báo lỗi gì.
+> Kiểm tra trước khi tuyên bố "không cần build" (thay tên file CSS cho đúng):
+> ```
+> for c in $(grep -ohE 'class="[^"]*"' resources/views/**/*.blade.php | grep -ohE '\b(bg|text|border|divide|ring|shadow|rounded|font)-[a-z]+-?[0-9]*\b' | sort -u); do grep -qF "$c" public/build/assets/app-*.css || echo "THIẾU: $c"; done
+> ```
+> Phiên 02/08 đã dính: `border-orange-300`, `text-orange-900`, `divide-orange-100`, `divide-red-200`,
+> `tabular-nums` đều thiếu → đã đổi sang class có sẵn (và `tabular-nums` chuyển thành inline style)
+> để deploy không phải build + upload.
