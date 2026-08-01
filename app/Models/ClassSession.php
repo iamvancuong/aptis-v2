@@ -27,6 +27,7 @@ class ClassSession extends Model
         'starts_at',
         'ends_at',
         'is_active',
+        'reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -34,6 +35,7 @@ class ClassSession extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
             'is_active' => 'boolean',
         ];
     }

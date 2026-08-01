@@ -19,3 +19,7 @@ Schedule::command('payos:reconcile')->everyTwoMinutes()->withoutOverlapping();
 Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
     ->withoutOverlapping();
+
+// Nhắc học viên trước giờ lớp online 60 phút. Mỗi buổi chỉ gửi một lần
+// (cột `class_sessions.reminder_sent_at`) nên chạy dày cũng không spam.
+Schedule::command('classes:remind')->everyFiveMinutes()->withoutOverlapping();
