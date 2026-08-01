@@ -65,7 +65,7 @@
             {{ $nextClass->isJoinable() ? '🔴 Lớp đang diễn ra: ' : '📅 Lớp sắp tới: ' }}{{ $nextClass->title }}
         </p>
         <p class="text-xs {{ $nextClass->isJoinable() ? 'text-green-600' : 'text-blue-600' }}">
-            {{ $nextClass->starts_at->format('H:i') }}–{{ $nextClass->ends_at->format('H:i') }}, {{ $nextClass->starts_at->format('d/m/Y') }}
+            {{ $nextClass->timeLabel() }}
         </p>
     </div>
     @if($nextClass->isJoinable())

@@ -38,26 +38,34 @@ class ClassSession extends Model
         ];
     }
 
-    /** Thời điểm nút "Vào lớp" bắt đầu bật. */
-    public function joinOpensAt(): \Illuminate\Support\Carbon
+    /** Thời điểm nút "Vào lớp" bắt đầu bật. Null = không đặt giờ, mở ngay. */
+    public function joinOpensAt(): ?\Illuminate\Support\Carbon
     {
-        return $this->starts_at->copy()->subMinutes(self::JOIN_EARLY_MINUTES);
+        return $this->starts_at?->copy()->subMinutes(self::JOIN_EARLY_MINUTES);
     }
 
+    /** Không đặt giờ kết thúc = không bao giờ tự đóng (admin tắt bằng is_active). */
     public function hasEnded(): bool
     {
-        return $this->ends_at->isPast();
+        return $this->ends_at !== null && $this->ends_at->isPast();
     }
 
     /** Đang trong khung giờ vào lớp (đã mở cửa, chưa kết thúc). */
     public function isLive(): bool
     {
-        return !$this->hasEnded() && !$this->joinOpensAt()->isFuture();
+        return !$this->hasEnded() && !$this->isUpcoming();
     }
 
+    /** Chỉ "sắp diễn ra" khi có đặt giờ bắt đầu và giờ đó còn ở tương lai. */
     public function isUpcoming(): bool
     {
-        return $this->joinOpensAt()->isFuture();
+        return $this->joinOpensAt()?->isFuture() ?? false;
+    }
+
+    /** Buổi không đặt giờ nào — mở suốt khi còn bật. */
+    public function isAlwaysOpen(): bool
+    {
+        return $this->starts_at === null && $this->ends_at === null;
     }
 
     /**
@@ -69,20 +77,43 @@ class ClassSession extends Model
         return $this->is_active && $this->isLive();
     }
 
-    public function statusLabel(): string
+    /** Câu mô tả giờ học cho học viên đọc, chịu được mọi tổ hợp null. */
+    public function timeLabel(): string
     {
-        if (!$this->is_active) return 'Đã tắt';
-        if ($this->hasEnded())  return 'Đã kết thúc';
-        if ($this->isLive())    return 'Đang diễn ra';
+        if ($this->isAlwaysOpen()) {
+            return 'Mở tự do — vào lúc nào cũng được';
+        }
 
-        return 'Sắp diễn ra';
+        if ($this->starts_at && $this->ends_at) {
+            return $this->starts_at->format('H:i') . '–' . $this->ends_at->format('H:i')
+                . ', ' . $this->starts_at->format('d/m/Y');
+        }
+
+        return $this->starts_at
+            ? 'Từ ' . $this->starts_at->format('H:i d/m/Y')
+            : 'Đến ' . $this->ends_at->format('H:i d/m/Y');
     }
 
-    /** Buổi học viên còn thấy được: đang bật và chưa kết thúc. */
+    public function statusLabel(): string
+    {
+        if (!$this->is_active)     return 'Đã tắt';
+        if ($this->hasEnded())     return 'Đã kết thúc';
+        if ($this->isUpcoming())   return 'Sắp diễn ra';
+        if ($this->isAlwaysOpen()) return 'Đang mở';
+
+        return 'Đang diễn ra';
+    }
+
+    /**
+     * Buổi học viên còn thấy được: đang bật và chưa kết thúc.
+     * `ends_at` null = không có hạn đóng nên luôn còn hiện.
+     */
     public function scopeVisibleToStudents(Builder $query): Builder
     {
         return $query->where('is_active', true)
-            ->where('ends_at', '>=', now())
+            ->where(fn (Builder $q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+            // Buổi có giờ xếp theo giờ; buổi mở tự do (starts_at null) đứng trước.
+            ->orderByRaw('starts_at IS NULL DESC')
             ->orderBy('starts_at');
     }
 }

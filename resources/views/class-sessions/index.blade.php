@@ -27,10 +27,7 @@
                             </span>
                         @endif
                     </div>
-                    <p class="text-sm text-gray-600">
-                        {{ $session->starts_at->format('H:i') }}–{{ $session->ends_at->format('H:i') }},
-                        {{ $session->starts_at->format('d/m/Y') }}
-                    </p>
+                    <p class="text-sm text-gray-600">{{ $session->timeLabel() }}</p>
                     @if($session->description)
                         <p class="mt-2 text-sm text-gray-500">{{ $session->description }}</p>
                     @endif
@@ -46,7 +43,7 @@
                         </a>
                     @else
                         <span class="inline-block px-4 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-lg">
-                            Mở lúc {{ $session->joinOpensAt()->format('H:i d/m') }}
+                            Mở lúc {{ $session->joinOpensAt()?->format('H:i d/m') }}
                         </span>
                     @endif
                 </div>

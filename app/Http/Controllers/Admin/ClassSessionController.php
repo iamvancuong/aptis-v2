@@ -55,17 +55,28 @@ class ClassSessionController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        // Giờ để trống được (giảm thao tác cho giảng viên): trống = không giới hạn
+        // phía đó. Chỉ so sánh trước/sau khi CẢ HAI cùng được điền — nếu không,
+        // rule `after:starts_at` sẽ đem so với một giá trị rỗng.
+        $bothTimesGiven = $request->filled('starts_at') && $request->filled('ends_at');
+
+        $data = $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             // Để url chung (không ép meet.google.com) phòng khi dùng nền tảng khác.
             'meet_link'   => 'required|url|max:500',
-            'starts_at'   => 'required|date',
-            'ends_at'     => 'required|date|after:starts_at',
+            'starts_at'   => 'nullable|date',
+            'ends_at'     => 'nullable|date' . ($bothTimesGiven ? '|after:starts_at' : ''),
             'is_active'   => 'boolean',
         ], [
             'ends_at.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
             'meet_link.url' => 'Link phòng học phải là một URL hợp lệ (bắt đầu bằng https://).',
         ]);
+
+        // Ô trống về DB là null (không phải chuỗi rỗng) để các hàm giờ hiểu đúng.
+        $data['starts_at'] = $data['starts_at'] ?: null;
+        $data['ends_at']   = $data['ends_at'] ?: null;
+
+        return $data;
     }
 }

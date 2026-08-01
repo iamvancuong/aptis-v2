@@ -18,8 +18,11 @@ return new class extends Migration
             $table->text('description')->nullable();
             // Link Meet do admin dán. Không bao giờ render ra HTML cho học viên.
             $table->string('meet_link', 500);
-            $table->dateTime('starts_at');
-            $table->dateTime('ends_at');
+            // Cả hai để trống được (giảm thao tác cho giảng viên):
+            // starts_at null = mở ngay · ends_at null = không tự đóng.
+            // Khi cả hai null thì `is_active` là công tắc bật/tắt duy nhất.
+            $table->dateTime('starts_at')->nullable();
+            $table->dateTime('ends_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 

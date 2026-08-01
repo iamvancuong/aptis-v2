@@ -133,6 +133,72 @@ class ClassSessionJoinTest extends TestCase
             ->assertDontSee('Buổi đã tắt');
     }
 
+    public function test_session_without_any_time_is_open_while_active(): void
+    {
+        // Cách dùng ít thao tác nhất: chỉ tên + link, is_active là công tắc.
+        $session = $this->makeSession(['starts_at' => null, 'ends_at' => null]);
+
+        $this->assertTrue($session->isAlwaysOpen());
+
+        $this->actingAs($this->student(now()->addMonth()))
+            ->get(route('classes.join', $session))
+            ->assertRedirect(self::MEET_LINK);
+    }
+
+    public function test_always_open_session_closes_when_deactivated(): void
+    {
+        $session = $this->makeSession(['starts_at' => null, 'ends_at' => null, 'is_active' => false]);
+
+        $this->actingAs($this->student(now()->addMonth()))
+            ->get(route('classes.join', $session))
+            ->assertRedirect(route('classes.index'))
+            ->assertSessionHas('error');
+    }
+
+    public function test_only_start_time_given_still_gates_the_opening(): void
+    {
+        $notYet = $this->makeSession(['starts_at' => now()->addHours(3), 'ends_at' => null]);
+        $opened = $this->makeSession(['starts_at' => now()->subHour(), 'ends_at' => null]);
+        $student = $this->student(now()->addMonth());
+
+        // Không đặt giờ kết thúc thì không bao giờ tự đóng.
+        $this->assertFalse($opened->hasEnded());
+
+        $this->actingAs($student)->get(route('classes.join', $notYet))
+            ->assertRedirect(route('classes.index'));
+        $this->actingAs($student)->get(route('classes.join', $opened))
+            ->assertRedirect(self::MEET_LINK);
+    }
+
+    public function test_only_end_time_given_closes_the_session(): void
+    {
+        $session = $this->makeSession(['starts_at' => null, 'ends_at' => now()->subMinute()]);
+
+        $this->actingAs($this->student(now()->addMonth()))
+            ->get(route('classes.join', $session))
+            ->assertRedirect(route('classes.index'))
+            ->assertSessionHas('error');
+    }
+
+    public function test_admin_can_create_a_session_without_times(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.class-sessions.store'), [
+                'title' => 'Buổi không giờ',
+                'meet_link' => self::MEET_LINK,
+                'starts_at' => '',
+                'ends_at' => '',
+                'is_active' => 1,
+            ])
+            ->assertRedirect(route('admin.class-sessions.index'))
+            ->assertSessionHasNoErrors();
+
+        // Ô trống phải vào DB là null, không phải chuỗi rỗng.
+        $this->assertDatabaseHas('class_sessions', [
+            'title' => 'Buổi không giờ', 'starts_at' => null, 'ends_at' => null,
+        ]);
+    }
+
     public function test_dashboard_shows_the_live_class_without_leaking_the_link(): void
     {
         $this->makeSession(['title' => 'Buổi đang chạy']);

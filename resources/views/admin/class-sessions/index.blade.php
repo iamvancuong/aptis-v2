@@ -39,16 +39,22 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            <div>{{ $session->starts_at->format('d/m/Y H:i') }}</div>
-                            <div class="text-xs text-gray-500">đến {{ $session->ends_at->format('H:i') }}</div>
+                            @if($session->isAlwaysOpen())
+                                <span class="text-gray-500 italic">Mở tự do</span>
+                            @else
+                                <div>{{ $session->starts_at?->format('d/m/Y H:i') ?? 'Mở ngay' }}</div>
+                                <div class="text-xs text-gray-500">
+                                    {{ $session->ends_at ? 'đến ' . $session->ends_at->format('H:i') : 'không tự đóng' }}
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @php
                                 $variant = match(true) {
-                                    !$session->is_active   => 'default',
-                                    $session->hasEnded()   => 'default',
-                                    $session->isLive()     => 'success',
-                                    default                => 'warning',
+                                    !$session->is_active => 'default',
+                                    $session->hasEnded() => 'default',
+                                    $session->isLive()   => 'success',
+                                    default              => 'warning',
                                 };
                             @endphp
                             <x-badge :variant="$variant">{{ $session->statusLabel() }}</x-badge>

@@ -38,23 +38,22 @@
     <x-input
         type="datetime-local"
         name="starts_at"
-        label="Bắt đầu"
+        label="Bắt đầu (không bắt buộc)"
         :value="$session?->starts_at?->format('Y-m-d\TH:i') ?? ''"
-        required
         error="{{ $errors->first('starts_at') }}"
     />
     <x-input
         type="datetime-local"
         name="ends_at"
-        label="Kết thúc"
+        label="Kết thúc (không bắt buộc)"
         :value="$session?->ends_at?->format('Y-m-d\TH:i') ?? ''"
-        required
         error="{{ $errors->first('ends_at') }}"
     />
 </div>
-<p class="-mt-2 mb-4 text-xs text-gray-500">
-    Nút “Vào lớp” tự bật trước giờ bắt đầu {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }} phút, và tắt khi qua giờ kết thúc.
-</p>
+<div class="-mt-2 mb-4 text-xs text-gray-500 space-y-1">
+    <p><strong>Để trống cả hai ô là xong</strong> — lớp mở ngay khi bật, đóng khi bạn bỏ tick “Bật buổi học”. Cách này ít thao tác nhất.</p>
+    <p>Nếu có điền: nút “Vào lớp” tự bật trước giờ bắt đầu {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }} phút và tự tắt khi qua giờ kết thúc — không cần nhớ tắt tay.</p>
+</div>
 
 <div class="flex items-center">
     <input type="hidden" name="is_active" value="0">
