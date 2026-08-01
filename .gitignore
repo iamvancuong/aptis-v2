@@ -1,8 +1,11 @@
 *.log
 .DS_Store
 .env
-.env.backup
-.env.production
+# Bắt MỌI biến thể .env (.env.backup-20260801, .env.local, .env.demo…). Trước
+# đây chỉ chặn đúng 3 tên cố định nên một bản sao .env kèm khoá PayOS/DB đã lọt
+# vào commit. Giữ lại .env.example vì nó không chứa giá trị thật.
+.env.*
+!.env.example
 .phpactor.json
 .phpunit.result.cache
 /.fleet
