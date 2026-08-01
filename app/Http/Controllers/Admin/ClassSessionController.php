@@ -16,7 +16,17 @@ class ClassSessionController extends Controller
     {
         $sessions = ClassSession::orderByDesc('starts_at')->paginate(15);
 
-        return view('admin.class-sessions.index', compact('sessions'));
+        // Danh sách mời qua Google Calendar: chỉ học viên còn hạn ĐÃ khai Gmail.
+        // Mời đúng danh sách này thì họ vào thẳng, người ngoài phải xin duyệt.
+        $guestEmails = \App\Models\User::invitableToClass()->pluck('google_email')->all();
+        // Số học viên còn hạn nhưng CHƯA khai Gmail — họ vẫn phải xin duyệt thủ công.
+        $missingEmailCount = \App\Models\User::where('role', '!=', 'admin')
+            ->where('status', 'active')
+            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
+            ->where(fn ($q) => $q->whereNull('google_email')->orWhere('google_email', ''))
+            ->count();
+
+        return view('admin.class-sessions.index', compact('sessions', 'guestEmails', 'missingEmailCount'));
     }
 
     public function create()

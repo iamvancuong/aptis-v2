@@ -27,6 +27,7 @@ class User extends Authenticatable
         'expires_at',
         'target_level',
         'max_devices',
+        'google_email',
     ];
 
     /**
@@ -140,6 +141,23 @@ class User extends Authenticatable
         $totalLimit = $defaultLimit + ($this->ai_extra_uses ?? 0);
 
         return max(0, $totalLimit - (int)$used);
+    }
+
+    /**
+     * Học viên đủ điều kiện được mời vào lớp online qua Google Calendar:
+     * còn hạn, không bị khoá, và đã khai Gmail dùng để vào lớp.
+     *
+     * Đây là chỗ DUY NHẤT nối danh tính Milaedu với danh tính Google — mời đúng
+     * danh sách này thì người ngoài dù có link cũng không vào thẳng được.
+     */
+    public function scopeInvitableToClass(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('role', '!=', 'admin')
+            ->where('status', 'active')
+            ->whereNotNull('google_email')
+            ->where('google_email', '!=', '')
+            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
+            ->orderBy('name');
     }
 
     public function recordWritingAiUsage(int $part): void

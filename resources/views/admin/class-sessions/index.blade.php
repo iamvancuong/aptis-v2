@@ -4,6 +4,55 @@
 @section('header', 'Lớp học online')
 
 @section('content')
+
+{{-- Danh sách mời qua Google Calendar. Đây là cách DUY NHẤT hiện có để người
+     ngoài không vào thẳng được: mời đích danh học viên còn hạn, đặt phòng ở mức
+     hạn chế. Không mời ai mà tắt "Truy cập nhanh" thì CẢ LỚP phải xin duyệt tay. --}}
+<x-card class="mb-6">
+    <div x-data="{ copied: false, list: @js(implode(', ', $guestEmails)) }">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800">Danh sách mời vào lớp (Google Calendar)</h2>
+                <p class="text-sm text-gray-500 mt-1">
+                    <strong>{{ count($guestEmails) }}</strong> học viên còn hạn đã khai Gmail.
+                    @if($missingEmailCount > 0)
+                        <span class="text-amber-700">{{ $missingEmailCount }} người chưa khai — họ sẽ phải bấm “Yêu cầu tham gia” và chờ bạn duyệt.</span>
+                    @endif
+                </p>
+            </div>
+            @if(count($guestEmails) > 0)
+                <button type="button"
+                        @click="navigator.clipboard.writeText(list); copied = true; setTimeout(() => copied = false, 2000)"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shrink-0">
+                    <span x-show="!copied">Copy {{ count($guestEmails) }} địa chỉ</span>
+                    <span x-show="copied" x-cloak>✓ Đã copy</span>
+                </button>
+            @endif
+        </div>
+
+        @if(count($guestEmails) > 0)
+            <textarea readonly rows="2" x-text="list"
+                      class="w-full px-3 py-2 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 text-gray-600"></textarea>
+        @else
+            <p class="text-sm text-gray-500 italic">Chưa học viên nào khai Gmail. Nhắc học viên điền ở trang “Lớp học”.</p>
+        @endif
+
+        <div class="mt-3 flex gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div class="text-xs text-blue-900">
+                <p class="font-semibold mb-1">Cách dùng — làm 1 lần cho mỗi buổi</p>
+                <ol class="list-decimal ml-4 space-y-0.5">
+                    <li>Tạo sự kiện trên <strong>Google Calendar</strong>, bấm “Thêm Google Meet”.</li>
+                    <li>Bấm <strong>Copy</strong> ở trên → dán vào ô <strong>Khách mời</strong>.</li>
+                    <li>Copy link Meet của sự kiện → dán vào buổi học bên dưới.</li>
+                    <li>Trong phòng: biểu tượng khiên → <strong>TẮT “Truy cập nhanh”</strong>.</li>
+                </ol>
+                <p class="mt-1.5">Kết quả: người được mời <strong>vào thẳng</strong>, người ngoài dù có link vẫn phải xin duyệt.</p>
+            </div>
+        </div>
+    </div>
+</x-card>
+
 <x-card>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>

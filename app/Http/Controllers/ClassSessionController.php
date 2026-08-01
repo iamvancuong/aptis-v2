@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClassSession;
+use Illuminate\Http\Request;
 
 /**
  * Cổng vào lớp online cho học viên.
@@ -43,5 +44,27 @@ class ClassSessionController extends Controller
         }
 
         return redirect()->away($classSession->meet_link);
+    }
+
+    /**
+     * Học viên tự khai Gmail dùng để vào lớp. Giảng viên mời đúng các địa chỉ
+     * này qua Google Calendar → họ vào thẳng, người ngoài phải xin duyệt.
+     */
+    public function saveGoogleEmail(Request $request)
+    {
+        $data = $request->validate([
+            'google_email' => 'nullable|email|max:255',
+        ], [
+            'google_email.email' => 'Địa chỉ Gmail không hợp lệ.',
+        ]);
+
+        auth()->user()->update(['google_email' => $data['google_email'] ?: null]);
+
+        return redirect()->route('classes.index')->with(
+            'success',
+            $data['google_email']
+                ? 'Đã lưu Gmail vào lớp. Giảng viên sẽ mời địa chỉ này vào buổi học.'
+                : 'Đã xoá Gmail vào lớp.'
+        );
     }
 }

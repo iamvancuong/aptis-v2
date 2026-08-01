@@ -210,6 +210,62 @@ class ClassSessionJoinTest extends TestCase
             ->assertDontSee(self::MEET_LINK);
     }
 
+    public function test_student_can_save_and_clear_google_email(): void
+    {
+        $student = $this->student(now()->addMonth());
+
+        $this->actingAs($student)
+            ->post(route('classes.google-email'), ['google_email' => 'hocvien@gmail.com'])
+            ->assertRedirect(route('classes.index'))
+            ->assertSessionHas('success');
+        $this->assertSame('hocvien@gmail.com', $student->fresh()->google_email);
+
+        // Bỏ trống = xoá, phải về null chứ không phải chuỗi rỗng.
+        $this->actingAs($student)->post(route('classes.google-email'), ['google_email' => '']);
+        $this->assertNull($student->fresh()->google_email);
+    }
+
+    public function test_invalid_google_email_is_rejected(): void
+    {
+        $student = $this->student(now()->addMonth());
+
+        $this->actingAs($student)
+            ->post(route('classes.google-email'), ['google_email' => 'khong-phai-email'])
+            ->assertSessionHasErrors('google_email');
+
+        $this->assertNull($student->fresh()->google_email);
+    }
+
+    public function test_invite_list_only_includes_in_date_students_with_gmail(): void
+    {
+        // Đủ điều kiện
+        $this->student(now()->addMonth())->update(['google_email' => 'con-han@gmail.com']);
+        $this->student(null)->update(['google_email' => 'khong-han@gmail.com']); // expires_at null = vô hạn
+        // Không đủ điều kiện
+        $this->student(now()->subDay())->update(['google_email' => 'het-han@gmail.com']);
+        $this->student(now()->addMonth());                                        // chưa khai Gmail
+        $blocked = $this->student(now()->addMonth());
+        $blocked->update(['google_email' => 'bi-khoa@gmail.com', 'status' => 'blocked']);
+        $this->admin()->update(['google_email' => 'admin@gmail.com']);             // admin không phải học viên
+
+        $list = User::invitableToClass()->pluck('google_email')->all();
+
+        sort($list);
+        $this->assertSame(['con-han@gmail.com', 'khong-han@gmail.com'], $list);
+    }
+
+    public function test_admin_index_shows_invite_list_and_missing_count(): void
+    {
+        $this->student(now()->addMonth())->update(['google_email' => 'da-khai@gmail.com']);
+        $this->student(now()->addMonth());  // còn hạn nhưng chưa khai
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.class-sessions.index'))
+            ->assertOk()
+            ->assertSee('da-khai@gmail.com')
+            ->assertSee('1 người chưa khai', false);
+    }
+
     public function test_admin_screens_render(): void
     {
         $session = $this->makeSession();
