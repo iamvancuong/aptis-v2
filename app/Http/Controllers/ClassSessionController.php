@@ -67,6 +67,15 @@ class ClassSessionController extends Controller
             'google_email.email' => 'Địa chỉ Gmail không hợp lệ.',
         ]);
 
+        // Bắt gõ nhầm tên miền (gmai.com, gmail.con…). Những địa chỉ này ĐÚNG cú
+        // pháp nên `email` cho qua, nhưng không tồn tại — để lọt thì học viên sẽ
+        // không bao giờ vào thẳng được mà chẳng ai hiểu vì sao.
+        if ($data['google_email'] && $goiY = \App\Support\InviteEmail::gmailTypoSuggestion($data['google_email'])) {
+            return back()
+                ->withInput()
+                ->withErrors(['google_email' => "Địa chỉ này có vẻ gõ nhầm. Có phải bạn định nhập {$goiY} không?"]);
+        }
+
         auth()->user()->update(['google_email' => $data['google_email'] ?: null]);
 
         return redirect()->route('classes.index')->with(

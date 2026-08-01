@@ -18,20 +18,43 @@ class ClassSessionController extends Controller
 
         // Danh sách mời qua Google Calendar: mọi học viên còn hạn. Mặc định lấy
         // email tài khoản; ai đã khai Gmail riêng thì lấy Gmail đó.
-        $guestEmails = \App\Models\User::invitableToClass()
-            ->get(['email', 'google_email'])
+        $hocVien = \App\Models\User::invitableToClass()->get(['id', 'name', 'email', 'google_email']);
+
+        // Tách địa chỉ gõ nhầm tên miền Gmail (gmai.com, gmail.con…) ra khỏi danh
+        // sách mời: chúng KHÔNG TỒN TẠI nên mời vào là mời hư không, mà học viên
+        // đó buổi nào cũng phải xin duyệt và không ai hiểu vì sao.
+        $emailHong = $hocVien
+            ->map(fn ($u) => [
+                'user'   => $u,
+                'email'  => $u->classInviteEmail(),
+                'goi_y'  => \App\Support\InviteEmail::gmailTypoSuggestion($u->classInviteEmail()),
+            ])
+            ->reject(fn ($r) => \App\Support\InviteEmail::isUsable($r['email']))
+            ->values();
+
+        $guestEmails = $hocVien
             ->map->classInviteEmail()
+            ->filter(fn ($e) => \App\Support\InviteEmail::isUsable($e))
             ->unique()
             ->values()
             ->all();
 
-        // Địa chỉ không phải @gmail.com có thể không gắn với tài khoản Google →
-        // mời vẫn được nhưng người đó có thể phải xin duyệt. Đếm để admin biết.
+        // Địa chỉ hợp lệ nhưng không phải @gmail.com — mời vẫn được, chỉ là có thể
+        // không gắn với tài khoản Google nên người đó vẫn phải xin duyệt.
         $nonGmailCount = collect($guestEmails)
             ->reject(fn ($e) => str_ends_with(strtolower($e), '@gmail.com'))
             ->count();
 
-        return view('admin.class-sessions.index', compact('sessions', 'guestEmails', 'nonGmailCount'));
+        // Danh sách mời là ẢNH CHỤP tại thời điểm copy. Với sự kiện Calendar lặp
+        // lại, người hết hạn tuần sau vẫn nằm trong lời mời cũ → nhắc admin.
+        $sapHetHan = \App\Models\User::invitableToClass()
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now()->addDays(7))
+            ->count();
+
+        return view('admin.class-sessions.index', compact(
+            'sessions', 'guestEmails', 'nonGmailCount', 'emailHong', 'sapHetHan'
+        ));
     }
 
     public function create()

@@ -14,9 +14,12 @@
             <div>
                 <h2 class="text-lg font-semibold text-gray-800">Danh sách mời vào lớp (Google Calendar)</h2>
                 <p class="text-sm text-gray-500 mt-1">
-                    <strong>{{ count($guestEmails) }}</strong> học viên còn hạn.
+                    <strong>{{ count($guestEmails) }}</strong> địa chỉ dùng được.
                     @if($nonGmailCount > 0)
                         <span class="text-amber-700">{{ $nonGmailCount }} địa chỉ không phải @gmail.com — nếu ai đó không vào thẳng được, nhắc họ khai Gmail ở trang “Lớp học”.</span>
+                    @endif
+                    @if($sapHetHan > 0)
+                        <span class="block mt-1">{{ $sapHetHan }} người hết hạn trong 7 ngày tới — danh sách này là <strong>ảnh chụp lúc copy</strong>, nhớ cập nhật lại lời mời sau đó.</span>
                     @endif
                 </p>
             </div>
@@ -35,6 +38,40 @@
                       class="w-full px-3 py-2 text-xs font-mono border border-gray-200 rounded-lg bg-gray-50 text-gray-600"></textarea>
         @else
             <p class="text-sm text-gray-500 italic">Chưa học viên nào khai Gmail. Nhắc học viên điền ở trang “Lớp học”.</p>
+        @endif
+
+        @if($emailHong->isNotEmpty())
+            {{-- Địa chỉ gõ nhầm tên miền: hợp lệ về cú pháp nhưng không tồn tại.
+                 Đã loại khỏi danh sách copy, hiện ra đây để admin liên hệ sửa. --}}
+            <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-xs font-semibold text-red-800 mb-2">
+                    {{ $emailHong->count() }} địa chỉ sai — đã loại khỏi danh sách mời
+                </p>
+                <p class="text-xs text-red-700 mb-2">
+                    Các email này gõ nhầm tên miền nên <strong>không tồn tại</strong>. Mời vào cũng vô ích:
+                    những bạn này buổi nào cũng phải xin duyệt. Liên hệ để họ sửa lại email tài khoản,
+                    hoặc bảo họ khai Gmail đúng ở trang “Lớp học”.
+                </p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <tbody class="divide-y divide-red-200">
+                            @foreach($emailHong as $r)
+                                <tr>
+                                    <td class="py-1.5 pr-4 font-medium text-gray-800 whitespace-nowrap">{{ $r['user']->name }}</td>
+                                    <td class="py-1.5 pr-4 font-mono text-red-700 whitespace-nowrap">{{ $r['email'] }}</td>
+                                    <td class="py-1.5 text-gray-600 whitespace-nowrap">
+                                        @if($r['goi_y'])
+                                            có phải là <span class="font-mono text-green-700">{{ $r['goi_y'] }}</span> ?
+                                        @else
+                                            sai định dạng
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         @endif
 
         <div class="mt-3 flex gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">

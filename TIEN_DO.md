@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–Q đã gộp + push**) · **118 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–R đã gộp + push**) · **121 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -569,7 +569,7 @@ Pha 0 **chạy được ngay bằng Gmail FREE**: trần **100 người/phòng**
 **Nâng Business Plus (~$22/host·tháng, 500 người) chỉ là đổi link được dán — KHÔNG sửa một dòng code nào.** Chỉ nâng khi 1 buổi thật sự chạm ~100 người hoặc cần buổi dài liên tục.
 
 ### Kiểm chứng
-`tests/Feature/ClassSessionJoinTest.php` (28 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 118 pass** (trước 90).
+`tests/Feature/ClassSessionJoinTest.php` (31 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 121 pass** (trước 90).
 
 **Bàn giao:** ✅ đã merge vào `main` + push 01/08/2026 (nhánh `feature/class-sessions`). Deploy: **CẦN `php artisan migrate --force`** (có migration mới); **không cần `npm run build`** (chỉ Blade/PHP, dùng class Tailwind đã có).
 
