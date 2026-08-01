@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 29/07/2026 · GitHub `main` = `origin/main` (**mọi việc A–K đã gộp + push**) · **90 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 01/08/2026 · GitHub `main` = `origin/main` (**A–M đã gộp + push**) · **109 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -9,17 +9,20 @@
 > **(E) deploy production + cộng đồng FB + responsive + vá Reading** (§14) ·
 > **(F) vá bug thanh toán khi mở lại đơn** (§15) · **(G) mã sale referral + doanh số theo sale** (§17) ·
 > **(H) bỏ watermark bài làm** (§18) · **(I) sửa copy bỏ Speaking + vá `&amp;` preview** (§19) ·
-> **(J) nhãn Có phí/Miễn phí trang chấm Writing** (§20) · **(K) vá "Chờ chấm" sót bài đã trả phí** (§21).
+> **(J) nhãn Có phí/Miễn phí trang chấm Writing** (§20) · **(K) vá "Chờ chấm" sót bài đã trả phí** (§21) ·
+> **(L) lớp online Pha 0 — dán link Meet thủ công** (§23) · **(M) vá bug quay lại câu đã làm báo sai toàn bộ** (§22).
 >
-> ▶️ **PRODUCTION** tại **https://milaedu.com** — release **CHỈ BÁN TÀI KHOẢN** (thanh toán → tạo tài khoản luyện thi, KHÔNG có lớp online).
+> ▶️ **PRODUCTION** tại **https://milaedu.com** — thanh toán → tạo tài khoản luyện thi. **Lớp online Pha 0 đã có code** (§23, admin dán link Meet thủ công) nhưng chỉ hiện buổi khi admin tạo.
 > Deploy = **cPanel AZDIGI Terminal**: `git reset --hard origin/main` (+ `php artisan migrate --force` khi có migration mới; `npm run build` + upload `public/build` khi đổi Tailwind/JS). Quy trình đầy đủ **§14** + `DEPLOY.md`.
 >
-> 🟠 **GitHub đã có, cần KIỂM TRA & DEPLOY lên milaedu.com (G–K):**
-> - **G (mã sale) có MIGRATION `sale_code`** → bắt buộc `php artisan migrate --force`. H–K chỉ Blade/PHP (không migrate/build).
+> 🟠 **GitHub đã có, cần KIỂM TRA & DEPLOY lên milaedu.com (G–M):**
+> - **CÓ MIGRATION** → bắt buộc `php artisan migrate --force`: **G** (`sale_code`) và **L** (`class_sessions`). Các batch còn lại chỉ Blade/PHP (không migrate/build).
+> - ⚠️ **L bật menu "Lớp học" cho MỌI học viên** ngay khi deploy. Chưa tạo buổi nào thì trang `/lop-hoc` chỉ hiện "Chưa có buổi học nào" — không lỗi, nhưng nên tạo buổi đầu tiên ở `/admin/class-sessions` trước khi báo học viên.
+> - **M là bản vá lỗi hiển thị đang ảnh hưởng học viên thật** (quay lại câu đã làm → báo sai toàn bộ). Ưu tiên lên sớm; không cần migrate/build.
 > - 🔴 `config/sales.php` đã điền tên thật (M1 = Nguyệt Anh, M2 = Trinh). 4 link gửi sale: `/dk/M1|M2/thang|tuan`; admin copy ở `/admin/revenue`.
 >
 > ⏸️ **PENDING (chỉ làm khi bạn nhắc):**
-> - **Lớp online Google Meet** (thay Zoom) — đã chốt hướng: gói **Business Plus**, **Pha 0 MVP** dán link thủ công (§16) + kế hoạch §11.
+> - **Lớp online — Pha 1 (Google Calendar/Meet API tự sinh phòng)**. ✅ **Pha 0 ĐÃ CODE + đã lên `main`** (§23) — chạy được ngay với **Gmail free**; chỉ nâng Business Plus khi 1 buổi vượt ~100 người.
 > - **Chấm Nói (Speaking) bằng AI** — đã khảo sát, kế hoạch + chi phí §12.
 > - **Chấm Speaking (giáo viên) đang TẠM TẮT trong quảng cáo** (§19). Khi bật lại: thêm "Speaking" vào copy + làm nhãn Có phí/Miễn phí + vá "Chờ chấm" cho `/admin/speaking-reviews` (hiện mới làm cho Writing — §20/§21).
 
@@ -230,8 +233,9 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 ---
 
 ## 11. 🔴 CẦN BẠN / VIỆC CÒN MỞ
-- ⏸️ **PENDING — Buổi học online (Google Meet):** Zoom đã gỡ. Khi cần lớp online, code MỚI bằng Google Meet
-  (Calendar API tạo link Meet, hoặc link phòng cố định) — không khôi phục code Zoom cũ. Chỉ làm khi bạn nhắc.
+- ✅ **Buổi học online (Google Meet) — Pha 0 ĐÃ CODE + merge vào `main`** (§23).
+  🔴 Cần bạn: **review + merge + `migrate --force`**, rồi tạo buổi đầu tiên ở `/admin/class-sessions` (dán link Meet từ Gmail free).
+  ⏸️ Pha 1 (Calendar API tự sinh phòng) vẫn chờ bạn nhắc.
 - **Nội dung thật (SEO):** bio THẬT của cô (sửa `config/seo.php` hoặc env `SEO_INSTRUCTOR_BIO`) · testimonial + số liệu thật (hiện KHÔNG bịa) · ảnh giảng viên thật (đang dùng ô chữ "D").
 - **Off-page SEO:** Google Search Console (submit sitemap) · Google Business Profile · backlink.
 - ⬜ **Tùy chọn — Turbo (SPA thật):** chuyển tab không reload cho khu marketing. Chưa bật vì app dùng Alpine dày (form/thanh toán/admin) → cần cấu hình lại vòng đời Alpine + **test trình duyệt thật**. Đã đặt sẵn `data-turbo="false"` ở các link ra ngoài khu marketing. (Hiện dùng View Transitions — mượt, an toàn.)
@@ -398,7 +402,8 @@ Bổ sung cho §11 (Zoom đã gỡ, làm mới bằng Meet khi cần). Phiên 29
 - **Gói (đã chốt):** ~300–500 học sinh vào **CÙNG 1 buổi** → **Business Plus (~$22/host·tháng, cap 500 người)**. Standard (150) không đủ. Nên 2 host (~$44/tháng). ⚠️ Trần cứng 500 → nếu vượt phải lên **Enterprise** (1.000).
 - **Email học sinh đa số Gmail** → Pha 1 dùng được `accessType=RESTRICTED` (mời đích danh, chống học chui chặt nhất).
 - **Chống "học chui":** enforce ở **tầng web Milaedu**, KHÔNG phải Meet — không gửi link trần, chỉ hiện nút "Vào lớp" cho tài khoản **đăng nhập + còn hạn**, trong **khung giờ**; host bật phòng chờ. Chống share tài khoản = bật **1 phiên/tài khoản** qua `LoginSession` sẵn có (Meet không chặn 1 account nhiều thiết bị).
-- **Hướng code (đã chọn Pha 0 MVP trước):** bảng `class_sessions` + admin dán link Meet thủ công + route `/lop-hoc/{session}/join` (check hạn+giờ rồi redirect, link không nằm trong HTML). **Pha 1** sau: Google Calendar/Meet REST API (service account + domain-wide delegation) tự sinh phòng + mời email còn hạn + gửi mail. → **Chưa bắt đầu code, chờ bạn nhắc.**
+- **Hướng code (đã chọn Pha 0 MVP trước):** bảng `class_sessions` + admin dán link Meet thủ công + route `/lop-hoc/{session}/join` (check hạn+giờ rồi redirect, link không nằm trong HTML). **Pha 1** sau: Google Calendar/Meet REST API (service account + domain-wide delegation) tự sinh phòng + mời email còn hạn + gửi mail.
+  → ✅ **Pha 0 ĐÃ CODE 01/08/2026 — xem §23** (đã merge vào `main`, chạy được với Gmail free). Pha 1 vẫn chờ bạn nhắc.
 
 ---
 
@@ -467,8 +472,6 @@ Watermark lát chữ `milaedu.com` + email học viên (mờ, phủ toàn trang)
 
 ## 22. 🐞 PHIÊN 01/08/2026 (M) — VÁ BUG: quay lại câu đã làm thì BÁO SAI TOÀN BỘ
 
-> ⚠️ Nhánh `feature/class-sessions` cũng đánh số §22 (lớp online). Nhánh nào merge sau thì **đổi thành §23**.
-
 **Triệu chứng:** học viên làm Listening Part 4, chọn ĐÚNG, chuyển sang câu khác rồi **quay lại** → mọi câu con đều hiện `✗ Incorrect`, dòng "Answer:" lại in đúng cái vừa chọn, và **nút radio không còn tick**.
 
 **Nguyên nhân:** đáp án nằm ở HAI nơi — `answers[qId]` (**bền**, chính là thứ nộp lên server) và `listeningPart4Answers`… (**tạm**, chỉ để vẽ giao diện).
@@ -494,4 +497,43 @@ Reading Part 2 (`/practice/2`): quay lại vẫn đủ 5 slot, kho rỗng, feedb
 
 **File chạm:** `resources/views/practice/show.blade.php` (chỉ 1 file). Chỉ Blade/JS trong Blade → **KHÔNG cần `npm run build`** (script này nằm inline trong Blade, không qua Vite), không cần migrate.
 
-**Bàn giao:** nhánh `fix/practice-answer-state` (từ `main`) — **chưa merge/push**.
+**Bàn giao:** ✅ đã merge vào `main` + push 01/08/2026 (nhánh `fix/practice-answer-state`).
+
+---
+
+## 23. 🎥 PHIÊN 01/08/2026 (L) — LỚP ONLINE PHA 0 (dán link Google Meet thủ công)
+
+Hiện thực **Pha 0** đã chốt ở §16. Không gọi API Google: cô Dung tự mở phòng Meet, admin dán link vào buổi học trên web.
+
+### Nguyên tắc bảo mật (quan trọng nhất)
+**Link Meet KHÔNG bao giờ render ra HTML.** Học viên chỉ thấy nút "Vào lớp" trỏ tới `/lop-hoc/{id}/join`;
+route đó kiểm tra điều kiện rồi mới `redirect()->away($meet_link)`. Xem source trang không lấy được link để gửi ra ngoài.
+Chống share tài khoản vẫn dựa vào `SessionLimit` (1 phiên/thiết bị) đã có sẵn — **không thêm gì mới**.
+
+### Điều kiện vào lớp (phải thoả CẢ HAI)
+1. **Tài khoản còn hạn** — đã có sẵn: middleware **`CheckAccountExpiration` chạy toàn cục cho mọi route web**, logout người hết hạn. `ClassSessionController@join` giữ thêm 1 lớp `isExpired()` làm lưới an toàn (gần như không chạy) vì đây là chỗ DUY NHẤT trả link ra ngoài.
+   > 💡 Vì middleware này là toàn cục, **mọi UI kiểu "tài khoản bạn đã hết hạn" trong khu đăng nhập đều là code chết** — người hết hạn không bao giờ vào được trang đó. Đừng viết lại.
+2. **Buổi đang mở cửa** — `is_active` && `now()` trong `[starts_at − 15 phút, ends_at]`. Hằng số `ClassSession::JOIN_EARLY_MINUTES = 15`.
+   > ⚠️ **Giờ bắt đầu/kết thúc KHÔNG bắt buộc** (giảng viên không muốn chọn nhiều ô). Để trống = không giới hạn phía đó:
+   > `starts_at` null = mở ngay · `ends_at` null = không tự đóng · **cả hai null = "Mở tự do"**, lúc này `is_active` là công tắc bật/tắt duy nhất.
+   > Dùng `timeLabel()` / `isAlwaysOpen()` khi hiển thị — **đừng gọi thẳng `starts_at->format()`** vì có thể null.
+
+### Dữ liệu & file
+- **Migration** `2026_08_01_000001_create_class_sessions_table` — `title` · `description` · `meet_link`(500) · `starts_at`(nullable) · `ends_at`(nullable) · `is_active`; index `(is_active, starts_at)`.
+- **Model** `app/Models/ClassSession.php` — `isJoinable()` / `isLive()` / `isUpcoming()` / `hasEnded()` / `statusLabel()` / scope `visibleToStudents()` (đang bật + chưa kết thúc).
+- **Admin** `Admin/ClassSessionController` (resource, trừ `show`) + views `admin/class-sessions/{index,create,edit,_form}` → nav **"Lớp online"** ở `layouts/admin`. Validate `ends_at` phải sau `starts_at`.
+- **Học viên** `ClassSessionController` (`index` + `join`) · view `class-sessions/index` · nav **"Lớp học"** ở `layouts/app` · **card "lớp sắp tới / đang diễn ra"** trên `dashboard` (`DashboardController` thêm `$nextClass`).
+- `robots.txt`: thêm `Disallow: /lop-hoc`.
+
+### Gmail free vs Business Plus
+Pha 0 **chạy được ngay bằng Gmail FREE**: trần **100 người/phòng** và **60 phút/buổi** (≥3 người) — hết 60 phút join lại là có phiên mới.
+**Nâng Business Plus (~$22/host·tháng, 500 người) chỉ là đổi link được dán — KHÔNG sửa một dòng code nào.** Chỉ nâng khi 1 buổi thật sự chạm ~100 người hoặc cần buổi dài liên tục.
+
+### Kiểm chứng
+`tests/Feature/ClassSessionJoinTest.php` (19 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 109 pass** (trước 90).
+
+**Bàn giao:** ✅ đã merge vào `main` + push 01/08/2026 (nhánh `feature/class-sessions`). Deploy: **CẦN `php artisan migrate --force`** (có migration mới); **không cần `npm run build`** (chỉ Blade/PHP, dùng class Tailwind đã có).
+
+### Còn mở (Pha 1, khi cần)
+- Google Calendar/Meet REST API tự sinh phòng + mời email còn hạn (service account + domain-wide delegation) — §16.
+- Gán buổi theo nhóm/lớp + điểm danh (Pha 0 cố ý bỏ qua: mọi tài khoản còn hạn đều vào được buổi đang mở).
