@@ -462,3 +462,36 @@ Watermark lát chữ `milaedu.com` + email học viên (mờ, phủ toàn trang)
 **Test** `WritingReviewQueueTest` (2 ca: limit_reached vào Chờ chấm & không ở Đã chấm; graded thì ngược lại). **Tổng 90 pass**. Chỉ PHP → deploy không cần migrate/build.
 > ⚠️ Nếu bài vẫn không hiện sau khi trả tiền → kiểm tra đơn đã `paid` chưa (webhook/`payos:reconcile` đã chạy để bật `is_grading_requested`). Đơn kẹt `pending` = vấn đề fulfillment (xem §14B), không phải bộ lọc này.
 > 💡 Trang Speaking cùng bộ lọc — nên vá y hệt khi đụng tới.
+
+---
+
+## 22. 🐞 PHIÊN 01/08/2026 (M) — VÁ BUG: quay lại câu đã làm thì BÁO SAI TOÀN BỘ
+
+> ⚠️ Nhánh `feature/class-sessions` cũng đánh số §22 (lớp online). Nhánh nào merge sau thì **đổi thành §23**.
+
+**Triệu chứng:** học viên làm Listening Part 4, chọn ĐÚNG, chuyển sang câu khác rồi **quay lại** → mọi câu con đều hiện `✗ Incorrect`, dòng "Answer:" lại in đúng cái vừa chọn, và **nút radio không còn tick**.
+
+**Nguyên nhân:** đáp án nằm ở HAI nơi — `answers[qId]` (**bền**, chính là thứ nộp lên server) và `listeningPart4Answers`… (**tạm**, chỉ để vẽ giao diện).
+`loadQuestionState()` chạy mỗi lần đổi câu (watcher `currentIndex`, dòng ~246) và **xoá trắng bản tạm** bằng `.fill(null)` mà **không nạp lại từ bản bền**.
+Nhưng `hasAnswered(qId)` chỉ xét `answers.hasOwnProperty(qId)` → vẫn `true` → khối feedback vẫn hiện và đem **mảng rỗng** đi so với đáp án → **báo sai hết**.
+Ô xanh vẫn nằm đúng đáp án vì `getLP4RadioClass` vẽ theo `correct_answers`, không phụ thuộc lựa chọn — nên nhìn càng giống "chọn đúng mà báo sai".
+
+**Điểm quan trọng: ĐIỂM LƯU DB VẪN ĐÚNG.** Server chấm theo `answers[qId]` (còn nguyên). Đây thuần là lỗi hiển thị. Sanitizer + answer_key đã kiểm chứng trả về đúng.
+
+**Phạm vi:** mọi part giữ đáp án bằng **mảng theo index** — Reading 2/3/4, Listening 1/2/3/4, Writing 1/2/3/4.
+Reading 1 và Grammar **không dính** vì lưu theo `[q.id]` nên sống sót qua điều hướng.
+
+**Cách sửa** (1 chỗ, vá tất cả các part): `loadQuestionState()` nạp lại bản tạm từ `answers[q.id]` nếu câu đó đã làm, thay vì xoá trắng. Có helper `restoreFor(part, blank)` — **chỉ nạp cho đúng part đang mở**, vì `saved` của part khác có hình dạng khác (object/chuỗi) sẽ làm hỏng mảng.
+Reading Part 2 xử lý riêng: đã nộp → dựng lại `part2Slots` từ bản lưu + `part2Pool = []` (mọi câu đã nằm trong slot) và **giữ feedback**; chưa làm → xáo kho như cũ + dọn feedback.
+
+**Kiểm chứng (chạy thật trên trình duyệt, không chỉ đọc code):** lái Alpine ở `/practice/8` (câu Listening P4, qid 236, đáp án `["0","0"]`) — chọn đúng → sang câu 2 → quay lại.
+| | Trước fix | Sau fix |
+|---|---|---|
+| Mảng khi quay lại | `[null,null]` | `[0,0]` |
+| DOM | `Incorrect` ×2 | `Correct` ×2 |
+| Radio còn tick | 0 | 2 |
+Reading Part 2 (`/practice/2`): quay lại vẫn đủ 5 slot, kho rỗng, feedback còn. `php artisan test` = **90 pass** (không đổi — lỗi thuần JS, test PHP không phủ được; **bắt buộc kiểm tra tay trên trình duyệt**).
+
+**File chạm:** `resources/views/practice/show.blade.php` (chỉ 1 file). Chỉ Blade/JS trong Blade → **KHÔNG cần `npm run build`** (script này nằm inline trong Blade, không qua Vite), không cần migrate.
+
+**Bàn giao:** nhánh `fix/practice-answer-state` (từ `main`) — **chưa merge/push**.
