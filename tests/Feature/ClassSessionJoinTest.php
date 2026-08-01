@@ -296,6 +296,53 @@ class ClassSessionJoinTest extends TestCase
             ->assertSee('đều được ghi lại', false);
     }
 
+    public function test_gmail_typo_domains_are_detected(): void
+    {
+        $typo = [
+            'a@gmai.com'     => 'a@gmail.com',   // thiếu chữ l
+            'b@gmail.con'    => 'b@gmail.com',   // con thay vì com
+            'c@gamil.com'    => 'c@gmail.com',   // đảo chữ
+            'd@gmail.com.vn' => 'd@gmail.com',   // không phải Gmail thật
+        ];
+        foreach ($typo as $sai => $dung) {
+            $this->assertSame($dung, \App\Support\InviteEmail::gmailTypoSuggestion($sai), "phải bắt được {$sai}");
+            $this->assertFalse(\App\Support\InviteEmail::isUsable($sai), "{$sai} không được dùng để mời");
+        }
+
+        // Tên miền hợp lệ KHÔNG được bắt oan.
+        foreach (['x@gmail.com', 'y@hus.edu.vn', 'z@outlook.com', 'w@company.vn'] as $ok) {
+            $this->assertNull(\App\Support\InviteEmail::gmailTypoSuggestion($ok), "{$ok} là hợp lệ");
+            $this->assertTrue(\App\Support\InviteEmail::isUsable($ok));
+        }
+    }
+
+    public function test_invite_list_drops_typo_addresses_and_admin_lists_them(): void
+    {
+        $tot = $this->student(now()->addMonth());
+        $tot->update(['google_email' => 'hop-le@gmail.com']);
+        $hong = $this->student(now()->addMonth());
+        $hong->update(['name' => 'Ban Go Nham', 'google_email' => 'go-nham@gmai.com']);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.class-sessions.index'))
+            ->assertOk()
+            ->assertSee('hop-le@gmail.com')
+            ->assertSee('Ban Go Nham')                    // hiện ở mục "địa chỉ sai"
+            ->assertSee('go-nham@gmail.com');             // gợi ý sửa
+    }
+
+    public function test_student_gets_a_suggestion_when_typing_a_typo(): void
+    {
+        $student = $this->student(now()->addMonth());
+
+        $this->actingAs($student)
+            ->post(route('classes.google-email'), ['google_email' => 'toi@gmai.com'])
+            ->assertSessionHasErrors('google_email');
+
+        // Không được lưu địa chỉ hỏng.
+        $this->assertNull($student->fresh()->google_email);
+    }
+
     public function test_invite_list_defaults_to_account_email(): void
     {
         // Không khai Gmail riêng → vẫn được mời bằng email tài khoản.
