@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–S đã gộp + push**) · **127 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · việc tồn: **§26** · **127 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -661,3 +661,47 @@ viết mù rồi đẩy lên production là liều — code này quyết định
 > Phiên 02/08 đã dính: `border-orange-300`, `text-orange-900`, `divide-orange-100`, `divide-red-200`,
 > `tabular-nums` đều thiếu → đã đổi sang class có sẵn (và `tabular-nums` chuyển thành inline style)
 > để deploy không phải build + upload.
+
+---
+
+## 26. 📋 VIỆC TỒN SAU DEPLOY 02/08/2026 — cố ý hoãn, làm sau
+
+> Deploy 02/08 đã xong: 5 migration chạy (batch 12–16), `classes:remind` đã lên lịch,
+> CSS production trùng mã băm với bản đã kiểm tra nên giao diện đủ class.
+> Những việc dưới đây **biết rõ nhưng chủ động hoãn** — không phải quên.
+
+### 🟡 Dọn dẹp — bỏ qua không sao
+| Việc | Nếu tiếp tục hoãn |
+|---|---|
+| `public/build.zip` trên server | Rác thuần. Không truy cập từ ngoài được (404). Xoá: `rm public/build.zip` |
+| **`robots.txt` tĩnh che route động** | Thiếu dòng khai báo `Sitemap:`, `/admin` `/dashboard` `/lop-hoc` không bị chặn crawl. Đã hỏng nhiều tháng, không gấp. Search Console vẫn nộp sitemap trực tiếp được |
+| Đọc `error_log` | Không biết production có lỗi âm thầm nào không |
+
+**Tìm `robots.txt`** — nó KHÔNG nằm trong repo (đã xác nhận bằng `git clean -nd`), nên ở thư mục web gốc:
+```
+find /home/ujxmchhx -maxdepth 3 -name "robots.txt" -not -path "*/vendor/*" 2>/dev/null
+```
+> 📌 Ghi nhớ: **docroot KHÔNG phải `repositories/aptis-v2/public`** — kiểm chứng bằng việc
+> `milaedu.com/build.zip` trả 404 dù `public/build.zip` tồn tại trong repo.
+
+### 🔴 Chưa xác nhận — nên làm sớm
+- **Kiểm tra bug §22 đã hết trên production chưa.** Đã chứng minh chạy đúng ở local, **chưa ai xác nhận trên
+  milaedu.com**. Cách thử: học viên làm 1 câu Listening Part 4 → sang câu khác → **quay lại** → phải hiện
+  `Correct`. Nếu vẫn `Incorrect` thì view cache chưa xoá sạch → chạy lại `php artisan view:cache`.
+
+### 🔴 Bật tính năng lớp online (chưa ai làm bước nào)
+1. Tạo sự kiện Google Calendar **lặp lại** + dán danh sách mời (copy ở `/admin/class-sessions`)
+2. Trong phòng Meet: **TẮT "Truy cập nhanh"**
+3. Tạo buổi học đầu tiên ở `/admin/class-sessions`
+> Chưa làm 3 bước này thì học viên vào `/lop-hoc` chỉ thấy "Chưa có buổi học nào".
+
+### 🔴 Nội dung & hạ tầng (đã chờ từ nhiều phiên)
+- **DNS**: thêm bản ghi TXT `google-site-verification=01wqEY9VNQQYXhqzvs-P-6rSZQ8CY8QKtUCIXrS7TKY` → Verify → nộp sitemap.
+- **Bio THẬT + ảnh cô Dung** → khai `SEO_INSTRUCTOR_BIO`, `SEO_INSTRUCTOR_PHOTO` (code đã mở đường sẵn).
+- **Testimonial thật** — review giả đã xoá khỏi production 02/08; mục cảm nhận tự ẩn khi rỗng nên trang chủ không vỡ.
+- **Chuyển email sang SendGrid/SES + SPF/DKIM.** ⚠️ Mức quan trọng đã TĂNG: từ 02/08 có **email nhắc giờ học**,
+  rơi vào spam là mất tác dụng hoàn toàn.
+- **2 học viên gõ nhầm email** cần liên hệ sửa: `npthach98@gamil.com`, `haivan.nguyen1708@gmai.com`.
+
+### ⬜ Để ngỏ từ lâu
+Đồng bộ tông màu khu học viên/admin với trang public · rà mobile tổng thể · Turbo SPA (§11).
