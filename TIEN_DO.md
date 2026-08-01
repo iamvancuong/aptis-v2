@@ -230,9 +230,10 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 ---
 
 ## 11. 🔴 CẦN BẠN / VIỆC CÒN MỞ
-- ✅ **Buổi học online (Google Meet) — Pha 0 ĐÃ CODE + merge vào `main`** (§23).
-  🔴 Cần bạn: **review + merge + `migrate --force`**, rồi tạo buổi đầu tiên ở `/admin/class-sessions` (dán link Meet từ Gmail free).
-  ⏸️ Pha 1 (Calendar API tự sinh phòng) vẫn chờ bạn nhắc.
+- ✅ **Lớp online Google Meet — Pha 0 đã code + đã push `main`** (§23).
+  🔴 Cần bạn: **deploy lên cPanel** (có `migrate --force`), rồi tạo buổi đầu tiên ở `/admin/class-sessions` (dán link Meet từ Gmail free).
+  🔴 **Bật "phòng chờ" trong Meet** — bắt buộc. Web chỉ kiểm soát AI ĐƯỢC LẤY link; ai đã vào phòng vẫn copy link gửi ra ngoài được. Phòng chờ là hàng rào thứ hai (xem §23).
+  ⏸️ Pha 1 (Calendar API tự sinh phòng + `accessType=RESTRICTED` chặn tuyệt đối) vẫn chờ bạn nhắc.
 - **Nội dung thật (SEO):** bio THẬT của cô (sửa `config/seo.php` hoặc env `SEO_INSTRUCTOR_BIO`) · testimonial + số liệu thật (hiện KHÔNG bịa) · ảnh giảng viên thật (đang dùng ô chữ "D").
 - **Off-page SEO:** Google Search Console (submit sitemap) · Google Business Profile · backlink.
 - ⬜ **Tùy chọn — Turbo (SPA thật):** chuyển tab không reload cho khu marketing. Chưa bật vì app dùng Alpine dày (form/thanh toán/admin) → cần cấu hình lại vòng đời Alpine + **test trình duyệt thật**. Đã đặt sẵn `data-turbo="false"` ở các link ra ngoài khu marketing. (Hiện dùng View Transitions — mượt, an toàn.)
