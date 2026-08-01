@@ -106,6 +106,8 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     // nhờ vậy link phòng không bao giờ nằm trong HTML để copy gửi ra ngoài.
     Route::get('/lop-hoc', [\App\Http\Controllers\ClassSessionController::class, 'index'])->name('classes.index');
     Route::get('/lop-hoc/{classSession}/join', [\App\Http\Controllers\ClassSessionController::class, 'join'])->name('classes.join');
+    // Học viên khai Gmail để giảng viên mời qua Google Calendar (vào thẳng, khỏi xin duyệt).
+    Route::post('/lop-hoc/gmail', [\App\Http\Controllers\ClassSessionController::class, 'saveGoogleEmail'])->name('classes.google-email');
 
     // Grammar & Vocabulary
     Route::get('/grammar', [App\Http\Controllers\GrammarController::class, 'index'])->name('grammar.index');

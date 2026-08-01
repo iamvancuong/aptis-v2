@@ -10,6 +10,36 @@
     <p class="mt-2 text-gray-600">Nút “Vào lớp” bật trước giờ học {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }} phút.</p>
 </div>
 
+{{-- Gmail vào lớp: nối danh tính Milaedu ↔ danh tính Google. Có địa chỉ này thì
+     giảng viên mời qua Calendar được → học viên vào thẳng, khỏi xin duyệt. --}}
+<div class="mb-6 p-4 bg-white border {{ auth()->user()->google_email ? 'border-gray-200' : 'border-blue-300 bg-blue-50' }} rounded-xl">
+    <form action="{{ route('classes.google-email') }}" method="POST" class="flex flex-col sm:flex-row sm:items-end gap-3">
+        @csrf
+        <div class="flex-1">
+            <label for="google_email" class="block text-sm font-semibold text-gray-800 mb-1">
+                Gmail dùng để vào lớp
+                @unless(auth()->user()->google_email)
+                    <span class="ml-1 text-xs font-medium text-blue-700">— nên điền</span>
+                @endunless
+            </label>
+            <p class="text-xs text-gray-500 mb-2">
+                Điền đúng tài khoản Google bạn đang đăng nhập trên máy học. Giảng viên sẽ mời địa chỉ này vào buổi học
+                để bạn <strong>vào thẳng</strong>; chưa điền thì mỗi lần vào phải bấm “Yêu cầu tham gia” và chờ duyệt.
+            </p>
+            <input type="email" name="google_email" id="google_email"
+                   value="{{ old('google_email', auth()->user()->google_email) }}"
+                   placeholder="ten.cua.ban@gmail.com"
+                   class="w-full px-4 py-2.5 text-sm border {{ $errors->has('google_email') ? 'border-red-500' : 'border-slate-300' }} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+            @error('google_email')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+        <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shrink-0">
+            Lưu
+        </button>
+    </form>
+</div>
+
 <div class="space-y-4">
     @forelse($sessions as $session)
         <div class="bg-white rounded-xl shadow-sm border {{ $session->isLive() ? 'border-green-300' : 'border-gray-200' }} p-5">
