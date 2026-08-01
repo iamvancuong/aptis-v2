@@ -288,38 +288,60 @@
                 const q = this.currentQuestion;
                 if (!q) return;
 
+                // `answers[qId]` là bản BỀN (chính là thứ nộp lên server); các biến
+                // partNAnswers chỉ là bản TẠM để vẽ giao diện. Hàm này chạy mỗi lần
+                // đổi câu (watcher currentIndex). Trước đây nó xoá trắng bản tạm,
+                // nhưng `answers` thì vẫn còn → hasAnswered() vẫn true → khối feedback
+                // vẫn hiện và đem mảng rỗng đi so với đáp án → BÁO SAI TOÀN BỘ khi
+                // học viên quay lại câu đã làm. Nay nạp lại từ bản bền.
+                const saved = this.answers[q.id];
+
+                // Chỉ nạp lại cho đúng part đang mở — `saved` của part khác có hình
+                // dạng khác (object/chuỗi) sẽ làm hỏng mảng của part này.
+                const restoreFor = (part, blank) => {
+                    if (q.part !== part || saved === undefined) return blank;
+                    return Array.isArray(saved) ? [...saved] : saved;
+                };
+
                 if (q.skill === 'reading') {
                     this.part1Answers[q.id] = this.part1Answers[q.id] || {};
-                    this.part3Answers = new Array(q.metadata.questions?.length || 0).fill('');
-                    this.part4Answers = new Array(q.metadata.paragraphs?.length || 0).fill('');
+                    this.part3Answers = restoreFor(3, new Array(q.metadata.questions?.length || 0).fill(''));
+                    this.part4Answers = restoreFor(4, new Array(q.metadata.paragraphs?.length || 0).fill(''));
 
                     if (q.part === 2) {
-                        // Always reset pool and slots when loading a new question to prevent stale data
                         const sentences = q.metadata.sentences.slice(1).map((text, idx) => ({
                             text, originalIndex: idx + 1
                         }));
-                        this.part2Pool = [...sentences].sort(() => Math.random() - 0.5);
-                        this.part2Slots = new Array(sentences.length).fill(null);
-                        
-                        // Clear any previous feedback for this question
-                        if (this.feedback[q.id]) {
-                            delete this.feedback[q.id];
+
+                        if (saved !== undefined) {
+                            // Đã nộp: dựng lại đúng thứ tự học viên đã sắp, kho câu rỗng
+                            // (mọi câu đều đã nằm trong slot). Giữ nguyên feedback.
+                            this.part2Slots = [...saved];
+                            this.part2Pool = [];
+                        } else {
+                            // Chưa làm: xáo lại kho và dọn feedback cũ để tránh dữ liệu thừa.
+                            this.part2Pool = [...sentences].sort(() => Math.random() - 0.5);
+                            this.part2Slots = new Array(sentences.length).fill(null);
+
+                            if (this.feedback[q.id]) {
+                                delete this.feedback[q.id];
+                            }
                         }
                     }
                 }
 
                 if (q.skill === 'listening') {
-                    if (q.part === 1) this.listeningPart1Answer = null;
-                    if (q.part === 2) this.listeningPart2Answers = new Array(q.metadata.items?.length || 0).fill('');
-                    if (q.part === 3) this.listeningPart3Answers = new Array(q.metadata.statements?.length || 0).fill('');
-                    if (q.part === 4) this.listeningPart4Answers = new Array(q.metadata.questions?.length || 0).fill(null);
+                    if (q.part === 1) this.listeningPart1Answer = restoreFor(1, null);
+                    if (q.part === 2) this.listeningPart2Answers = restoreFor(2, new Array(q.metadata.items?.length || 0).fill(''));
+                    if (q.part === 3) this.listeningPart3Answers = restoreFor(3, new Array(q.metadata.statements?.length || 0).fill(''));
+                    if (q.part === 4) this.listeningPart4Answers = restoreFor(4, new Array(q.metadata.questions?.length || 0).fill(null));
                 }
 
                 if (q.skill === 'writing') {
-                    if (q.part === 1) this.writingPart1Answers = new Array(q.metadata.fields?.length || 0).fill('');
-                    if (q.part === 2) this.writingPart2Answer = '';
-                    if (q.part === 3) this.writingPart3Answers = new Array(q.metadata.questions?.length || 0).fill('');
-                    if (q.part === 4) this.writingPart4Answers = new Array(2).fill('');
+                    if (q.part === 1) this.writingPart1Answers = restoreFor(1, new Array(q.metadata.fields?.length || 0).fill(''));
+                    if (q.part === 2) this.writingPart2Answer = restoreFor(2, '');
+                    if (q.part === 3) this.writingPart3Answers = restoreFor(3, new Array(q.metadata.questions?.length || 0).fill(''));
+                    if (q.part === 4) this.writingPart4Answers = restoreFor(4, new Array(2).fill(''));
                 }
 
                 if (q.skill === 'grammar') {
