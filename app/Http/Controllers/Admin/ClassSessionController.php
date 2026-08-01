@@ -14,7 +14,7 @@ class ClassSessionController extends Controller
 {
     public function index()
     {
-        $sessions = ClassSession::orderByDesc('starts_at')->paginate(15);
+        $sessions = ClassSession::withCount('joins')->orderByDesc('starts_at')->paginate(15);
 
         // Danh sách mời qua Google Calendar: mọi học viên còn hạn. Mặc định lấy
         // email tài khoản; ai đã khai Gmail riêng thì lấy Gmail đó.
@@ -37,6 +37,26 @@ class ClassSessionController extends Controller
     public function create()
     {
         return view('admin.class-sessions.create');
+    }
+
+    /**
+     * Nhật ký vào lớp của một buổi. Dấu hiệu chia sẻ link đáng ngờ nhất là
+     * MỘT tài khoản vào từ NHIỀU địa chỉ mạng khác nhau trong cùng buổi.
+     */
+    public function joins(ClassSession $classSession)
+    {
+        $joins = $classSession->joins()
+            ->with('user:id,name,email')
+            ->latest('id')
+            ->paginate(50);
+
+        // Đếm số IP khác nhau mỗi học viên đã dùng trong buổi này (1 truy vấn).
+        $ipCounts = $classSession->joins()
+            ->selectRaw('user_id, COUNT(DISTINCT ip_address) as ips, COUNT(*) as lan')
+            ->groupBy('user_id')
+            ->pluck('ips', 'user_id');
+
+        return view('admin.class-sessions.joins', compact('classSession', 'joins', 'ipCounts'));
     }
 
     public function store(Request $request)

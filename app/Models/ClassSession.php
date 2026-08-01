@@ -38,6 +38,11 @@ class ClassSession extends Model
         ];
     }
 
+    public function joins(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ClassSessionJoin::class);
+    }
+
     /** Thời điểm nút "Vào lớp" bắt đầu bật. Null = không đặt giờ, mở ngay. */
     public function joinOpensAt(): ?\Illuminate\Support\Carbon
     {

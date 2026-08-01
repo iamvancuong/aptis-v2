@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–P đã gộp + push**) · **114 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–Q đã gộp + push**) · **118 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -523,8 +523,29 @@ người tham gia → host thấy tên lặp thì **Remove from call**.
   Địa chỉ lấy qua **`User::classInviteEmail()`** = `google_email ?: email`.
 - Màn `/admin/class-sessions` có hộp **copy 1 chạm** + đếm số địa chỉ **không phải @gmail.com** (hiện 16/422 —
   có thể không gắn với tài khoản Google nên người đó vẫn phải xin duyệt), kèm hướng dẫn 4 bước tạo sự kiện Calendar.
-- Quy trình mỗi buổi: tạo sự kiện Calendar → dán danh sách vào ô Khách mời → copy link Meet dán vào buổi học
-  → trong phòng tắt "Truy cập nhanh".
+- ⭐ **Dùng sự kiện LẶP LẠI (recurring) để admin gần như không phải thao tác.** Tạo một sự kiện định kỳ
+  ("19h30 thứ 7 hàng tuần") → dán danh sách mời **một lần** → Google giữ **một link Meet** cho cả chuỗi →
+  dán link đó vào buổi học trên web **một lần**. Từ đó mỗi buổi **không phải làm gì**; có học viên mới thì
+  thêm email vào sự kiện. Đây là câu trả lời cho yêu cầu "admin hạn chế thao tác nhất".
+- Quy trình nếu tạo từng buổi riêng: tạo sự kiện Calendar → dán danh sách vào ô Khách mời → copy link Meet
+  dán vào buổi học → trong phòng tắt "Truy cập nhanh".
+
+> ❌ **Hiểu nhầm cần tránh:** *"học viên cùng dùng Gmail nên Meet tự cho qua"* — SAI.
+> Meet **không đọc được** database Milaedu, nó không biết Gmail nào là học viên đã đóng tiền.
+> Bỏ bước mời Calendar thì chỉ còn 2 trạng thái: Truy cập nhanh BẬT (ai có link cũng vào thẳng, kể cả người lạ)
+> hoặc TẮT (**mọi người** đều phải xin duyệt, kể cả học viên thật).
+> Trạng thái "học viên thật vào thẳng, người lạ mới bị xét" **chính là danh sách mời Calendar** — bỏ nó là mất đúng thứ đó.
+
+### Nhật ký vào lớp + nội quy hiển thị
+- Bảng **`class_session_joins`** (`user_id`, `class_session_id`, `ip_address`, `user_agent`) — ghi mỗi lượt
+  vào lớp **thành công**. Lượt bị chặn KHÔNG ghi (nếu không nhật ký sẽ đầy rác).
+  > Cố ý **không dùng chung `security_flags`**: bảng đó dành cho vi phạm (DevTools), đổ lượt vào lớp hợp lệ
+  > vào đó sẽ làm chìm mất cảnh báo thật.
+- `/admin/class-sessions/{id}/nhat-ky` — danh sách lượt vào, **tô vàng học viên vào từ >1 địa chỉ mạng**
+  trong cùng buổi (dấu hiệu chia sẻ link rõ nhất). Cột "Nhật ký (n)" ở bảng danh sách buổi.
+- Trang `/lop-hoc` hiển thị **nội quy** cho học viên.
+  > ⚠️ Nội quy **chỉ nêu những điều hệ thống LÀM THẬT** — ghi log, giới hạn thiết bị, giảng viên duyệt/mời ra.
+  > Đừng thêm lời doạ suông: học viên thử một lần là biết bịa, mất hết tác dụng răn đe.
 > Pha 1 sau này chỉ là **tự động hoá đúng bước dán danh sách này** bằng Calendar API.
 
 ### Điều kiện vào lớp (phải thoả CẢ HAI)
@@ -548,7 +569,7 @@ Pha 0 **chạy được ngay bằng Gmail FREE**: trần **100 người/phòng**
 **Nâng Business Plus (~$22/host·tháng, 500 người) chỉ là đổi link được dán — KHÔNG sửa một dòng code nào.** Chỉ nâng khi 1 buổi thật sự chạm ~100 người hoặc cần buổi dài liên tục.
 
 ### Kiểm chứng
-`tests/Feature/ClassSessionJoinTest.php` (24 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 114 pass** (trước 90).
+`tests/Feature/ClassSessionJoinTest.php` (28 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 118 pass** (trước 90).
 
 **Bàn giao:** ✅ đã merge vào `main` + push 01/08/2026 (nhánh `feature/class-sessions`). Deploy: **CẦN `php artisan migrate --force`** (có migration mới); **không cần `npm run build`** (chỉ Blade/PHP, dùng class Tailwind đã có).
 

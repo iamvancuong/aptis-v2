@@ -115,6 +115,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-3">
+                                <a href="{{ route('admin.class-sessions.joins', $session) }}" class="text-slate-600 hover:text-slate-900 bg-slate-100 px-2 py-1.5 rounded-md hover:bg-slate-200 transition-colors text-xs font-medium" title="Nhật ký vào lớp">
+                                    Nhật ký ({{ $session->joins_count }})
+                                </a>
                                 <a href="{{ route('admin.class-sessions.edit', $session) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-1.5 rounded-md hover:bg-indigo-100 transition-colors" title="Chỉnh sửa">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 </a>

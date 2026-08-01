@@ -265,5 +265,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::get('revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('revenue.index');
 
     // Lớp online — tạo buổi + dán link Meet (không có trang show riêng).
+    // `joins` phải khai TRƯỚC resource để không bị nuốt bởi route {class_session}.
+    Route::get('class-sessions/{classSession}/nhat-ky', [\App\Http\Controllers\Admin\ClassSessionController::class, 'joins'])->name('class-sessions.joins');
     Route::resource('class-sessions', \App\Http\Controllers\Admin\ClassSessionController::class)->except('show');
 });
