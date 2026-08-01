@@ -51,6 +51,35 @@
     </div>
 </div>
 
+{{-- Nội quy. Chỉ nêu những điều hệ thống LÀM THẬT — học viên thử một lần là
+     biết ngay lời nào bịa, mất hết tác dụng răn đe. --}}
+<div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+    <div class="flex gap-3">
+        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        <div class="text-sm text-amber-900">
+            <p class="font-semibold mb-2">Nội quy lớp học online</p>
+            <ul class="space-y-1.5 list-disc ml-4">
+                <li><strong>Link lớp học chỉ dành riêng cho bạn.</strong> Không chia sẻ cho người khác dưới bất kỳ hình thức nào.</li>
+                <li>
+                    <strong>Mỗi lần vào lớp đều được ghi lại</strong>: thời gian, thiết bị và địa chỉ mạng.
+                    Giảng viên xem được toàn bộ nhật ký này.
+                </li>
+                <li>
+                    Tài khoản đăng nhập vượt quá số thiết bị cho phép sẽ bị <strong>ghi nhận vi phạm</strong>;
+                    tái phạm nhiều lần thì <strong>tài khoản bị khoá</strong>.
+                </li>
+                <li>
+                    Người không có trong danh sách lớp khi bấm link sẽ phải xin phép và
+                    <strong>giảng viên có quyền từ chối hoặc mời ra khỏi phòng</strong>.
+                </li>
+            </ul>
+            <p class="mt-2 text-xs text-amber-800">
+                Học phí của bạn trả cho công sức giảng viên. Chia sẻ link là lấy đi phần đó của cô.
+            </p>
+        </div>
+    </div>
+</div>
+
 <div class="space-y-4">
     @forelse($sessions as $session)
         <div class="bg-white rounded-xl shadow-sm border {{ $session->isLive() ? 'border-green-300' : 'border-gray-200' }} p-5">

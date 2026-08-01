@@ -43,6 +43,15 @@ class ClassSessionController extends Controller
             return redirect()->route('classes.index')->with('error', $message);
         }
 
+        // Ghi nhật ký TRƯỚC khi trả link. Nội quy hiển thị cho học viên nói
+        // "mỗi lần vào lớp đều được ghi lại" — phải ghi thật thì lời đó mới đúng.
+        \App\Models\ClassSessionJoin::create([
+            'user_id'          => $user->id,
+            'class_session_id' => $classSession->id,
+            'ip_address'       => request()->ip(),
+            'user_agent'       => substr((string) request()->userAgent(), 0, 512),
+        ]);
+
         return redirect()->away($classSession->meet_link);
     }
 

@@ -236,6 +236,66 @@ class ClassSessionJoinTest extends TestCase
         $this->assertNull($student->fresh()->google_email);
     }
 
+    public function test_join_is_logged_with_ip_and_device(): void
+    {
+        $session = $this->makeSession();
+        $student = $this->student(now()->addMonth());
+
+        $this->actingAs($student)
+            ->withServerVariables(['REMOTE_ADDR' => '203.0.113.9'])
+            ->get(route('classes.join', $session))
+            ->assertRedirect(self::MEET_LINK);
+
+        $this->assertDatabaseHas('class_session_joins', [
+            'user_id' => $student->id,
+            'class_session_id' => $session->id,
+            'ip_address' => '203.0.113.9',
+        ]);
+    }
+
+    public function test_blocked_join_is_not_logged(): void
+    {
+        // Bị chặn thì không được ghi log — nếu không, nhật ký sẽ đầy lượt không vào được.
+        $session = $this->makeSession(['starts_at' => now()->addHours(3), 'ends_at' => now()->addHours(4)]);
+
+        $this->actingAs($this->student(now()->addMonth()))
+            ->get(route('classes.join', $session))
+            ->assertRedirect(route('classes.index'));
+
+        $this->assertDatabaseCount('class_session_joins', 0);
+    }
+
+    public function test_admin_join_log_flags_multiple_networks(): void
+    {
+        $session = $this->makeSession();
+        $chiaSe = $this->student(now()->addMonth());
+        $binhThuong = $this->student(now()->addMonth());
+
+        // Một tài khoản vào từ 2 mạng khác nhau = dấu hiệu chia sẻ link.
+        $this->actingAs($chiaSe)->withServerVariables(['REMOTE_ADDR' => '198.51.100.1'])
+            ->get(route('classes.join', $session));
+        $this->actingAs($chiaSe)->withServerVariables(['REMOTE_ADDR' => '203.0.113.77'])
+            ->get(route('classes.join', $session));
+        $this->actingAs($binhThuong)->withServerVariables(['REMOTE_ADDR' => '198.51.100.2'])
+            ->get(route('classes.join', $session));
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.class-sessions.joins', $session))
+            ->assertOk()
+            ->assertSee('198.51.100.1')
+            ->assertSee('203.0.113.77')
+            ->assertSee('Vào từ 2 mạng khác nhau', false);
+    }
+
+    public function test_class_page_shows_the_rules(): void
+    {
+        $this->actingAs($this->student(now()->addMonth()))
+            ->get(route('classes.index'))
+            ->assertOk()
+            ->assertSee('Nội quy lớp học online')
+            ->assertSee('đều được ghi lại', false);
+    }
+
     public function test_invite_list_defaults_to_account_email(): void
     {
         // Không khai Gmail riêng → vẫn được mời bằng email tài khoản.
