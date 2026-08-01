@@ -38,7 +38,7 @@ return new class extends Migration
             $table->string('payos_link_id')->nullable();
             $table->timestamp('paid_at')->nullable();
 
-            // Dữ liệu phụ: ngày thứ 7 buổi hướng dẫn, id bài cần chấm, kỹ năng…
+            // Dữ liệu phụ: id bài cần chấm, kỹ năng, link thanh toán…
             $table->json('meta')->nullable();
 
             $table->timestamps();
