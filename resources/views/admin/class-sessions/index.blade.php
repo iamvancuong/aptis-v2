@@ -54,7 +54,7 @@
                 </p>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-xs">
-                        <tbody class="divide-y divide-red-200">
+                        <tbody class="divide-y divide-gray-200">
                             @foreach($emailHong as $r)
                                 <tr>
                                     <td class="py-1.5 pr-4 font-medium text-gray-800 whitespace-nowrap">{{ $r['user']->name }}</td>
@@ -77,11 +77,11 @@
         @if($canGoBo->isNotEmpty())
             {{-- Người hết hạn nhưng vẫn nằm trong lời mời Calendar cũ: họ có link
                  trong lịch nên vào Meet thẳng, KHÔNG qua cổng web. Phải gỡ tay. --}}
-            <div class="mt-3 p-3 bg-orange-50 border border-orange-300 rounded-lg"
+            <div class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg"
                  x-data="{ copied: false, list: @js($canGoBo->map->classInviteEmail()->unique()->values()->implode(', ')) }">
                 <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
                     <div>
-                        <p class="text-xs font-bold text-orange-900">
+                        <p class="text-xs font-bold text-orange-800">
                             {{ $canGoBo->count() }} người đã hết hạn — cần GỠ khỏi lời mời Calendar
                         </p>
                         <p class="text-xs text-orange-800 mt-1">
@@ -100,12 +100,12 @@
 
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-xs">
-                        <tbody class="divide-y divide-orange-200">
+                        <tbody class="divide-y divide-gray-200">
                             @foreach($canGoBo as $u)
                                 <tr>
                                     <td class="py-1.5 pr-4 font-medium text-gray-800 whitespace-nowrap">{{ $u->name }}</td>
                                     <td class="py-1.5 pr-4 font-mono text-orange-800 whitespace-nowrap">{{ $u->classInviteEmail() }}</td>
-                                    <td class="py-1.5 text-gray-600 whitespace-nowrap tabular-nums">hết hạn {{ $u->expires_at->format('d/m/Y') }}</td>
+                                    <td class="py-1.5 text-gray-600 whitespace-nowrap" style="font-variant-numeric: tabular-nums">hết hạn {{ $u->expires_at->format('d/m/Y') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -114,7 +114,7 @@
 
                 <form action="{{ route('admin.class-sessions.invite-synced') }}" method="POST" class="mt-3">
                     @csrf
-                    <button type="submit" class="text-xs font-medium text-orange-900 underline hover:no-underline">
+                    <button type="submit" class="text-xs font-medium text-orange-800 underline hover:no-underline">
                         Tôi đã gỡ xong — ẩn danh sách này đi
                     </button>
                     <span class="text-xs text-orange-700 ml-2">

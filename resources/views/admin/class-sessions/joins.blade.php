@@ -46,7 +46,7 @@
                                 </x-badge>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 tabular-nums">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700" style="font-variant-numeric: tabular-nums">
                             {{ $join->created_at->format('H:i:s d/m/Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
