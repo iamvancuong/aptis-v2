@@ -23,7 +23,7 @@
 >
 > ⏸️ **PENDING (chỉ làm khi bạn nhắc):**
 > - **Lớp online — Pha 1 (Google Calendar/Meet API tự sinh phòng)**. ✅ **Pha 0 ĐÃ CODE + đã lên `main`** (§23) — chạy được ngay với **Gmail free**; chỉ nâng Business Plus khi 1 buổi vượt ~100 người.
-> - **Chấm Nói (Speaking) bằng AI** — đã khảo sát, kế hoạch + chi phí §12.
+> - **Chấm Nói (Speaking) bằng AI** — 📄 plan chi tiết ở **`PLAN_CHAM_SPEAKING_AI.md`** (§12 đã lỗi thời). Số liệu: **2.537/2.540 bài Nói chưa ai chấm**.
 > - **Chấm Speaking (giáo viên) đang TẠM TẮT trong quảng cáo** (§19). Khi bật lại: thêm "Speaking" vào copy + làm nhãn Có phí/Miễn phí + vá "Chờ chấm" cho `/admin/speaking-reviews` (hiện mới làm cho Writing — §20/§21).
 
 ---
@@ -243,6 +243,12 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 ---
 
 ## 12. 🎤 CHẤM BÀI NÓI BẰNG AI — KHẢO SÁT & KẾ HOẠCH (⏸️ PENDING — chưa code, chỉ làm khi bạn nhắc)
+
+> 📄 **ĐỌC `PLAN_CHAM_SPEAKING_AI.md` TRƯỚC — mục này đã lỗi thời.** Plan mới (02/08/2026) có:
+> số liệu thật (**2.537/2.540 bài Nói chưa ai chấm**), giá API cập nhật, và quy trình 4 giai đoạn có cổng dừng.
+> ⚠️ Hai chỗ sai của §12: (1) khuyến nghị `whisper-1` — model này đã bị **GPT-Transcribe** (ra 28/07/2026)
+> thay thế; (2) ước tính chi phí **cao gấp ~6 lần** thực tế (~$0.03/bài → thật ra ~$0.005/bài).
+> Giữ §12 lại vì phần **hạ tầng đã có** và **cách làm 2 bước** vẫn đúng.
 
 **Kết luận khảo sát (26/07):** Khả thi cao, độ khó trung bình. Cái khó KHÔNG phải kỹ thuật (hạ tầng gần như có sẵn) mà là **độ chính xác chấm phát âm / độ trôi chảy** → định vị điểm AI là **NHÁP tham khảo, giáo viên xác nhận** (đúng triết lý dự án). Về cơ bản = **nhân bản luồng Writing AI + thêm bước xử lý âm thanh**.
 
