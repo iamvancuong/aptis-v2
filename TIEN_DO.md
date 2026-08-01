@@ -705,3 +705,21 @@ find /home/ujxmchhx -maxdepth 3 -name "robots.txt" -not -path "*/vendor/*" 2>/de
 
 ### ⬜ Để ngỏ từ lâu
 Đồng bộ tông màu khu học viên/admin với trang public · rà mobile tổng thể · Turbo SPA (§11).
+
+### 🧰 Trạng thái MÁY LOCAL (không nằm trong git — phiên mới cần biết)
+- **`.env` local đã đổi `SESSION_DRIVER=file` + `CACHE_STORE=file`** (trước là `database`).
+  Lý do: DB local trỏ host xa `103.221.223.60`, để `database` thì **mỗi lần tải trang đều query qua Internet**
+  → ~1s/request và thỉnh thoảng đứt kết nối (`SQLSTATE[HY000] [2002]`). Đổi xong còn ~0.11s.
+  Bản gốc lưu ở **`.env.backup-20260801`**. ⚠️ Chỉ ảnh hưởng máy local — production có `.env` riêng, vẫn `database`.
+- **DB "local" thực ra là DB TEST từ xa** `ujxmchhx_aptis_test_2026`@`103.221.223.60` — **không phải** production
+  (`ujxmchhx_aptis_v2`@`127.0.0.1`). Sửa dữ liệu ở đây KHÔNG đụng khách thật.
+- Trong DB test còn **2 buổi học `[DEMO]`** để thử giao diện. Xoá khi không cần:
+  `php artisan tinker --execute="\App\Models\ClassSession::where('title','like','[DEMO]%')->delete();"`
+- Chạy thử local: `php artisan serve --port=8010` (có sẵn `.claude/launch.json`).
+
+### 📄 Tài liệu hướng dẫn cho GIẢNG VIÊN (ngoài repo)
+Trang hướng dẫn cô Dung dùng lớp online + bảng giá gói Google Meet:
+**https://claude.ai/code/artifact/475bfb3d-10c4-4136-94c7-25aedca172c6**
+Nội dung: cài đặt một lần cho cả khoá (sự kiện Calendar lặp lại) · học viên thấy gì · xử lý trong lúc dạy ·
+bảng giá (Business Plus ~$22/tháng cho 500 người — **chỉ host trả tiền, học viên vào miễn phí**).
+> Sửa trang này thì bảo Claude cập nhật kèm đúng URL trên để giữ nguyên link đã gửi.
