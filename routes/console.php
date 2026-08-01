@@ -23,3 +23,11 @@ Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
 // Nhắc học viên trước giờ lớp online 60 phút. Mỗi buổi chỉ gửi một lần
 // (cột `class_sessions.reminder_sent_at`) nên chạy dày cũng không spam.
 Schedule::command('classes:remind')->everyFiveMinutes()->withoutOverlapping();
+
+// ⚠️ CỐ Ý ĐỂ TẮT. Dọn file ghi âm bài Nói cũ (hosting 30GB chia 21 web).
+// Lệnh này XOÁ AUDIO THẬT CỦA HỌC VIÊN và không khôi phục được, nên không tự
+// bật. Chạy thử trước rồi mới bỏ comment dòng dưới:
+//
+//   php artisan speaking:cleanup-audio --dry-run
+//
+// Schedule::command('speaking:cleanup-audio')->weeklyOn(1, '03:00')->withoutOverlapping();

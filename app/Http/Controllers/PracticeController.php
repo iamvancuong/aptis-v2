@@ -9,6 +9,7 @@ use App\Jobs\ProcessWritingGrading;
 use App\Services\AiService;
 use App\Services\GradingService;
 use App\Services\QuestionSanitizer;
+use App\Services\SpeakingAiDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +19,8 @@ class PracticeController extends Controller
     public function __construct(
         private GradingService $gradingService,
         private AiService $aiService,
-        private QuestionSanitizer $sanitizer
+        private QuestionSanitizer $sanitizer,
+        private SpeakingAiDispatcher $speakingAiDispatcher
     ) {}
 
     public function show(Set $set)
@@ -190,6 +192,13 @@ class PracticeController extends Controller
                         ]);
                     }
                 }
+            }
+
+            // Chấm Nói bằng AI — phải đứng SAU khối lưu audio ở trên, vì lúc
+            // `createMany` chạy thì cột `answer` còn rỗng; đẩy job sớm hơn thì
+            // job đọc ra một bài không có bản ghi nào.
+            if ($set->quiz->skill === 'speaking') {
+                $this->speakingAiDispatcher->dispatchFor($attempt, $user);
             }
 
             // For writing practice: dispatch AI grading jobs asynchronously

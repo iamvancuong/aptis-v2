@@ -34,6 +34,18 @@
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
                             ✅ Điểm: {{ number_format($answer->score ?? 0, 1) }}/10
                         </span>
+                    @elseif($answer->grading_status === 'ai_graded')
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
+                            🤖 AI chấm nháp: {{ number_format($answer->score ?? 0, 1) }}/10
+                        </span>
+                    @elseif($answer->grading_status === 'ai_failed')
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                            ⚠️ Chấm tự động chưa xong
+                        </span>
+                    @elseif($answer->grading_status === 'limit_reached')
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                            Đã hết lượt chấm AI
+                        </span>
                     @else
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
                             ⏳ Chờ giảng viên chấm
@@ -127,6 +139,101 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Nhận xét của AI (nháp tham khảo) --}}
+                @php
+                    $ai = $answer->ai_metadata['feedback'] ?? null;
+                    $aiError = $answer->ai_metadata['error'] ?? null;
+                    $aiTranscript = $answer->ai_metadata['transcript'] ?? null;
+                    $criteriaLabels = [
+                        'task_fulfillment' => 'Trả lời đúng yêu cầu',
+                        'vocabulary' => 'Từ vựng',
+                        'grammar' => 'Ngữ pháp',
+                        'coherence' => 'Mạch lạc',
+                    ];
+                @endphp
+
+                @if($ai)
+                    <div class="p-6 bg-amber-50 border-t border-amber-100">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold shadow-sm">
+                                AI
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-bold text-amber-800 mb-1">Nhận xét tự động (bản nháp)</h3>
+
+                                {{-- Công bố giới hạn: cách chấm này đọc lời nói đã được
+                                     chuyển thành chữ, nên không nghe được cách phát âm. --}}
+                                <div class="bg-white p-3 rounded-lg border border-amber-200 text-sm text-gray-700 mb-4">
+                                    <p class="font-semibold text-gray-900 mb-1">Bản nháp này đánh giá được gì?</p>
+                                    <p>Máy đọc <strong>nội dung</strong> bài nói của bạn: trả lời đúng yêu cầu chưa, từ vựng, ngữ pháp, mạch lạc.</p>
+                                    <p class="mt-1"><strong>Máy KHÔNG chấm phát âm và độ trôi chảy</strong> — hai mục này phải do giảng viên nghe trực tiếp mới đánh giá được. Điểm dưới đây là <strong>nháp tham khảo</strong>, không phải điểm cuối cùng.</p>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                                    @foreach($criteriaLabels as $key => $label)
+                                        <div class="bg-white p-3 rounded-lg border border-gray-200">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">{{ $label }}</span>
+                                                <span class="text-sm font-black text-amber-700">{{ $ai['scores'][$key] ?? 0 }}/5</span>
+                                            </div>
+                                            @if(!empty($ai['feedback'][$key]))
+                                                <p class="text-sm text-gray-700 leading-relaxed">{{ $ai['feedback'][$key] }}</p>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                @if(!empty($ai['improved_sample']))
+                                    <div class="mb-4">
+                                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Gợi ý nói hay hơn</h4>
+                                        <div class="bg-white p-4 rounded-lg border border-gray-200 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{{ $ai['improved_sample'] }}</div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($ai['key_mistakes']))
+                                    <div class="mb-4">
+                                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Lỗi cần chú ý</h4>
+                                        <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
+                                            @foreach($ai['key_mistakes'] as $item)
+                                                <li>{{ $item }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+
+                                @if(!empty($ai['suggestions']))
+                                    <div class="mb-4">
+                                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Gợi ý cải thiện</h4>
+                                        <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
+                                            @foreach($ai['suggestions'] as $item)
+                                                <li>{{ $item }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+
+                                @if($aiTranscript)
+                                    {{-- Để học viên tự đối chiếu: máy nghe ra sai thì nhận xét
+                                         phía trên cũng lệch theo, và họ cần biết điều đó. --}}
+                                    <details class="bg-white rounded-lg border border-gray-200">
+                                        <summary class="px-4 py-2 text-sm font-semibold text-gray-700 cursor-pointer">Xem máy nghe được gì từ bản ghi của bạn</summary>
+                                        <div class="px-4 pb-4 pt-1 text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{{ $aiTranscript }}</div>
+                                        <p class="px-4 pb-3 text-xs text-gray-500">Nếu đoạn này khác nhiều với điều bạn đã nói, nghĩa là máy nghe nhầm — hãy bỏ qua nhận xét tự động và chờ giảng viên.</p>
+                                    </details>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @elseif($aiError)
+                    <div class="p-6 bg-gray-50 border-t border-gray-200">
+                        <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Chấm tự động chưa hoàn tất:</span>
+                            {{ $aiError['message'] ?? 'Chấm tự động chưa hoàn tất cho phần này.' }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">Lượt chấm AI của bạn không bị trừ. Bài vẫn nằm trong danh sách chờ giảng viên chấm.</p>
+                    </div>
+                @endif
 
                 {{-- Teacher Feedback (Bottom) --}}
                 @if($answer->grading_status === 'graded' && $answer->feedback)

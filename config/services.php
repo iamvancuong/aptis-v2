@@ -37,6 +37,14 @@ return [
     
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
+
+        // Model phiên âm bài Nói. Để trong env vì tên/giá model OpenAI đổi rất
+        // nhanh — đổi được bằng 1 dòng .env thay vì phải sửa code rồi deploy lại.
+        'transcribe_model' => env('OPENAI_TRANSCRIBE_MODEL', 'gpt-4o-mini-transcribe'),
+
+        // Công tắc tắt nhanh chấm Nói bằng AI mà không cần gỡ code.
+        // Tắt = bài mới rơi về luồng giáo viên chấm tay như trước.
+        'speaking_ai_enabled' => env('SPEAKING_AI_ENABLED', true),
     ],
 
 ];

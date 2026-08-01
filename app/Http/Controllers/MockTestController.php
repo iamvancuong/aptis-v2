@@ -7,6 +7,7 @@ use App\Models\Quiz;
 use App\Models\Set;
 use App\Services\GradingService;
 use App\Services\QuestionSanitizer;
+use App\Services\SpeakingAiDispatcher;
 use App\Jobs\ProcessWritingGrading;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +17,8 @@ class MockTestController extends Controller
 {
     public function __construct(
         private GradingService $gradingService,
-        private QuestionSanitizer $sanitizer
+        private QuestionSanitizer $sanitizer,
+        private SpeakingAiDispatcher $speakingAiDispatcher
     ) {}
 
     /**
@@ -367,6 +369,12 @@ class MockTestController extends Controller
                     }
                 }
             }
+        }
+
+        // Bài Nói: chấm AI tự động (phiên âm → chấm transcript). Điểm AI là nháp
+        // tham khảo, giáo viên chấm tay vẫn ghi đè được.
+        if ($mockTest->skill === 'speaking') {
+            $this->speakingAiDispatcher->dispatchFor($attempt, auth()->user());
         }
 
         // Update mock test
