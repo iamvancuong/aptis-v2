@@ -1,7 +1,8 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · việc tồn: **§26** · **127 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · **(T) chấm Nói bằng AI đã code, CHỜ DEPLOY — §27** ·
+> việc tồn: **§26** · **146 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -22,9 +23,14 @@
 > - **M là bản vá lỗi hiển thị đang ảnh hưởng học viên thật** (quay lại câu đã làm → báo sai toàn bộ). Ưu tiên lên sớm; không cần migrate/build.
 > - 🔴 `config/sales.php` đã điền tên thật (M1 = Nguyệt Anh, M2 = Trinh). 4 link gửi sale: `/dk/M1|M2/thang|tuan`; admin copy ở `/admin/revenue`.
 >
+> 🔴 **(T) CHẤM NÓI BẰNG AI — đã code, CHƯA DEPLOY. Đọc §27 trước khi lên.**
+> - **CÓ MIGRATION** (`speaking_ai_usages`) → bắt buộc `php artisan migrate --force`. Không cần `npm run build`.
+> - ⚠️ **Đã bỏ qua cả 3 cổng dừng** của `PLAN_CHAM_SPEAKING_AI.md` theo yêu cầu — chưa ai kiểm host có gọi
+>   được `api.openai.com` không. **Sau khi deploy phải tự nộp thử 1 bài Nói** rồi xem kết quả (§27).
+> - Hỏng thì tắt ngay bằng `.env`: `SPEAKING_AI_ENABLED=false` (không cần deploy lại).
+>
 > ⏸️ **PENDING (chỉ làm khi bạn nhắc):**
 > - **Lớp online — Pha 1 (Google Calendar/Meet API tự sinh phòng)**. ✅ **Pha 0 ĐÃ CODE + đã lên `main`** (§23) — chạy được ngay với **Gmail free**; chỉ nâng Business Plus khi 1 buổi vượt ~100 người.
-> - **Chấm Nói (Speaking) bằng AI** — 📄 plan chi tiết ở **`PLAN_CHAM_SPEAKING_AI.md`** (§12 đã lỗi thời). Số liệu: **2.537/2.540 bài Nói chưa ai chấm**.
 > - **Chấm Speaking (giáo viên) đang TẠM TẮT trong quảng cáo** (§19). Khi bật lại: thêm "Speaking" vào copy + làm nhãn Có phí/Miễn phí + vá "Chờ chấm" cho `/admin/speaking-reviews` (hiện mới làm cho Writing — §20/§21).
 
 ---
@@ -716,6 +722,92 @@ find /home/ujxmchhx -maxdepth 3 -name "robots.txt" -not -path "*/vendor/*" 2>/de
 - Trong DB test còn **2 buổi học `[DEMO]`** để thử giao diện. Xoá khi không cần:
   `php artisan tinker --execute="\App\Models\ClassSession::where('title','like','[DEMO]%')->delete();"`
 - Chạy thử local: `php artisan serve --port=8010` (có sẵn `.claude/launch.json`).
+
+---
+
+## 27. 🎤 PHIÊN 02/08/2026 (T) — CHẤM NÓI BẰNG AI (đã code, chờ deploy)
+
+Bối cảnh, số liệu và rủi ro: **`PLAN_CHAM_SPEAKING_AI.md`**. Mục này chỉ ghi phần đã cài đặt.
+
+### Quyết định khung (chủ dự án chốt)
+- **Cách (A)**: audio → phiên âm → chấm transcript. Rẻ (~130đ/bài) nhưng **không chấm được
+  phát âm và độ trôi chảy** — giới hạn này được nói thẳng cho học viên, không giấu.
+- **Miễn phí theo credit**, học viên thấy điểm ngay. Không bán riêng.
+- **Chỉ chấm bài nộp mới.** 2.537 bài tồn giữ nguyên — KHÔNG có command backfill, cố ý.
+- Điểm AI là **nháp**; giáo viên chấm tay luôn ghi đè.
+
+### ⚠️ Đã bỏ qua cả 3 cổng dừng của plan
+Chưa ai kiểm: host có gọi ra `api.openai.com` được không · phiên âm giọng Việt chính xác
+bao nhiêu % · điểm AI lệch điểm cô Dung bao nhiêu. Bù lại bằng thiết kế "hỏng thì hiện ra"
+(dưới) + **công tắc tắt nóng**, nhưng đó không thay được việc đo thật.
+
+### File mới
+`app/Services/SpeakingAiDispatcher.php` (đẩy job + luật credit, dùng chung 2 controller) ·
+`app/Jobs/ProcessSpeakingGrading.php` · `app/Exceptions/AiGradingException.php` ·
+`app/Models/SpeakingAiUsage.php` · `app/Console/Commands/CleanupSpeakingAudio.php` ·
+`resources/views/prompts/speaking_{system,user}.blade.php` ·
+`database/migrations/2026_08_02_000005_create_speaking_ai_usages_table.php` ·
+`scripts/speaking_ai_probe.php` (script rời đo GĐ1+GĐ2, **không phải code production**) ·
+2 file test.
+
+### Sửa
+`AiService` (+`transcribe`, `gradeSpeaking`, `classifyHttpFailure`, chuẩn hoá kết quả) ·
+`User` (+credit Nói, có cả **hoàn lượt**) · `MockTestController`/`PracticeController` (đẩy job) ·
+`Admin/SpeakingReviewController` (vá lọc "Chờ chấm") · `history/speaking-show` +
+`admin/speaking-reviews/show` (hiển thị) · `policy/refund` (điều khoản) · `config/services` ·
+`phpunit.xml` · `routes/console.php`.
+
+### Những chỗ dễ sai đã xử lý sẵn
+- **Lỗi TẠM vs VĨNH VIỄN.** 429/5xx/mạng → ném ra cho queue thử lại (3 lượt, giãn 30s/120s).
+  File hỏng, quá 25MB, key sai, không có tiếng nói → **dừng ngay**, ghi `ai_failed` + câu tiếng
+  Việt cho học viên. Gộp làm một thì key sai cũng phải chờ hết 3 lượt mới báo.
+- **Không bao giờ treo "đang chờ" im lặng.** Mọi nhánh hỏng đều ghi trạng thái ra DB, giao diện
+  nói rõ. Đây là hàng rào thay cho cổng GĐ1 chưa chạy: host mà chặn outbound thì học viên
+  **thấy báo lỗi**, không phải nộp bài rồi chờ mãi.
+- **Hoàn lượt khi AI hỏng hẳn** (`User::refundSpeakingAiUsage`). Lượt bị trừ lúc nộp để hai bài
+  liên tiếp không tiêu chung một lượt; hỏng mà vẫn giữ lượt là lấy không của học viên.
+- **Không phiên âm lại khi retry.** Transcript ghi xuống DB ngay khi có, TRƯỚC bước chấm —
+  nếu không, bước chấm hỏng sẽ khiến lượt sau trả tiền phiên âm lần hai cho cùng một file.
+- **Dispatcher không bao giờ ném lỗi ra ngoài.** Nó chạy trong cùng transaction với việc lưu
+  bài làm; queue trục trặc mà làm rollback thì học viên mất trắng công thu âm.
+- **`->afterCommit()`** — job chỉ chạy sau khi transaction commit, tránh job đọc bài chưa tồn tại.
+- **Khoá dòng attempt khi tính lại điểm tổng** — các phần chấm song song, không khoá thì hai job
+  ghi đè nhau.
+- **Vá lại đúng bẫy §21 cho Speaking**: "Chờ chấm" giờ hiểu là *chưa có giáo viên chấm*
+  (`whereNotIn ['graded','manually_graded']`). Không vá thì bài đã trả 99k sẽ biến mất khỏi danh
+  sách ngay khi AI chấm xong. Có test theo 4 trạng thái.
+- **Prompt được dặn về phiên âm sai giọng Việt**: từ nào nghe lệch mà có từ gần giống hợp nghĩa
+  thì coi là máy nghe nhầm, không trừ điểm học viên. Cũng cấm nhận xét phát âm/trôi chảy.
+- **`phpunit.xml` đã che `OPENAI_API_KEY`** — thiếu dòng này thì máy nào có key thật trong `.env`
+  sẽ gọi API thật và bị tính tiền mỗi lần chạy test.
+
+### Trạng thái `grading_status` của bài Nói
+`pending` (chưa ai chấm) · `ai_graded` (AI xong, chờ giáo viên) · `graded` (giáo viên chốt) ·
+`ai_failed` (AI hỏng hẳn, đã hoàn lượt) · `limit_reached` (hết lượt AI).
+**Chỉ `graded` mới là điểm chính thức.**
+
+### Công tắc tắt nóng
+`.env`: `SPEAKING_AI_ENABLED=false` → bài mới về lại luồng giáo viên chấm tay, không cần deploy.
+Đổi model phiên âm: `OPENAI_TRANSCRIBE_MODEL=` (mặc định `gpt-4o-mini-transcribe`).
+
+### 🔴 Việc còn lại của mục này
+- **`speaking:cleanup-audio` CHƯA BẬT CRON — cố ý.** Lệnh xoá audio thật, không khôi phục được.
+  Dòng schedule đã viết sẵn nhưng **để comment** trong `routes/console.php`.
+  Chạy `php artisan speaking:cleanup-audio --dry-run` trước, rồi mới bỏ comment.
+- Vẫn nên chạy `scripts/speaking_ai_probe.php` + đối chiếu 10 bài với cô Dung (cổng GĐ2).
+- Khi bật lại quảng cáo chấm Speaking của **giáo viên** (§19): còn thiếu nhãn Có phí/Miễn phí
+  cho `/admin/speaking-reviews` (Writing đã làm ở §20).
+
+**Kiểm chứng:** `SpeakingAiGradingTest` (14 ca — chủ yếu nhánh hỏng: mất file, không có tiếng nói,
+401, quá 25MB, JSON hỏng, 500 phải retry, không ghi đè điểm giáo viên, không phiên âm lại,
+hết lượt, phần trống không bị trừ lượt, công tắc tắt) + `SpeakingReviewQueueTest` (5 ca).
+**Tổng 146 pass** (trước phiên này 127).
+
+**Deploy:** **CẦN `php artisan migrate --force`** (bảng `speaking_ai_usages`).
+**KHÔNG cần `npm run build`** — đã đối chiếu từng class Tailwind mới với `public/build/assets/app-*.css`,
+không thiếu class nào (bẫy §25).
+
+---
 
 ### 📄 Tài liệu hướng dẫn cho GIẢNG VIÊN (ngoài repo)
 Trang hướng dẫn cô Dung dùng lớp online + bảng giá gói Google Meet:

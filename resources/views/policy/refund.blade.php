@@ -29,6 +29,21 @@
             <li>Thông tin đăng nhập được gửi về email đã đăng ký — vui lòng kiểm tra kỹ email.</li>
         </ul>
 
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <h2 class="font-bold text-slate-900 mb-2">Xử lý bài làm khi chấm tự động</h2>
+            <p>
+                Bài Viết và bài Nói có thể được chấm tự động bằng công cụ trí tuệ nhân tạo của
+                bên thứ ba (OpenAI). Với bài Nói, <strong>bản ghi âm giọng của học viên được gửi
+                tới dịch vụ này</strong> để chuyển thành văn bản rồi nhận xét. Dữ liệu chỉ dùng cho
+                mục đích chấm bài, không dùng để nhận dạng danh tính và không chia sẻ cho bên nào khác.
+            </p>
+            <p class="mt-2">
+                Điểm do máy chấm là <strong>bản nháp tham khảo</strong>, không phải điểm chính thức.
+                Máy đánh giá nội dung, từ vựng, ngữ pháp và mạch lạc; <strong>không đánh giá phát âm
+                và độ trôi chảy</strong> — hai mục này do giảng viên nghe trực tiếp.
+            </p>
+        </div>
+
         <p class="text-slate-500">
             Nếu có thắc mắc về giao dịch, vui lòng liên hệ Milaedu qua thông tin ở chân trang.
         </p>

@@ -198,7 +198,65 @@
                                                     @endif
                                                 @endforeach
                                             </div>
-                                            
+
+                                            {{-- Phần riêng của chấm NÓI (schema speaking, có `not_assessed`).
+                                                 Panel gốc phía trên viết cho Writing: nó đọc `part_responses`
+                                                 mà bài Nói không có, nên phần dưới đây bù đúng những gì thiếu. --}}
+                                            @if(!empty($aiFeedback['not_assessed']))
+                                                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+                                                    <span class="font-bold">Máy chỉ đọc transcript.</span>
+                                                    Điểm trên KHÔNG bao gồm phát âm và độ trôi chảy — hai mục đó cần cô nghe trực tiếp.
+                                                    Học viên cũng được báo đúng như vậy.
+                                                </div>
+
+                                                @if(!empty($ans->ai_metadata['transcript']))
+                                                    <div>
+                                                        <div class="text-xs font-bold text-gray-500 uppercase mb-2">Máy nghe được</div>
+                                                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{{ $ans->ai_metadata['transcript'] }}</div>
+                                                        <p class="text-xs text-gray-500 mt-1">Lệch nhiều với bản ghi thật → nhận xét của máy cũng lệch theo, bỏ qua và chấm tay.</p>
+                                                    </div>
+                                                @endif
+
+                                                @php
+                                                    $speakingLabels = [
+                                                        'task_fulfillment' => 'Trả lời đúng yêu cầu',
+                                                        'vocabulary' => 'Từ vựng',
+                                                        'grammar' => 'Ngữ pháp',
+                                                        'coherence' => 'Mạch lạc',
+                                                    ];
+                                                @endphp
+                                                @if(!empty(array_filter($aiFeedback['feedback'] ?? [])))
+                                                    <div class="space-y-2">
+                                                        @foreach($speakingLabels as $key => $label)
+                                                            @if(!empty($aiFeedback['feedback'][$key]))
+                                                                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                                                    <div class="text-xs font-bold text-gray-500 uppercase mb-1">{{ $label }}</div>
+                                                                    <div class="text-sm text-gray-700 leading-relaxed">{{ $aiFeedback['feedback'][$key] }}</div>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+
+                                                @if(!empty($aiFeedback['improved_sample']))
+                                                    <div>
+                                                        <div class="text-xs font-bold text-gray-500 uppercase mb-2">Bài mẫu tham khảo</div>
+                                                        <div class="text-sm text-indigo-900 bg-indigo-50 p-4 rounded-lg font-medium leading-relaxed whitespace-pre-wrap">{{ $aiFeedback['improved_sample'] }}</div>
+                                                    </div>
+                                                @endif
+
+                                                @if(!empty($aiFeedback['key_mistakes']))
+                                                    <div>
+                                                        <div class="text-xs font-bold text-gray-500 uppercase mb-2">Lỗi chính</div>
+                                                        <ul class="list-disc pl-5 text-gray-700 space-y-1 text-xs">
+                                                            @foreach($aiFeedback['key_mistakes'] as $mistake)
+                                                                <li>{{ $mistake }}</li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                @endif
+                                            @endif
+
                                             {{-- Detailed Feedback --}}
                                             @if($schemaVersion >= 3 && !empty($aiFeedback['part_responses']))
                                                 <div class="space-y-4">

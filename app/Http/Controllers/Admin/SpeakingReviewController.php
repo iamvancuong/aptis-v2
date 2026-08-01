@@ -31,14 +31,16 @@ class SpeakingReviewController extends Controller
             });
         }
 
+        // "Chờ chấm" = còn phần GIÁO VIÊN chưa chấm, chứ không phải còn phần ở
+        // trạng thái 'pending'. Từ khi có chấm AI, một bài đã trả phí chấm tay
+        // sẽ chuyển sang 'ai_graded' và biến mất khỏi danh sách nếu lọc theo
+        // 'pending' — đúng bằng lỗi đã gặp ở trang Writing (TIEN_DO §21).
+        $needsTeacher = fn ($q) => $q->whereNotIn('grading_status', ['graded', 'manually_graded']);
+
         if ($filter === 'pending') {
-            $query->whereHas('attemptAnswers', function ($q) {
-                $q->whereIn('grading_status', ['pending']);
-            });
+            $query->whereHas('attemptAnswers', $needsTeacher);
         } elseif ($filter === 'graded') {
-            $query->whereDoesntHave('attemptAnswers', function ($q) {
-                $q->whereIn('grading_status', ['pending']);
-            });
+            $query->whereDoesntHave('attemptAnswers', $needsTeacher);
         }
 
         // Filter by user expiration

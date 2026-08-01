@@ -179,4 +179,75 @@ class User extends Authenticatable
 
         $usage->increment('usage_count');
     }
+
+    /**
+     * AI Speaking Credit Helpers
+     *
+     * Đếm riêng khỏi Writing (bảng riêng + `speaking_ai_reset_version` riêng),
+     * nhưng dùng chung hạn mức `default_ai_limit` — nghĩa là học viên có N lượt
+     * Writing VÀ N lượt Speaking, không phải N lượt gộp.
+     *
+     * Trả về int chứ không phải int|string như bản Writing: bản Writing trả
+     * chuỗi 'unlimited' cho admin, khiến chỗ gọi phải so sánh `$credits > 0`
+     * giữa string và int — chạy đúng chỉ nhờ luật ép kiểu của PHP. Ở đây admin
+     * nhận PHP_INT_MAX nên mọi so sánh số học đều đúng nghĩa đen.
+     */
+    public function speakingAiUsages()
+    {
+        return $this->hasMany(SpeakingAiUsage::class);
+    }
+
+    public function getRemainingSpeakingAiCredits(): int
+    {
+        if ($this->isAdmin()) {
+            return PHP_INT_MAX;
+        }
+
+        $resetVersion = $this->speaking_ai_reset_version ?? 0;
+        $used = (int) $this->speakingAiUsages()
+            ->where('reset_version', $resetVersion)
+            ->sum('usage_count');
+
+        $defaultLimit = (int) (\App\Models\Setting::where('key', 'default_ai_limit')->value('value') ?? 10);
+        $totalLimit = $defaultLimit + ($this->ai_extra_uses ?? 0);
+
+        return max(0, $totalLimit - $used);
+    }
+
+    public function recordSpeakingAiUsage(int $part): void
+    {
+        if ($this->isAdmin()) {
+            return;
+        }
+
+        $usage = $this->speakingAiUsages()->firstOrCreate([
+            'speaking_part' => $part,
+            'reset_version' => $this->speaking_ai_reset_version ?? 0,
+        ]);
+
+        $usage->increment('usage_count');
+    }
+
+    /**
+     * Trả lại lượt đã trừ khi AI hỏng hẳn.
+     *
+     * Lượt bị trừ ngay lúc nộp bài (trước khi job chạy) để hai bài nộp liên tiếp
+     * không cùng tiêu một lượt. Nhưng nếu job chết vĩnh viễn thì học viên không
+     * nhận được gì — giữ lượt đã trừ là lấy không của họ.
+     */
+    public function refundSpeakingAiUsage(int $part): void
+    {
+        if ($this->isAdmin()) {
+            return;
+        }
+
+        $usage = $this->speakingAiUsages()
+            ->where('speaking_part', $part)
+            ->where('reset_version', $this->speaking_ai_reset_version ?? 0)
+            ->first();
+
+        if ($usage && $usage->usage_count > 0) {
+            $usage->decrement('usage_count');
+        }
+    }
 }
