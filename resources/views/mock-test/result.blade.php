@@ -161,6 +161,8 @@
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Chấm tự động lỗi</span>
                             @elseif($partAnswer && $partAnswer->grading_status === 'limit_reached')
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Hết lượt AI</span>
+                            @elseif($mockTest->skill === 'speaking' && !\App\Support\SpeakingAudio::hasRecording($partAnswer->answer ?? null))
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Không ghi âm</span>
                             @else
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">Chờ chấm</span>
                             @endif

@@ -323,6 +323,61 @@ class SpeakingAiGradingTest extends TestCase
         $this->assertSame(0, (int) $student->speakingAiUsages()->sum('usage_count'));
     }
 
+    /**
+     * Luồng practice: `GradingService` gán 'graded' cho bài Nói khi mode khác
+     * 'mock_test' (nghĩa là "không cần máy chấm"), trùng tên với 'graded' của
+     * giáo viên. Dispatcher từng chỉ nhận đúng 'pending' nên practice KHÔNG BAO
+     * GIỜ được chấm — không ai phát hiện vì mock test vẫn chạy đúng.
+     */
+    public function test_bai_practice_bi_gan_graded_van_duoc_ai_cham(): void
+    {
+        Http::fake([
+            '*/audio/transcriptions' => Http::response(['text' => 'I come from Hanoi.']),
+            '*/chat/completions' => Http::response($this->fakeGradeBody()),
+        ]);
+
+        $student = $this->student();
+        $answer = $this->submittedAnswer($student, ['speaking_attempts/a.webm'], 'graded');
+
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+
+        // Queue chạy sync trong test nên job đã chạy xong ngay tại đây.
+        $this->assertSame('ai_graded', $answer->refresh()->grading_status);
+        $this->assertEquals(7.0, (float) $answer->score);
+    }
+
+    public function test_bai_giao_vien_da_cham_thi_khong_day_job_va_khong_tru_luot(): void
+    {
+        Http::fake();
+
+        $student = $this->student();
+        // Dấu hiệu của người chấm: 'graded' KÈM nhận xét.
+        $answer = $this->submittedAnswer($student, ['speaking_attempts/a.webm'], 'graded');
+        $answer->update(['feedback' => 'Em nói tốt, chú ý phát âm đuôi s.', 'score' => 8]);
+
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+
+        $answer->refresh();
+        $this->assertSame('graded', $answer->grading_status);
+        $this->assertEquals(8.0, (float) $answer->score);
+        $this->assertSame(0, (int) $student->speakingAiUsages()->sum('usage_count'));
+        Http::assertNothingSent();
+    }
+
+    public function test_khong_cham_lai_phan_da_co_ket_qua_ai(): void
+    {
+        Http::fake();
+
+        $student = $this->student();
+        $answer = $this->submittedAnswer($student);
+        $answer->update(['ai_metadata' => ['feedback' => ['scores' => []]]]);
+
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+
+        $this->assertSame(0, (int) $student->speakingAiUsages()->sum('usage_count'));
+        Http::assertNothingSent();
+    }
+
     public function test_cong_tac_tat_thi_khong_cham_ai(): void
     {
         config(['services.openai.speaking_ai_enabled' => false]);

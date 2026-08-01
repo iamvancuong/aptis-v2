@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\ProcessSpeakingGrading;
 use App\Models\Attempt;
 use App\Models\User;
+use App\Support\SpeakingAudio;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -36,13 +37,17 @@ class SpeakingAiDispatcher
             $remaining = $user->getRemainingSpeakingAiCredits();
 
             foreach ($attempt->attemptAnswers as $answer) {
-                if ($answer->grading_status !== 'pending' || !$answer->question) {
+                if (!$answer->question) {
                     continue;
                 }
 
                 // Không có bản ghi nào thì không gọi AI và cũng KHÔNG trừ lượt.
                 // Trừ lượt cho một phần trống là lấy không của học viên.
-                if (empty($answer->answer)) {
+                if (!SpeakingAudio::hasRecording($answer->answer)) {
+                    continue;
+                }
+
+                if ($this->alreadyHandled($answer)) {
                     continue;
                 }
 
@@ -52,6 +57,16 @@ class SpeakingAiDispatcher
                 }
 
                 $part = (int) $answer->question->part;
+
+                // Chuẩn hoá trạng thái trước khi đẩy job.
+                //
+                // `GradingService` gán 'graded' cho bài Nói ở mode practice (nghĩa là
+                // "không cần chấm máy"), trùng tên với 'graded' của giáo viên chấm tay.
+                // Job từ chối chạy trên 'graded' để không đè điểm người, nên nếu không
+                // đưa về 'pending' ở đây thì practice sẽ KHÔNG BAO GIỜ được AI chấm.
+                if ($answer->grading_status !== 'pending') {
+                    $answer->update(['grading_status' => 'pending']);
+                }
 
                 ProcessSpeakingGrading::dispatch($answer->id, [
                     'part'     => $part,
@@ -71,5 +86,25 @@ class SpeakingAiDispatcher
             // Bài không được chấm sẽ nằm ở trạng thái 'pending' — giáo viên vẫn
             // thấy trong danh sách chờ chấm, không mất đi đâu.
         }
+    }
+
+    /**
+     * Phần này đã có kết quả rồi — đừng chấm lại, đừng trừ thêm lượt.
+     *
+     * Không so trạng thái bằng một chuỗi cố định vì 'graded' mang hai nghĩa khác
+     * nhau (giáo viên đã chấm / practice không cần chấm máy). Dấu hiệu chắc chắn
+     * là ĐÃ CÓ kết quả: `ai_metadata` của máy, hoặc `feedback` của người.
+     */
+    protected function alreadyHandled(\App\Models\AttemptAnswer $answer): bool
+    {
+        if (!empty($answer->ai_metadata)) {
+            return true;
+        }
+
+        if (in_array($answer->grading_status, ['ai_graded', 'manually_graded', 'limit_reached'], true)) {
+            return true;
+        }
+
+        return $answer->grading_status === 'graded' && filled($answer->feedback);
     }
 }
