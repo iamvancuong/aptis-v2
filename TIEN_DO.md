@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 01/08/2026 · **A–K đã gộp vào `main`** · **104 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 01/08/2026 · **A–K đã gộp vào `main`** · **109 test pass** · deploy cPanel: xem 🟠 dưới.
 > ⚠️ `main` local đang **hơn `origin/main` 1 commit** (`c206496` — cập nhật TIEN_DO, chưa push). Nhớ `git push` trước khi deploy.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
@@ -482,9 +482,12 @@ Chống share tài khoản vẫn dựa vào `SessionLimit` (1 phiên/thiết b�
 1. **Tài khoản còn hạn** — đã có sẵn: middleware **`CheckAccountExpiration` chạy toàn cục cho mọi route web**, logout người hết hạn. `ClassSessionController@join` giữ thêm 1 lớp `isExpired()` làm lưới an toàn (gần như không chạy) vì đây là chỗ DUY NHẤT trả link ra ngoài.
    > 💡 Vì middleware này là toàn cục, **mọi UI kiểu "tài khoản bạn đã hết hạn" trong khu đăng nhập đều là code chết** — người hết hạn không bao giờ vào được trang đó. Đừng viết lại.
 2. **Buổi đang mở cửa** — `is_active` && `now()` trong `[starts_at − 15 phút, ends_at]`. Hằng số `ClassSession::JOIN_EARLY_MINUTES = 15`.
+   > ⚠️ **Giờ bắt đầu/kết thúc KHÔNG bắt buộc** (giảng viên không muốn chọn nhiều ô). Để trống = không giới hạn phía đó:
+   > `starts_at` null = mở ngay · `ends_at` null = không tự đóng · **cả hai null = "Mở tự do"**, lúc này `is_active` là công tắc bật/tắt duy nhất.
+   > Dùng `timeLabel()` / `isAlwaysOpen()` khi hiển thị — **đừng gọi thẳng `starts_at->format()`** vì có thể null.
 
 ### Dữ liệu & file
-- **Migration** `2026_08_01_000001_create_class_sessions_table` — `title` · `description` · `meet_link`(500) · `starts_at` · `ends_at` · `is_active`; index `(is_active, starts_at)`.
+- **Migration** `2026_08_01_000001_create_class_sessions_table` — `title` · `description` · `meet_link`(500) · `starts_at`(nullable) · `ends_at`(nullable) · `is_active`; index `(is_active, starts_at)`.
 - **Model** `app/Models/ClassSession.php` — `isJoinable()` / `isLive()` / `isUpcoming()` / `hasEnded()` / `statusLabel()` / scope `visibleToStudents()` (đang bật + chưa kết thúc).
 - **Admin** `Admin/ClassSessionController` (resource, trừ `show`) + views `admin/class-sessions/{index,create,edit,_form}` → nav **"Lớp online"** ở `layouts/admin`. Validate `ends_at` phải sau `starts_at`.
 - **Học viên** `ClassSessionController` (`index` + `join`) · view `class-sessions/index` · nav **"Lớp học"** ở `layouts/app` · **card "lớp sắp tới / đang diễn ra"** trên `dashboard` (`DashboardController` thêm `$nextClass`).
@@ -495,7 +498,7 @@ Pha 0 **chạy được ngay bằng Gmail FREE**: trần **100 người/phòng**
 **Nâng Business Plus (~$22/host·tháng, 500 người) chỉ là đổi link được dán — KHÔNG sửa một dòng code nào.** Chỉ nâng khi 1 buổi thật sự chạm ~100 người hoặc cần buổi dài liên tục.
 
 ### Kiểm chứng
-`tests/Feature/ClassSessionJoinTest.php` (14 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 104 pass** (trước 90).
+`tests/Feature/ClassSessionJoinTest.php` (19 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 109 pass** (trước 90).
 
 **Bàn giao:** nhánh `feature/class-sessions` (từ `main`) — **chưa merge/push**. Deploy: **CẦN `php artisan migrate --force`** (có migration mới); **không cần `npm run build`** (chỉ Blade/PHP, dùng class Tailwind đã có).
 
