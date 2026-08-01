@@ -118,9 +118,16 @@
 <section class="bg-slate-50 border-y border-slate-100">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <a href="{{ route('about') }}" class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left group">
-            <span class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white text-3xl font-extrabold flex items-center justify-center shrink-0">
-                {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim(config('seo.instructor.name')), ' '), 0, 1)) }}
-            </span>
+            {{-- Có ảnh thật thì dùng ảnh; chưa có thì vẽ ô chữ cái đầu (SEO_INSTRUCTOR_PHOTO). --}}
+            @if(config('seo.instructor.photo'))
+                <img src="{{ config('seo.instructor.photo') }}" alt="{{ config('seo.instructor.name') }}"
+                     width="80" height="80" loading="lazy"
+                     class="w-20 h-20 rounded-2xl object-cover shrink-0">
+            @else
+                <span class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white text-3xl font-extrabold flex items-center justify-center shrink-0">
+                    {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim(config('seo.instructor.name')), ' '), 0, 1)) }}
+                </span>
+            @endif
             <div class="flex-1">
                 <h2 class="text-xl font-extrabold text-slate-900">Luyện thi Aptis cùng {{ config('seo.instructor.name') }}</h2>
                 <p class="text-slate-600 mt-1">{{ config('seo.instructor.bio') }}</p>

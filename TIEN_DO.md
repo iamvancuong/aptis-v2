@@ -232,7 +232,7 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 ## 11. 🔴 CẦN BẠN / VIỆC CÒN MỞ
 - ✅ **Lớp online Google Meet — Pha 0 đã code + đã push `main`** (§23).
   🔴 Cần bạn: **deploy lên cPanel** (có `migrate --force`), rồi tạo buổi đầu tiên ở `/admin/class-sessions` (dán link Meet từ Gmail free).
-  🔴 **Bật "phòng chờ" trong Meet** — bắt buộc. Web chỉ kiểm soát AI ĐƯỢC LẤY link; ai đã vào phòng vẫn copy link gửi ra ngoài được. Phòng chờ là hàng rào thứ hai (xem §23).
+  🔴 **TẮT "Truy cập nhanh" (Quick access) trong phòng Meet** — bắt buộc. Web chỉ kiểm soát AI ĐƯỢC LẤY link; ai đã vào phòng vẫn copy link gửi ra ngoài được. ⚠️ "Phòng chờ" đúng nghĩa là tính năng TRẢ PHÍ (Business Standard trở lên) — Gmail free phải dùng cách tắt Truy cập nhanh (xem §23).
   ⏸️ Pha 1 (Calendar API tự sinh phòng + `accessType=RESTRICTED` chặn tuyệt đối) vẫn chờ bạn nhắc.
 - **Nội dung thật (SEO):** bio THẬT của cô (sửa `config/seo.php` hoặc env `SEO_INSTRUCTOR_BIO`) · testimonial + số liệu thật (hiện KHÔNG bịa) · ảnh giảng viên thật (đang dùng ô chữ "D").
 - **Off-page SEO:** Google Search Console (submit sitemap) · Google Business Profile · backlink.

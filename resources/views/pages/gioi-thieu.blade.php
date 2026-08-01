@@ -51,9 +51,15 @@
 <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <div class="grid md:grid-cols-3 gap-10 items-start">
         <div class="md:col-span-1">
-            <div class="aspect-square rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white flex items-center justify-center text-6xl font-extrabold shadow-lg">
-                {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim($gv['name']), ' '), 0, 1)) }}
-            </div>
+            {{-- Ảnh thật nếu đã khai SEO_INSTRUCTOR_PHOTO, chưa có thì ô chữ cái đầu. --}}
+            @if(!empty($gv['photo']))
+                <img src="{{ $gv['photo'] }}" alt="{{ $gv['name'] }} — {{ $gv['job_title'] }}"
+                     loading="lazy" class="aspect-square w-full rounded-2xl object-cover shadow-lg">
+            @else
+                <div class="aspect-square rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white flex items-center justify-center text-6xl font-extrabold shadow-lg">
+                    {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim($gv['name']), ' '), 0, 1)) }}
+                </div>
+            @endif
             <p class="mt-4 text-center font-bold text-slate-900 text-lg">{{ $gv['name'] }}</p>
             <p class="text-center text-sm text-slate-500">{{ $gv['job_title'] }}</p>
         </div>

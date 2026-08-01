@@ -31,7 +31,10 @@
             'description' => $instructor['bio'],
             'worksFor'    => ['@id' => $url . '/#org'],
             'knowsAbout'  => ['Aptis', 'Aptis Speaking', 'Aptis Writing'],
-        ],
+            // Chỉ khai `image` khi có ảnh THẬT — khai ảnh placeholder là dữ liệu sai.
+        ] + (!empty($instructor['photo']) ? ['image' => \Illuminate\Support\Str::startsWith($instructor['photo'], ['http://', 'https://'])
+                ? $instructor['photo']
+                : $url . '/' . ltrim($instructor['photo'], '/')] : []),
         [
             '@type'           => 'WebSite',
             '@id'             => $url . '/#website',
