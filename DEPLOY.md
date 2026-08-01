@@ -170,3 +170,32 @@ php artisan optimize:clear
 - **Email Gmail hay vào Spam** → nhắc khách kiểm Spam. Về lâu dài chuyển SendGrid/SES + SPF/DKIM (TIEN_DO §7 💡).
 - **Buổi học online** đã gỡ — bản này chỉ bán tài khoản. Muốn lớp online sau → làm Google Meet (TIEN_DO §11, pending).
 - **Chấm bài Nói AI** — pending (TIEN_DO §12).
+
+---
+
+## ⚠️ BẪY: `git reset --hard` KHÔNG xoá file untracked
+
+Quy trình deploy dùng `git reset --hard origin/main`. Lệnh này chỉ đưa **file được git theo dõi**
+về đúng trạng thái — **file lạ nằm sẵn trên server thì giữ nguyên vĩnh viễn**.
+
+**Đã dính thật:** `public/robots.txt` bị xoá khỏi repo từ phiên 26/07 (để route động
+`Route::get('/robots.txt')` chạy), nhưng bản tĩnh cũ vẫn nằm trên server. Web server ưu tiên
+file tĩnh nên route Laravel **không bao giờ được gọi** — suốt nhiều tháng `milaedu.com/robots.txt`
+chỉ trả `Disallow:` trống, mất dòng khai báo `Sitemap:` và không chặn `/admin`, `/dashboard`.
+Phát hiện ngày 02/08/2026 khi kiểm tra sau deploy.
+
+**Kiểm tra sau mỗi lần deploy** — xem có file lạ nào không:
+```
+cd /home/ujxmchhx/repositories/aptis-v2 && git clean -nd
+```
+`-n` là **chạy thử, không xoá gì**. Xem danh sách rồi xoá tay từng file thừa.
+
+> 🚫 **TUYỆT ĐỐI không chạy `git clean -fdx`.** Cờ `-x` xoá cả file bị gitignore —
+> tức là xoá luôn **`.env`** (mất khoá PayOS, mật khẩu DB) và **`public/build`** (mất toàn bộ CSS/JS).
+> Website sẽ chết ngay lập tức.
+
+**Kiểm tra nhanh sau deploy** (route động có bị file tĩnh che không):
+```
+curl -s https://milaedu.com/robots.txt | head -3   # phải thấy "Allow: /" và các dòng Disallow
+curl -s https://milaedu.com/sitemap.xml | head -2  # phải là XML
+```
