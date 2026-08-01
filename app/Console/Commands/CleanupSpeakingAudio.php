@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\AttemptAnswer;
+use App\Support\SpeakingAudio;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -118,34 +119,12 @@ class CleanupSpeakingAudio extends Command
             ->select(['id', 'answer'])
             ->chunkById(500, function ($answers) use (&$protected) {
                 foreach ($answers as $answer) {
-                    foreach ($this->pathsOf($answer->answer) as $path) {
+                    foreach (SpeakingAudio::pathsOf($answer->answer) as $path) {
                         $protected[$path] = true;
                     }
                 }
             });
 
         return $protected;
-    }
-
-    /** Cột `answer` lúc mảng, lúc chuỗi JSON, lúc lồng nhau — duyệt đệ quy. */
-    protected function pathsOf(mixed $raw): array
-    {
-        if (is_string($raw)) {
-            $decoded = json_decode($raw, true);
-            $raw = json_last_error() === JSON_ERROR_NONE ? $decoded : [$raw];
-        }
-
-        if (!is_array($raw)) {
-            return [];
-        }
-
-        $paths = [];
-        array_walk_recursive($raw, function ($value) use (&$paths) {
-            if (is_string($value) && str_contains($value, 'speaking_attempts/')) {
-                $paths[] = $value;
-            }
-        });
-
-        return $paths;
     }
 }

@@ -6,6 +6,7 @@ use App\Exceptions\AiGradingException;
 use App\Models\Attempt;
 use App\Models\AttemptAnswer;
 use App\Services\AiService;
+use App\Support\SpeakingAudio;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -115,7 +116,7 @@ class ProcessSpeakingGrading implements ShouldQueue
             return $existing;
         }
 
-        $paths = $this->audioPaths($answer->answer);
+        $paths = SpeakingAudio::pathsOf($answer->answer);
 
         if (empty($paths)) {
             throw AiGradingException::permanent('file_missing', "AttemptAnswer #{$answer->id} không có đường dẫn audio nào.");
@@ -155,34 +156,6 @@ class ProcessSpeakingGrading implements ShouldQueue
         ]);
 
         return $transcript;
-    }
-
-    /**
-     * Rút danh sách đường dẫn audio từ cột `answer`.
-     *
-     * Cột này lúc là mảng, lúc là chuỗi JSON, lúc là mảng lồng mảng tuỳ chỗ ghi
-     * (PracticeController và MockTestController ghi khác nhau) — nên duyệt đệ quy
-     * thay vì tin vào một hình dạng cố định.
-     */
-    protected function audioPaths(mixed $raw): array
-    {
-        if (is_string($raw)) {
-            $decoded = json_decode($raw, true);
-            $raw = json_last_error() === JSON_ERROR_NONE ? $decoded : [$raw];
-        }
-
-        if (!is_array($raw)) {
-            return [];
-        }
-
-        $paths = [];
-        array_walk_recursive($raw, function ($value) use (&$paths) {
-            if (is_string($value) && str_contains($value, 'speaking_attempts/')) {
-                $paths[] = $value;
-            }
-        });
-
-        return array_values(array_unique($paths));
     }
 
     /** Ghi trạng thái hỏng để giao diện nói rõ, thay vì treo "đang chờ" mãi. */

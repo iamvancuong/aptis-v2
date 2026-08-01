@@ -46,6 +46,12 @@
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                             Đã hết lượt chấm AI
                         </span>
+                    @elseif(!\App\Support\SpeakingAudio::hasRecording($answer->answer))
+                        {{-- Không ghi âm thì sẽ không bao giờ có ai chấm. Hiện "Chờ chấm"
+                             ở đây là hứa suông với học viên. --}}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                            Không có bản ghi âm
+                        </span>
                     @else
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
                             ⏳ Chờ giảng viên chấm
