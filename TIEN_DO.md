@@ -754,8 +754,17 @@ bao nhiêu % · điểm AI lệch điểm cô Dung bao nhiêu. Bù lại bằng 
 `AiService` (+`transcribe`, `gradeSpeaking`, `classifyHttpFailure`, chuẩn hoá kết quả) ·
 `User` (+credit Nói, có cả **hoàn lượt**) · `MockTestController`/`PracticeController` (đẩy job) ·
 `Admin/SpeakingReviewController` (vá lọc "Chờ chấm") · `history/speaking-show` +
-`admin/speaking-reviews/show` (hiển thị) · `policy/refund` (điều khoản) · `config/services` ·
-`phpunit.xml` · `routes/console.php`.
+`admin/speaking-reviews/show` + **`mock-test/result`** (hiển thị) · `policy/refund` (điều khoản) ·
+`config/services` · `phpunit.xml` · `routes/console.php`.
+
+### Hai trang hiển thị, đừng nhầm
+- **`/mock-test/{id}/result`** — trang học viên đáp xuống ngay sau khi nộp. Chỉ hiện **tóm tắt**:
+  điểm từng Part kèm nhãn "AI chấm nháp", và nút sang trang chi tiết.
+  > ⚠️ Trang này lấy điểm từ **`Attempt.score`**, KHÔNG phải `MockTest.score` — job chấm AI chỉ ghi
+  > vào `Attempt`. Vì vậy danh sách "Lịch sử thi thử" (đọc `MockTest.score`) vẫn hiện 0% cho bài
+  > Viết/Nói — hành vi có sẵn từ trước, chưa sửa.
+- **`/speaking-history/{id}`** — nhận xét **đầy đủ**: 4 tiêu chí, bài mẫu, lỗi, và mục xổ ra cho
+  học viên xem transcript máy nghe được.
 
 ### Những chỗ dễ sai đã xử lý sẵn
 - **Lỗi TẠM vs VĨNH VIỄN.** 429/5xx/mạng → ném ra cho queue thử lại (3 lượt, giãn 30s/120s).
