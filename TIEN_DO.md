@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 02/08/2026 · **A–O** (O = danh sách mời Calendar, chưa push) · **113 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–P đã gộp + push**) · **114 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -515,12 +515,14 @@ Cùng một tài khoản Google vào từ nhiều thiết bị sẽ hiện thàn
 người tham gia → host thấy tên lặp thì **Remove from call**.
 
 ### Danh sách mời qua Google Calendar (Pha 0.5)
-- Cột **`users.google_email`** — học viên tự khai ở `/lop-hoc` (route `classes.google-email`).
-  Nullable: chưa khai vẫn học được, chỉ là phải xin duyệt thủ công.
-- Scope **`User::invitableToClass()`** — học viên `status=active`, **còn hạn**, đã khai Gmail, không phải admin.
-  Đây là **chỗ DUY NHẤT nối danh tính Milaedu với danh tính Google**.
-- Màn `/admin/class-sessions` có hộp **copy 1 chạm** toàn bộ Gmail đó + đếm số người **chưa khai**,
-  kèm hướng dẫn 4 bước tạo sự kiện Calendar.
+- Danh sách mời **mặc định lấy `users.email`**. Kiểm tra DB: **96% học viên còn hạn (406/422) đã đăng ký bằng @gmail.com**
+  → bắt gõ lại Gmail là rào cản thừa và khiến danh sách mời gần như rỗng (bản đầu chỉ gom được 1/422 địa chỉ).
+- Cột **`users.google_email`** chỉ là **bản GHI ĐÈ** cho số ít người vào Meet bằng tài khoản Google khác.
+  Học viên tự khai ở `/lop-hoc` (route `classes.google-email`), ô **thu gọn sẵn** — không khai vẫn được mời bình thường.
+- Scope **`User::invitableToClass()`** — `status=active`, **còn hạn**, không phải admin (KHÔNG đòi khai Gmail).
+  Địa chỉ lấy qua **`User::classInviteEmail()`** = `google_email ?: email`.
+- Màn `/admin/class-sessions` có hộp **copy 1 chạm** + đếm số địa chỉ **không phải @gmail.com** (hiện 16/422 —
+  có thể không gắn với tài khoản Google nên người đó vẫn phải xin duyệt), kèm hướng dẫn 4 bước tạo sự kiện Calendar.
 - Quy trình mỗi buổi: tạo sự kiện Calendar → dán danh sách vào ô Khách mời → copy link Meet dán vào buổi học
   → trong phòng tắt "Truy cập nhanh".
 > Pha 1 sau này chỉ là **tự động hoá đúng bước dán danh sách này** bằng Calendar API.
@@ -546,7 +548,7 @@ Pha 0 **chạy được ngay bằng Gmail FREE**: trần **100 người/phòng**
 **Nâng Business Plus (~$22/host·tháng, 500 người) chỉ là đổi link được dán — KHÔNG sửa một dòng code nào.** Chỉ nâng khi 1 buổi thật sự chạm ~100 người hoặc cần buổi dài liên tục.
 
 ### Kiểm chứng
-`tests/Feature/ClassSessionJoinTest.php` (23 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 113 pass** (trước 90).
+`tests/Feature/ClassSessionJoinTest.php` (24 ca): redirect đúng link khi hợp lệ · mở sớm 15 phút · chặn chưa tới giờ / đã kết thúc / buổi tắt / chưa đăng nhập / tài khoản hết hạn · **link không lộ trong HTML** dashboard + danh sách · buổi đã kết thúc/đã tắt bị ẩn khỏi học viên · 3 màn admin render · validate giờ · học viên bị 403 ở khu admin. **Tổng 114 pass** (trước 90).
 
 **Bàn giao:** ✅ đã merge vào `main` + push 01/08/2026 (nhánh `feature/class-sessions`). Deploy: **CẦN `php artisan migrate --force`** (có migration mới); **không cần `npm run build`** (chỉ Blade/PHP, dùng class Tailwind đã có).
 

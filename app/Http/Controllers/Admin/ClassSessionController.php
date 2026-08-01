@@ -16,17 +16,22 @@ class ClassSessionController extends Controller
     {
         $sessions = ClassSession::orderByDesc('starts_at')->paginate(15);
 
-        // Danh sách mời qua Google Calendar: chỉ học viên còn hạn ĐÃ khai Gmail.
-        // Mời đúng danh sách này thì họ vào thẳng, người ngoài phải xin duyệt.
-        $guestEmails = \App\Models\User::invitableToClass()->pluck('google_email')->all();
-        // Số học viên còn hạn nhưng CHƯA khai Gmail — họ vẫn phải xin duyệt thủ công.
-        $missingEmailCount = \App\Models\User::where('role', '!=', 'admin')
-            ->where('status', 'active')
-            ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
-            ->where(fn ($q) => $q->whereNull('google_email')->orWhere('google_email', ''))
+        // Danh sách mời qua Google Calendar: mọi học viên còn hạn. Mặc định lấy
+        // email tài khoản; ai đã khai Gmail riêng thì lấy Gmail đó.
+        $guestEmails = \App\Models\User::invitableToClass()
+            ->get(['email', 'google_email'])
+            ->map->classInviteEmail()
+            ->unique()
+            ->values()
+            ->all();
+
+        // Địa chỉ không phải @gmail.com có thể không gắn với tài khoản Google →
+        // mời vẫn được nhưng người đó có thể phải xin duyệt. Đếm để admin biết.
+        $nonGmailCount = collect($guestEmails)
+            ->reject(fn ($e) => str_ends_with(strtolower($e), '@gmail.com'))
             ->count();
 
-        return view('admin.class-sessions.index', compact('sessions', 'guestEmails', 'missingEmailCount'));
+        return view('admin.class-sessions.index', compact('sessions', 'guestEmails', 'nonGmailCount'));
     }
 
     public function create()

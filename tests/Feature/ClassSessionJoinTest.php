@@ -236,34 +236,52 @@ class ClassSessionJoinTest extends TestCase
         $this->assertNull($student->fresh()->google_email);
     }
 
-    public function test_invite_list_only_includes_in_date_students_with_gmail(): void
+    public function test_invite_list_defaults_to_account_email(): void
     {
-        // Đủ điều kiện
-        $this->student(now()->addMonth())->update(['google_email' => 'con-han@gmail.com']);
-        $this->student(null)->update(['google_email' => 'khong-han@gmail.com']); // expires_at null = vô hạn
-        // Không đủ điều kiện
-        $this->student(now()->subDay())->update(['google_email' => 'het-han@gmail.com']);
-        $this->student(now()->addMonth());                                        // chưa khai Gmail
-        $blocked = $this->student(now()->addMonth());
-        $blocked->update(['google_email' => 'bi-khoa@gmail.com', 'status' => 'blocked']);
-        $this->admin()->update(['google_email' => 'admin@gmail.com']);             // admin không phải học viên
+        // Không khai Gmail riêng → vẫn được mời bằng email tài khoản.
+        $mac_dinh = $this->student(now()->addMonth());
+        // Có khai Gmail riêng → lấy Gmail đó, KHÔNG lấy email tài khoản.
+        $ghi_de = $this->student(now()->addMonth());
+        $ghi_de->update(['google_email' => 'gmail-khac@gmail.com']);
 
-        $list = User::invitableToClass()->pluck('google_email')->all();
+        $list = User::invitableToClass()->get(['email', 'google_email'])->map->classInviteEmail()->all();
 
-        sort($list);
-        $this->assertSame(['con-han@gmail.com', 'khong-han@gmail.com'], $list);
+        $this->assertContains($mac_dinh->email, $list);
+        $this->assertContains('gmail-khac@gmail.com', $list);
+        $this->assertNotContains($ghi_de->email, $list);
     }
 
-    public function test_admin_index_shows_invite_list_and_missing_count(): void
+    public function test_invite_list_excludes_expired_blocked_and_admins(): void
     {
-        $this->student(now()->addMonth())->update(['google_email' => 'da-khai@gmail.com']);
-        $this->student(now()->addMonth());  // còn hạn nhưng chưa khai
+        $con_han = $this->student(now()->addMonth());
+        $vo_han  = $this->student(null);                 // expires_at null = không giới hạn
+        $het_han = $this->student(now()->subDay());
+        $bi_khoa = $this->student(now()->addMonth());
+        $bi_khoa->update(['status' => 'blocked']);
+        $admin = $this->admin();
+
+        $list = User::invitableToClass()->get(['email', 'google_email'])->map->classInviteEmail()->all();
+
+        $this->assertContains($con_han->email, $list);
+        $this->assertContains($vo_han->email, $list);
+        $this->assertNotContains($het_han->email, $list);
+        $this->assertNotContains($bi_khoa->email, $list);
+        $this->assertNotContains($admin->email, $list);
+    }
+
+    public function test_admin_index_shows_invite_list_and_flags_non_gmail(): void
+    {
+        $gmail = $this->student(now()->addMonth());
+        $gmail->update(['google_email' => 'binh-thuong@gmail.com']);
+        $khac = $this->student(now()->addMonth());
+        $khac->update(['google_email' => 'sinhvien@hus.edu.vn']);
 
         $this->actingAs($this->admin())
             ->get(route('admin.class-sessions.index'))
             ->assertOk()
-            ->assertSee('da-khai@gmail.com')
-            ->assertSee('1 người chưa khai', false);
+            ->assertSee('binh-thuong@gmail.com')
+            ->assertSee('sinhvien@hus.edu.vn')
+            ->assertSee('1 địa chỉ không phải', false);
     }
 
     public function test_admin_screens_render(): void

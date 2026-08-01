@@ -14,9 +14,9 @@
             <div>
                 <h2 class="text-lg font-semibold text-gray-800">Danh sách mời vào lớp (Google Calendar)</h2>
                 <p class="text-sm text-gray-500 mt-1">
-                    <strong>{{ count($guestEmails) }}</strong> học viên còn hạn đã khai Gmail.
-                    @if($missingEmailCount > 0)
-                        <span class="text-amber-700">{{ $missingEmailCount }} người chưa khai — họ sẽ phải bấm “Yêu cầu tham gia” và chờ bạn duyệt.</span>
+                    <strong>{{ count($guestEmails) }}</strong> học viên còn hạn.
+                    @if($nonGmailCount > 0)
+                        <span class="text-amber-700">{{ $nonGmailCount }} địa chỉ không phải @gmail.com — nếu ai đó không vào thẳng được, nhắc họ khai Gmail ở trang “Lớp học”.</span>
                     @endif
                 </p>
             </div>

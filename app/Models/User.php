@@ -144,20 +144,25 @@ class User extends Authenticatable
     }
 
     /**
-     * Học viên đủ điều kiện được mời vào lớp online qua Google Calendar:
-     * còn hạn, không bị khoá, và đã khai Gmail dùng để vào lớp.
+     * Học viên được mời vào lớp online qua Google Calendar: còn hạn, không bị khoá.
      *
-     * Đây là chỗ DUY NHẤT nối danh tính Milaedu với danh tính Google — mời đúng
-     * danh sách này thì người ngoài dù có link cũng không vào thẳng được.
+     * KHÔNG đòi phải khai `google_email`. 96% học viên đăng ký sẵn bằng @gmail.com,
+     * nên mặc định dùng luôn `email` tài khoản — bắt gõ lại chỉ tạo rào cản thừa
+     * và khiến danh sách mời rỗng. `google_email` chỉ là bản ghi đè cho số ít
+     * người vào Meet bằng tài khoản Google khác.
      */
     public function scopeInvitableToClass(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('role', '!=', 'admin')
             ->where('status', 'active')
-            ->whereNotNull('google_email')
-            ->where('google_email', '!=', '')
             ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
             ->orderBy('name');
+    }
+
+    /** Địa chỉ dùng để mời vào lớp: ưu tiên Gmail đã khai, không có thì lấy email tài khoản. */
+    public function classInviteEmail(): string
+    {
+        return $this->google_email ?: $this->email;
     }
 
     public function recordWritingAiUsage(int $part): void

@@ -10,34 +10,45 @@
     <p class="mt-2 text-gray-600">Nút “Vào lớp” bật trước giờ học {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }} phút.</p>
 </div>
 
-{{-- Gmail vào lớp: nối danh tính Milaedu ↔ danh tính Google. Có địa chỉ này thì
-     giảng viên mời qua Calendar được → học viên vào thẳng, khỏi xin duyệt. --}}
-<div class="mb-6 p-4 bg-white border {{ auth()->user()->google_email ? 'border-gray-200' : 'border-blue-300 bg-blue-50' }} rounded-xl">
-    <form action="{{ route('classes.google-email') }}" method="POST" class="flex flex-col sm:flex-row sm:items-end gap-3">
-        @csrf
-        <div class="flex-1">
-            <label for="google_email" class="block text-sm font-semibold text-gray-800 mb-1">
-                Gmail dùng để vào lớp
-                @unless(auth()->user()->google_email)
-                    <span class="ml-1 text-xs font-medium text-blue-700">— nên điền</span>
-                @endunless
-            </label>
-            <p class="text-xs text-gray-500 mb-2">
-                Điền đúng tài khoản Google bạn đang đăng nhập trên máy học. Giảng viên sẽ mời địa chỉ này vào buổi học
-                để bạn <strong>vào thẳng</strong>; chưa điền thì mỗi lần vào phải bấm “Yêu cầu tham gia” và chờ duyệt.
-            </p>
-            <input type="email" name="google_email" id="google_email"
-                   value="{{ old('google_email', auth()->user()->google_email) }}"
-                   placeholder="ten.cua.ban@gmail.com"
-                   class="w-full px-4 py-2.5 text-sm border {{ $errors->has('google_email') ? 'border-red-500' : 'border-slate-300' }} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
-            @error('google_email')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-        <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shrink-0">
-            Lưu
+{{-- Địa chỉ mời vào lớp. Mặc định là email tài khoản (96% học viên đã là Gmail),
+     ô này chỉ để ghi đè khi vào Meet bằng tài khoản Google khác. Mặc định đóng
+     để không làm rối trang — ai cần mới mở. --}}
+@php $u = auth()->user(); @endphp
+<div class="mb-6 p-4 bg-white border border-gray-200 rounded-xl" x-data="{ open: {{ $errors->has('google_email') ? 'true' : 'false' }} }">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <p class="text-sm text-gray-700">
+            Giảng viên sẽ mời <strong class="text-gray-900">{{ $u->classInviteEmail() }}</strong> vào buổi học.
+        </p>
+        <button type="button" @click="open = !open"
+                class="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline shrink-0 text-left sm:text-right">
+            <span x-show="!open">Tôi vào Meet bằng Gmail khác</span>
+            <span x-show="open" x-cloak>Đóng</span>
         </button>
-    </form>
+    </div>
+
+    <div x-show="open" x-cloak class="mt-4 pt-4 border-t border-gray-100">
+        <form action="{{ route('classes.google-email') }}" method="POST" class="flex flex-col sm:flex-row sm:items-start gap-3">
+            @csrf
+            <div class="flex-1">
+                <label for="google_email" class="block text-sm font-semibold text-gray-800 mb-1">Gmail dùng để vào lớp</label>
+                <p class="text-xs text-gray-500 mb-2">
+                    Chỉ điền nếu tài khoản Google bạn đăng nhập trên máy học <strong>khác</strong> email đăng ký Milaedu.
+                    Để trống thì hệ thống dùng email tài khoản. Điền đúng thì bạn <strong>vào thẳng</strong> lớp,
+                    sai thì phải bấm “Yêu cầu tham gia” và chờ duyệt.
+                </p>
+                <input type="email" name="google_email" id="google_email"
+                       value="{{ old('google_email', $u->google_email) }}"
+                       placeholder="{{ $u->email }}"
+                       class="w-full px-4 py-2.5 text-sm border {{ $errors->has('google_email') ? 'border-red-500' : 'border-slate-300' }} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+                @error('google_email')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shrink-0 sm:mt-6">
+                Lưu
+            </button>
+        </form>
+    </div>
 </div>
 
 <div class="space-y-4">
