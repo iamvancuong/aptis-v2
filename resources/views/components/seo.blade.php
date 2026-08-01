@@ -34,6 +34,10 @@
 <meta name="description" content="{{ $desc }}">
 <meta name="keywords" content="{{ $kw }}">
 <link rel="canonical" href="{{ $canonical }}">
+@if(config('seo.google_site_verification'))
+    {{-- Xác minh sở hữu tên miền cho Google Search Console (cách "HTML tag"). --}}
+    <meta name="google-site-verification" content="{{ config('seo.google_site_verification') }}">
+@endif
 @if($noindex)
     <meta name="robots" content="noindex, nofollow">
 @else

@@ -5,7 +5,7 @@
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
-> **(C) hiệu năng + SEO + redesign UI public** (§10) · **(D) gỡ Zoom + "buổi hướng dẫn"** (§13) ·
+> **(C) hiệu năng + SEO + redesign UI public** (§10) ·
 > **(E) deploy production + cộng đồng FB + responsive + vá Reading** (§14) ·
 > **(F) vá bug thanh toán khi mở lại đơn** (§15) · **(G) mã sale referral + doanh số theo sale** (§17) ·
 > **(H) bỏ watermark bài làm** (§18) · **(I) sửa copy bỏ Speaking + vá `&amp;` preview** (§19) ·
@@ -47,10 +47,10 @@ trang thanh toán ký (signed URL) → QR PayOS thật → khách chuyển kho�
 - Đăng ký **dedupe** đơn pending trùng (email+gói+SL+amount trong 2h) — chống double-submit (§10 #L1b).
 - `payment.show` chặn đơn `canceled`/`expired` mở lại (§10 #F4). Route `return`/`cancel` **có chữ ký** (§10 #L2/#L3).
 
-### Buổi học online — ⏸️ ĐÃ GỠ (Zoom bỏ hoàn toàn, Meet để sau)
-Toàn bộ tính năng "buổi hướng dẫn" (đặt lịch + tạo phòng + gửi link) **đã bị xóa sạch** ở phiên này (§13).
-Release hiện tại chỉ bán tài khoản: mua gói → tạo tài khoản luyện thi, **không** có lớp học online.
-Khi cần, sẽ dựng lại bằng **Google Meet** (code mới — §11), không khôi phục code Zoom cũ.
+### Lớp học online (Google Meet — Pha 0)
+Admin tạo buổi ở `/admin/class-sessions` và **dán link phòng Meet thủ công**; học viên còn hạn thấy nút
+"Vào lớp" trong khung giờ. Link Meet không bao giờ render ra HTML. Chi tiết **§23**.
+Mua gói vẫn chỉ tạo tài khoản luyện thi — vào lớp là quyền đi kèm, không phải thứ bán riêng.
 
 ### Chấm bài
 - **Giáo viên chấm tay (tính phí):** bài mock Writing/Speaking → "Thanh toán 99.000đ & gửi chấm" → đơn `grading` → trả tiền → bật `is_grading_requested`. Admin chấm miễn phí.
@@ -75,7 +75,6 @@ doanh thu CHẤM BÀI để **riêng 100% Cô Dung**. Không thuế. Lọc theo 
 ## 4. KIẾN TRÚC — FILE QUAN TRỌNG
 
 **Config:** `config/pricing.php` · `config/payos.php` · **`config/seo.php`** (SEO tập trung, §10) · **`config/sales.php`** (mã sale referral M1/M2, §17)
-> (Đã xóa `config/zoom.php` + `config/guidance.php` ở §13.)
 
 **Services:**
 - `app/Services/PayosService.php` — createPaymentLink (ký HMAC), verifyWebhook, **getPaymentInfo**
@@ -83,7 +82,6 @@ doanh thu CHẤM BÀI để **riêng 100% Cô Dung**. Không thuế. Lọc theo 
 - `app/Services/AiService.php` — chấm Writing qua OpenAI (timeout 45s)
 - `app/Services/QuestionSanitizer.php` — lọc đáp án khỏi payload client
 - `app/Jobs/ProcessWritingGrading.php` — chấm AI Writing tự động (queue)
-> (Đã xóa `ZoomService` + `GuidanceSessionService` ở §13.)
 
 **Controllers:** `PaymentController` (show/return/cancel/**webhook**/devFulfill) · `RegistrationController` (thêm **`referral()`** — link /dk/{sale}, §17) · `PracticeController` · `Admin/ReportController` · `Admin/RevenueController` (thêm **doanh số theo sale**, §17) · `Admin/WritingReviewController` (nhãn Có phí + lọc "Chờ chấm", §20/§21) · `Admin/QuestionController` · `DashboardController` · `HistoryController` · …
 
@@ -139,7 +137,6 @@ SEO_INSTRUCTOR_NAME / SEO_INSTRUCTOR_TITLE / SEO_INSTRUCTOR_BIO  # 🔴 nên đi
 # Email: Gmail SMTP (gửi thật OK nhưng hay vào SPAM)
 MAIL_* (milaedu.hn@gmail.com)
 
-# (ĐÃ XÓA toàn bộ ZOOM_* — không còn code nào đọc, xem §13.)
 ```
 **Test không mất tiền:** `PAYOS_FAKE=true`.
 **Test CK thật ở local:** trả tiền → `php artisan payos:reconcile`.
@@ -153,16 +150,16 @@ MAIL_* (milaedu.hn@gmail.com)
 
 ### ✅ ĐÃ XONG (code + test)
 - Bảo mật cốt lõi: lọc đáp án, vá chấm Reading Part 2, signed audio, chống DevTools.
-- Thương mại hóa: đăng ký-PayOS · chấm bài 99k · doanh số · buộc đổi mật khẩu · không hoàn tiền. *(Buổi hướng dẫn đã gỡ ở §13.)*
+- Thương mại hóa: đăng ký-PayOS · chấm bài 99k · doanh số · buộc đổi mật khẩu · không hoàn tiền.
 - **Phiên 26/07:** vá logic/bảo mật + hiệu năng + SEO nền tảng + redesign UI public (**§10**).
 - **Phiên 29/07 (F–K), đã push `main`:** vá bug thanh toán mở lại đơn (§15) · mã sale referral + doanh số theo sale (§17) · bỏ watermark bài làm (§18) · bỏ "Speaking" trong copy + vá `&amp;` preview (§19) · nhãn Có phí/Miễn phí (§20) + vá "Chờ chấm" sót bài đã trả phí (§21) trên trang chấm Writing.
 
 ### ✅ ĐÃ TEST THẬT
 - CK thật 2.000đ qua PayOS → tài khoản tự tạo + email. PayOS link OK · Email Gmail OK (⚠️ spam).
 
-### ⏸️ BUỔI HỌC ONLINE — ĐÃ GỠ (không còn việc dở)
-Zoom + tính năng "buổi hướng dẫn" đã xóa sạch (§13). Không còn khóa Zoom cần cấp.
-Nếu sau này cần lớp online → dựng lại bằng **Google Meet** (code mới, §11).
+### ✅ LỚP HỌC ONLINE — Pha 0 đã có (§23)
+Admin dán link Google Meet thủ công cho từng buổi; chạy được ngay bằng **Gmail free**.
+Pha 1 (Calendar API tự sinh phòng) vẫn để mở — xem §16.
 
 ### ✅ DEPLOY PRODUCTION — ĐÃ LÊN (28/07, milaedu.com) · quy trình chi tiết ở §14
 Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=false`, `PAYOS_VERIFY_SSL=true`, `PRICE_WEEK=399000`) →
@@ -188,7 +185,7 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 - Chấm bài 99k chỉ cho giáo viên chấm tay; AI credit giữ nguyên.
 - Doanh số: 40/30/30 trên đăng ký; chấm bài riêng 100% Cô Dung; bỏ thuế + hóa đơn; thu tiền cá nhân.
 - Email trùng = cộng dồn hạn. Không hoàn tiền.
-- ~~Buổi hướng dẫn: 1 thứ 7… phòng Zoom riêng.~~ **← ĐÃ HỦY/GỠ ở §13** (release chỉ bán tài khoản; lớp online sau này dùng Google Meet §16).
+- **Lớp online chỉ dùng Google Meet** (§23). Không tích hợp nền tảng họp nào khác.
 - **Mã sale referral** (§17): cứng trong `config/sales.php`, chưa tính hoa hồng, "số người" = số đơn đã thanh toán, 4 link chọn sẵn gói.
 - **Chấm Speaking (giáo viên) TẠM TẮT** trong quảng cáo (§19) — copy chỉ nói "chấm chữa Writing" cho tới khi bật lại.
 - **Tên "Cô Dung" KHÔNG phô trương trên web nhưng PHẢI tìm ra web khi search** → đặt tên ở nội dung thật (structured data, trang giới thiệu, footer, meta) — KHÔNG giấu chữ cho bot (cloaking = bị Google phạt).
@@ -233,9 +230,10 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 ---
 
 ## 11. 🔴 CẦN BẠN / VIỆC CÒN MỞ
-- ✅ **Buổi học online (Google Meet) — Pha 0 ĐÃ CODE + merge vào `main`** (§23).
-  🔴 Cần bạn: **review + merge + `migrate --force`**, rồi tạo buổi đầu tiên ở `/admin/class-sessions` (dán link Meet từ Gmail free).
-  ⏸️ Pha 1 (Calendar API tự sinh phòng) vẫn chờ bạn nhắc.
+- ✅ **Lớp online Google Meet — Pha 0 đã code + đã push `main`** (§23).
+  🔴 Cần bạn: **deploy lên cPanel** (có `migrate --force`), rồi tạo buổi đầu tiên ở `/admin/class-sessions` (dán link Meet từ Gmail free).
+  🔴 **TẮT "Truy cập nhanh" (Quick access) trong phòng Meet** — bắt buộc. Web chỉ kiểm soát AI ĐƯỢC LẤY link; ai đã vào phòng vẫn copy link gửi ra ngoài được. ⚠️ "Phòng chờ" đúng nghĩa là tính năng TRẢ PHÍ (Business Standard trở lên) — Gmail free phải dùng cách tắt Truy cập nhanh (xem §23).
+  ⏸️ Pha 1 (Calendar API tự sinh phòng + `accessType=RESTRICTED` chặn tuyệt đối) vẫn chờ bạn nhắc.
 - **Nội dung thật (SEO):** bio THẬT của cô (sửa `config/seo.php` hoặc env `SEO_INSTRUCTOR_BIO`) · testimonial + số liệu thật (hiện KHÔNG bịa) · ảnh giảng viên thật (đang dùng ô chữ "D").
 - **Off-page SEO:** Google Search Console (submit sitemap) · Google Business Profile · backlink.
 - ⬜ **Tùy chọn — Turbo (SPA thật):** chuyển tab không reload cho khu marketing. Chưa bật vì app dùng Alpine dày (form/thanh toán/admin) → cần cấu hình lại vòng đời Alpine + **test trình duyệt thật**. Đã đặt sẵn `data-turbo="false"` ở các link ra ngoài khu marketing. (Hiện dùng View Transitions — mượt, an toàn.)
@@ -290,33 +288,6 @@ Backup DB → `.env` production (`APP_URL=https://milaedu.com`, `PAYOS_FAKE=fals
 
 > 💡 Gợi ý mở màn phiên mới: viết 1 script test nhỏ gọi Whisper + GPT trên 1 file audio mẫu trong `storage/app/public/speaking_attempts/` để **kiểm chứng outbound HTTPS + chất lượng** trước khi làm đầy đủ.
 
----
-
-## 13. 🧹 PHIÊN 26/07 (D) — GỠ ZOOM + TÍNH NĂNG "BUỔI HƯỚNG DẪN"
-
-**Mục tiêu:** Release "chỉ bán tài khoản". Bỏ Zoom hoàn toàn; lớp học online để sau (Google Meet, code mới). Sau thanh toán chỉ tạo tài khoản luyện thi, KHÔNG gửi link học.
-
-**Đã xóa (21 file):**
-- Zoom: `app/Services/ZoomService.php`, `config/zoom.php`.
-- Guidance service/command/controller: `GuidanceSessionService`, `SendGuidanceLinks` (command `guidance:dispatch`), `Admin/GuidanceSessionController`, `GuidanceController`, `config/guidance.php`.
-- Mail (3 class + 3 view): `GuidanceBookingMail` / `GuidanceLinkMail` / `GuidanceHostMail` + `resources/views/mail/guidance-{booking,link,host}.blade.php`.
-- Models + migrations: `GuidanceBooking`, `GuidanceSession` + `2026_03_06_000400_*` (bookings) + `2026_03_06_000500_*` (sessions).
-- Views: `resources/views/guidance/index.blade.php`, `resources/views/admin/guidance-sessions/index.blade.php`.
-- Tests: `GuidanceBookingTest`, `GuidanceSessionTest`.
-
-**Đã sửa (9 file):**
-- `routes/web.php` — bỏ 2 route `/buoi-huong-dan` (học viên) + 2 route `admin/guidance-sessions` + dòng `Disallow: /buoi-huong-dan` trong robots.txt.
-- `routes/console.php` — bỏ `Schedule::command('guidance:dispatch')`.
-- `app/Models/User.php` — bỏ `canBookGuidance()`.
-- `resources/views/layouts/app.blade.php` + `layouts/admin.blade.php` — bỏ nav "Buổi hướng dẫn".
-- `phpunit.xml` — bỏ env `ZOOM_FAKE` + sửa comment; `.env.example` + `.env` — bỏ block `ZOOM_*`.
-
-**Kiểm chứng:** `optimize:clear` OK · `route:list` không còn route guidance · **`php artisan test` = 74 pass** (trước 85; chênh 11 = 2 file test guidance đã xóa) · `npm run build` OK · migrate sạch (test RefreshDatabase pass → không FK mồ côi).
-
-**Bàn giao:** commit trên `feature/milaedu-commerce`, **chưa merge/push** — bạn tự merge vào `main` rồi deploy (checklist §7).
-
----
-
 ## 14. 🚀 PHIÊN 28/07/2026 (E) — DEPLOY PRODUCTION + CỘNG ĐỒNG + RESPONSIVE + VÁ BUG READING
 
 ### A. ✅ ĐÃ DEPLOY LÊN PRODUCTION (milaedu.com)
@@ -348,7 +319,7 @@ Cron cPanel trước đây chạy thẳng `queue:work` → **`payos:reconcile` k
 ### C. 🤝 Section cộng đồng Facebook (trang chủ)
 - Thêm section **"Cộng đồng Milaedu"** ở `welcome.blade.php` (giữa "Về giảng viên" và bảng giá) mời vào nhóm FB — **tông sáng** (nền gradient xanh nhạt, thẻ trắng), không phải khối xanh đậm chói.
 - Link nhóm ở `config/seo.php` → `contact.facebook` (đổi qua env `SEO_FACEBOOK_GROUP`).
-- Dọn 2 chỗ **quảng cáo nhầm tính năng đã gỡ**: feature card + quyền lợi bảng giá "Buổi hướng dẫn 19h30 thứ 7" → "Chấm Writing bằng AI".
+- Dọn 2 chỗ quảng cáo sai: feature card + quyền lợi bảng giá → "Chấm Writing bằng AI".
 
 ### D. 📱 Responsive (iPad/iPhone)
 - **Hero** trước ép `min-h-[calc(100vh-4rem)]` → trên iPad **dọc** thừa khoảng trắng rất dài. Đổi `lg:landscape:min-h-[...]`: chỉ full-màn ở **desktop ngang**, còn iPad/iPhone dọc **co theo nội dung**. (Verified 375 / 768 / 1024×1366 / 1280×800, không tràn ngang.)
@@ -397,7 +368,7 @@ Bị kích hoạt vì: khách **back/đóng tab** khiến đơn vẫn `pending` 
 ---
 
 ## 16. 🎥 GHI CHÚ TƯ VẤN — LỚP ONLINE GOOGLE MEET (⏸️ PENDING — chưa code, đã chốt hướng 29/07)
-Bổ sung cho §11 (Zoom đã gỡ, làm mới bằng Meet khi cần). Phiên 29/07 đã tư vấn + chốt sơ bộ:
+Bổ sung cho §11. Phiên 29/07 đã tư vấn + chốt sơ bộ:
 - **Chi phí:** chỉ trả license cho **tài khoản HOST** (Cô Dung ±1 co-host); **học sinh join miễn phí** bằng link, không cần license. Giới hạn người/phòng do **gói của host** quyết định.
 - **Gói (đã chốt):** ~300–500 học sinh vào **CÙNG 1 buổi** → **Business Plus (~$22/host·tháng, cap 500 người)**. Standard (150) không đủ. Nên 2 host (~$44/tháng). ⚠️ Trần cứng 500 → nếu vượt phải lên **Enterprise** (1.000).
 - **Email học sinh đa số Gmail** → Pha 1 dùng được `accessType=RESTRICTED` (mời đích danh, chống học chui chặt nhất).
@@ -537,3 +508,27 @@ Pha 0 **chạy được ngay bằng Gmail FREE**: trần **100 người/phòng**
 ### Còn mở (Pha 1, khi cần)
 - Google Calendar/Meet REST API tự sinh phòng + mời email còn hạn (service account + domain-wide delegation) — §16.
 - Gán buổi theo nhóm/lớp + điểm danh (Pha 0 cố ý bỏ qua: mọi tài khoản còn hạn đều vào được buổi đang mở).
+
+---
+
+## 24. 🧹 PHIÊN 02/08/2026 (N) — DỌN TỒN DƯ TÍNH NĂNG "BUỔI HỌC CŨ"
+
+Tính năng đặt lịch buổi học đời đầu (nền tảng họp khác, trước Google Meet) đã bị gỡ khỏi code từ lâu.
+Phiên này xoá nốt **mọi dấu vết còn lại** để tài liệu + DB phản ánh đúng hiện trạng.
+
+**Đã dọn:**
+- **2 bảng mồ côi trong DB** — `guidance_bookings`, `guidance_sessions` (có cột lưu link/ID phòng họp cũ).
+  Chúng tồn tại vĩnh viễn vì migration tạo bảng bị xoá cùng lúc với code → **không có gì DROP chúng**.
+  Migration mới `2026_08_02_000001_drop_guidance_tables` dọn nốt.
+  > ⚠️ Đây là **xoá dữ liệu**. DB test: cả 2 bảng **0 dòng**. **Kiểm tra production trước khi migrate:**
+  > `php artisan tinker --execute="foreach(['guidance_bookings','guidance_sessions'] as \$t) echo \$t.'='.DB::table(\$t)->count().PHP_EOL;"`
+  > `down()` chỉ dựng lại cấu trúc rỗng, KHÔNG khôi phục dữ liệu.
+- **Tài liệu**: xoá hẳn mục §13 cũ + mọi tham chiếu tới nó trong `TIEN_DO.md` và `DEPLOY.md`.
+  > 📌 Vì vậy **số mục nhảy từ §12 sang §14** — không phải thiếu sót. Đừng đánh số lại (nhiều mục tham chiếu chéo nhau).
+- **Cập nhật mô tả sai hiện trạng**: §2 và §7 trước đây ghi "không có lớp học online" — nay trỏ đúng sang **§23** (lớp online Pha 0 đã có).
+- 1 comment lạc trong migration `create_orders_table`.
+
+**Kiểm chứng:** quét `zoom|guidance|buổi hướng dẫn|§13` trên `app/ config/ routes/ resources/ tests/ database/` + 2 file `.md` → **0 kết quả**
+(chỉ còn 1 chỗ "browser zoom" trong `devtools-guard.blade.php` — nói về mức phóng to trình duyệt, không liên quan). **109 test pass**.
+
+**Deploy:** **CẦN `php artisan migrate --force`**; không cần `npm run build`.

@@ -1,6 +1,6 @@
 # 🚀 DEPLOY MILAEDU LÊN PRODUCTION (cPanel — milaedu.com)
 
-> Bản release: **"chỉ bán tài khoản"** (Zoom + buổi hướng dẫn đã gỡ — xem `TIEN_DO.md` §13).
+> Bản release: bán tài khoản luyện thi + lớp online Google Meet Pha 0 (xem `TIEN_DO.md` §23).
 > Nhánh code: `feature/milaedu-commerce`. **74 test pass · npm build OK.**
 > ⚠️ Production hiện chạy `main` (bản cũ). Deploy = merge `feature` → `main` rồi đẩy lên.
 
@@ -145,7 +145,7 @@ Cron này tự chạy: `payos:reconcile` (đối soát đơn mỗi 2 phút) + `q
 
 ## 3. 🧪 SMOKE TEST SAU DEPLOY (5 phút)
 
-- [ ] Mở `https://milaedu.com` — trang chủ lên, **không** còn menu "Buổi hướng dẫn".
+- [ ] Mở `https://milaedu.com` — trang chủ lên bình thường.
 - [ ] `https://milaedu.com/sitemap.xml` và `/robots.txt` — trả về, Sitemap là URL **https**.
 - [ ] Vào `/register` → chọn gói → ra trang QR PayOS **thật** (không lỗi "chưa cấu hình").
 - [ ] Thanh toán thử 1 đơn nhỏ (hoặc nhờ 1 người) → nhận được **email tài khoản + mật khẩu** (kiểm cả hộp **Spam**).

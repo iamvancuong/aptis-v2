@@ -30,6 +30,11 @@ return [
     'locale' => env('SEO_LOCALE', 'vi_VN'),
     'twitter_card' => 'summary_large_image',
 
+    // Mã xác minh Google Search Console (cách "HTML tag"). Dán ĐÚNG phần content
+    // trong thẻ Google đưa, không dán cả thẻ. Để trống thì không render gì.
+    // VD: SEO_GOOGLE_SITE_VERIFICATION=abc123xyz...
+    'google_site_verification' => env('SEO_GOOGLE_SITE_VERIFICATION', ''),
+
     // Thông tin giảng viên cho structured data Person + trang giới thiệu.
     // Đây là NỘI DUNG THẬT, người dùng thấy được ở mục "Về giảng viên"/footer.
     'instructor' => [
@@ -37,6 +42,9 @@ return [
         'job_title'   => env('SEO_INSTRUCTOR_TITLE', 'Giảng viên luyện thi Aptis'),
         // 2–3 dòng bio thật — bạn cập nhật nội dung chính xác sau.
         'bio'         => env('SEO_INSTRUCTOR_BIO', 'Nhiều năm luyện thi Aptis, trực tiếp chấm chữa Writing cho học viên đạt mục tiêu điểm.'),
+        // Ảnh chân dung THẬT. Bỏ trống → web tự vẽ ô chữ cái đầu làm placeholder.
+        // Đặt file vào `public/images/` rồi khai: SEO_INSTRUCTOR_PHOTO=/images/co-dung.jpg
+        'photo'       => env('SEO_INSTRUCTOR_PHOTO', ''),
     ],
 
     // Liên hệ (dùng cho structured data + footer). Đọc từ Setting/env nếu có.
