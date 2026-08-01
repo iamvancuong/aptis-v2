@@ -128,7 +128,11 @@ class DashboardController extends Controller
             ->whereNotNull('score')
             ->count();
 
+        // Buổi học online gần nhất còn hiệu lực (đang diễn ra hoặc sắp tới).
+        $nextClass = \App\Models\ClassSession::visibleToStudents()->first();
+
         return view('dashboard', compact(
+            'nextClass',
             'statisticsData',
             'totalAttempts',
             'avgScore',

@@ -54,6 +54,28 @@
 </div>
 @endif
 
+{{-- Lớp học online sắp tới / đang diễn ra --}}
+@if($nextClass ?? null)
+<div class="mb-6 p-4 {{ $nextClass->isJoinable() ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200' }} border rounded-xl flex flex-col sm:flex-row sm:items-center gap-3">
+    <div class="w-9 h-9 {{ $nextClass->isJoinable() ? 'bg-green-100' : 'bg-blue-100' }} rounded-full flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 {{ $nextClass->isJoinable() ? 'text-green-600' : 'text-blue-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+    </div>
+    <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold {{ $nextClass->isJoinable() ? 'text-green-800' : 'text-blue-800' }}">
+            {{ $nextClass->isJoinable() ? '🔴 Lớp đang diễn ra: ' : '📅 Lớp sắp tới: ' }}{{ $nextClass->title }}
+        </p>
+        <p class="text-xs {{ $nextClass->isJoinable() ? 'text-green-600' : 'text-blue-600' }}">
+            {{ $nextClass->starts_at->format('H:i') }}–{{ $nextClass->ends_at->format('H:i') }}, {{ $nextClass->starts_at->format('d/m/Y') }}
+        </p>
+    </div>
+    @if($nextClass->isJoinable())
+        <a href="{{ route('classes.join', $nextClass) }}" class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-center">Vào lớp →</a>
+    @else
+        <a href="{{ route('classes.index') }}" class="px-3 py-1.5 text-sm font-medium text-blue-700 bg-white border border-blue-200 hover:bg-blue-50 rounded-lg transition-colors text-center">Xem lịch</a>
+    @endif
+</div>
+@endif
+
 {{-- Quick Stats Row --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
     {{-- Total Attempts --}}

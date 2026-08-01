@@ -76,6 +76,7 @@ Route::get('/robots.txt', function () {
         'Disallow: /dashboard',
         'Disallow: /thanh-toan',
         'Disallow: /doi-mat-khau',
+        'Disallow: /lop-hoc',
         '',
         'Sitemap: ' . route('sitemap'),
     ];
@@ -99,6 +100,12 @@ Route::middleware('guest')->group(function () {
 // Authenticated routes
 Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
+    // Lớp học online (Pha 0 — admin dán link Meet thủ công).
+    // `join` là cổng kiểm soát: còn hạn + đúng khung giờ mới redirect sang Meet,
+    // nhờ vậy link phòng không bao giờ nằm trong HTML để copy gửi ra ngoài.
+    Route::get('/lop-hoc', [\App\Http\Controllers\ClassSessionController::class, 'index'])->name('classes.index');
+    Route::get('/lop-hoc/{classSession}/join', [\App\Http\Controllers\ClassSessionController::class, 'join'])->name('classes.join');
 
     // Grammar & Vocabulary
     Route::get('/grammar', [App\Http\Controllers\GrammarController::class, 'index'])->name('grammar.index');
@@ -254,4 +261,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
 
     // Doanh số
     Route::get('revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('revenue.index');
+
+    // Lớp online — tạo buổi + dán link Meet (không có trang show riêng).
+    Route::resource('class-sessions', \App\Http\Controllers\Admin\ClassSessionController::class)->except('show');
 });
