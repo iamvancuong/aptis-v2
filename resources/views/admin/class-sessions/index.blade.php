@@ -74,6 +74,60 @@
             </div>
         @endif
 
+        @if($canGoBo->isNotEmpty())
+            {{-- Người hết hạn nhưng vẫn nằm trong lời mời Calendar cũ: họ có link
+                 trong lịch nên vào Meet thẳng, KHÔNG qua cổng web. Phải gỡ tay. --}}
+            <div class="mt-3 p-3 bg-orange-50 border border-orange-300 rounded-lg"
+                 x-data="{ copied: false, list: @js($canGoBo->map->classInviteEmail()->unique()->values()->implode(', ')) }">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                    <div>
+                        <p class="text-xs font-bold text-orange-900">
+                            {{ $canGoBo->count() }} người đã hết hạn — cần GỠ khỏi lời mời Calendar
+                        </p>
+                        <p class="text-xs text-orange-800 mt-1">
+                            Những người này vẫn còn lời mời trong lịch của họ, nên <strong>vào thẳng phòng Meet được
+                            mà không đi qua website</strong> — hệ thống không chặn được. Mở sự kiện Calendar, xoá các
+                            địa chỉ dưới đây khỏi ô Khách mời.
+                        </p>
+                    </div>
+                    <button type="button"
+                            @click="navigator.clipboard.writeText(list); copied = true; setTimeout(() => copied = false, 2000)"
+                            class="px-3 py-1.5 text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors shrink-0">
+                        <span x-show="!copied">Copy danh sách cần gỡ</span>
+                        <span x-show="copied" x-cloak>✓ Đã copy</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <tbody class="divide-y divide-orange-200">
+                            @foreach($canGoBo as $u)
+                                <tr>
+                                    <td class="py-1.5 pr-4 font-medium text-gray-800 whitespace-nowrap">{{ $u->name }}</td>
+                                    <td class="py-1.5 pr-4 font-mono text-orange-800 whitespace-nowrap">{{ $u->classInviteEmail() }}</td>
+                                    <td class="py-1.5 text-gray-600 whitespace-nowrap tabular-nums">hết hạn {{ $u->expires_at->format('d/m/Y') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <form action="{{ route('admin.class-sessions.invite-synced') }}" method="POST" class="mt-3">
+                    @csrf
+                    <button type="submit" class="text-xs font-medium text-orange-900 underline hover:no-underline">
+                        Tôi đã gỡ xong — ẩn danh sách này đi
+                    </button>
+                    <span class="text-xs text-orange-700 ml-2">
+                        @if($lanDongBo)
+                            (lần cuối xác nhận: {{ \Illuminate\Support\Carbon::parse($lanDongBo)->format('H:i d/m/Y') }})
+                        @else
+                            (đang tính trong 60 ngày gần nhất)
+                        @endif
+                    </span>
+                </form>
+            </div>
+        @endif
+
         <div class="mt-3 flex gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div class="text-xs text-blue-900">

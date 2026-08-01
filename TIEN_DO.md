@@ -1,7 +1,7 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–R đã gộp + push**) · **121 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: 02/08/2026 · GitHub `main` = `origin/main` (**A–S đã gộp + push**) · **127 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -600,3 +600,52 @@ Phiên này xoá nốt **mọi dấu vết còn lại** để tài liệu + DB p
 (chỉ còn 1 chỗ "browser zoom" trong `devtools-guard.blade.php` — nói về mức phóng to trình duyệt, không liên quan). **109 test pass**.
 
 **Deploy:** **CẦN `php artisan migrate --force`**; không cần `npm run build`.
+
+---
+
+## 25. 🔔 PHIÊN 02/08/2026 (S) — NHẮC GIỜ HỌC + GỠ NGƯỜI HẾT HẠN KHỎI LỜI MỜI
+
+### ① Email nhắc trước giờ học
+- Command **`classes:remind`** (mặc định nhắc trước **60 phút**, đổi bằng `--minutes=`),
+  lên lịch **mỗi 5 phút** ở `routes/console.php`.
+- Chỉ nhắc buổi **có đặt `starts_at`** — buổi "mở tự do" không có mốc nào để nhắc.
+- Cột **`class_sessions.reminder_sent_at`** đảm bảo **mỗi buổi chỉ gửi 1 lần**.
+  > ⚠️ Thiếu cột này thì cron 5 phút/lần sẽ gửi lại cho hàng trăm người mỗi lượt → spam, Gmail chặn.
+  > Đánh dấu **TRƯỚC** khi gửi: gửi lỗi giữa chừng thì thà sót một buổi còn hơn lượt sau gửi lại từ đầu.
+- **Email KHÔNG chứa link Meet** — chỉ dẫn về `/lop-hoc`. Chuyển tiếp email cho người khác cũng vô dụng
+  vì họ không đăng nhập được tài khoản. Có test khẳng định điều này.
+- Một địa chỉ hỏng không làm chết cả đợt gửi (bọc `try/catch` + `report()` từng người).
+
+### ② Gỡ người hết hạn khỏi lời mời Calendar
+**Lỗ hổng đang vá:** học viên hết hạn **vẫn còn lời mời trong lịch của họ** → mở lịch là có link,
+**vào thẳng Meet mà KHÔNG đi qua cổng web** → hệ thống không chặn được. Google không tự gỡ.
+- `/admin/class-sessions` hiện danh sách **"cần GỠ khỏi lời mời Calendar"** + nút copy các địa chỉ đó.
+- Nút **"Tôi đã gỡ xong"** ghi mốc vào `settings.class_invite_synced_at`; lần sau chỉ liệt kê người
+  hết hạn **kể từ mốc đó** → danh sách luôn là **việc còn phải làm**, không lặp lại việc đã xong.
+  Chưa từng bấm thì mặc định tính 60 ngày gần nhất.
+
+**Kiểm chứng:** `tests/Feature/ClassReminderTest.php` (6 ca): chỉ gửi cho người còn hạn · chỉ gửi 1 lần
+dù chạy 3 lượt · bỏ qua buổi còn xa/đã bắt đầu/đang tắt/mở tự do · **email không chứa link Meet** ·
+admin thấy danh sách cần gỡ · bấm xác nhận thì danh sách trống. **Tổng 127 pass.**
+
+**Deploy:** cần `php artisan migrate --force` (thêm cột `reminder_sent_at`). Không cần `npm run build`.
+Cron đã có sẵn 1 dòng `schedule:run` nên **không phải thêm cron mới**.
+
+### ③ ⏸️ Tự động hoá Calendar (Pha 1) — CHƯA LÀM, CHỜ GOOGLE WORKSPACE
+**Cố ý không code.** Cần Workspace + service account + domain-wide delegation để chạy thử;
+viết mù rồi đẩy lên production là liều — code này quyết định ai vào được lớp.
+
+**Đặc tả sẵn cho khi có Workspace:**
+1. Cài `google/apiclient`; tạo **service account**, bật **domain-wide delegation**, uỷ quyền scope
+   `https://www.googleapis.com/auth/calendar` cho tài khoản host (cô Dung).
+2. Service `GoogleCalendarService`: `createOrUpdateEvent(ClassSession $s, array $emails)` —
+   tạo sự kiện có `conferenceData` (tự sinh link Meet) + `attendees` = danh sách email.
+   Lưu `google_event_id` vào bảng `class_sessions` (migration mới).
+3. Đặt **`guestsCanInviteOthers = false`** và mức truy cập phòng ở **RESTRICTED** —
+   lúc đó link rò ra ngoài cũng vô dụng, đây mới là hàng rào kín thật sự.
+4. Command `classes:sync-invites` chạy hằng ngày: so `User::invitableToClass()` với `attendees`
+   hiện tại → thêm người mới, **gỡ người hết hạn**. Vá hẳn ② mà không cần thao tác tay.
+5. Khi ③ xong: bỏ hộp "cần GỠ khỏi lời mời" ở màn admin (không còn tác dụng).
+
+> 💡 Trước khi code: test **outbound HTTPS từ cPanel tới `www.googleapis.com`** — cùng loại rủi ro
+> đã nêu ở `PLAN_CHAM_SPEAKING_AI.md` với `api.openai.com`. Shared host đôi khi chặn.

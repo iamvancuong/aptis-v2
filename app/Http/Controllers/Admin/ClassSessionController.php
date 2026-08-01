@@ -12,6 +12,24 @@ use Illuminate\Http\Request;
  */
 class ClassSessionController extends Controller
 {
+    /** Mốc thời gian admin xác nhận đã cập nhật lời mời Calendar lần gần nhất. */
+    private const INVITE_SYNC_KEY = 'class_invite_synced_at';
+
+    /**
+     * Admin bấm sau khi đã gỡ người hết hạn khỏi sự kiện Calendar. Ghi mốc để
+     * lần sau chỉ hiện người hết hạn TỪ đó — danh sách luôn là việc còn phải làm.
+     */
+    public function markInviteSynced()
+    {
+        \App\Models\Setting::updateOrCreate(
+            ['key' => self::INVITE_SYNC_KEY],
+            ['value' => now()->toDateTimeString(), 'label' => 'Lần cuối cập nhật lời mời lớp online']
+        );
+
+        return redirect()->route('admin.class-sessions.index')
+            ->with('success', 'Đã ghi nhận. Danh sách cần gỡ sẽ tính lại từ bây giờ.');
+    }
+
     public function index()
     {
         $sessions = ClassSession::withCount('joins')->orderByDesc('starts_at')->paginate(15);
@@ -52,8 +70,23 @@ class ClassSessionController extends Controller
             ->where('expires_at', '<', now()->addDays(7))
             ->count();
 
+        // ⚠️ Lỗ hổng thật: học viên hết hạn NHƯNG vẫn nằm trong lời mời Calendar
+        // thì có link trong lịch của họ và vào Meet thẳng — KHÔNG đi qua cổng web
+        // nên hệ thống không chặn được. Phải gỡ tay khỏi sự kiện Calendar.
+        // Chỉ liệt kê người hết hạn KỂ TỪ lần admin bấm "Đã cập nhật lời mời",
+        // để danh sách luôn là việc còn phải làm, không lặp lại việc đã xong.
+        $lanDongBo = \App\Models\Setting::where('key', self::INVITE_SYNC_KEY)->value('value');
+        $moc = $lanDongBo ? \Illuminate\Support\Carbon::parse($lanDongBo) : now()->subDays(60);
+
+        $canGoBo = \App\Models\User::where('role', '!=', 'admin')
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now())
+            ->where('expires_at', '>=', $moc)
+            ->orderByDesc('expires_at')
+            ->get(['id', 'name', 'email', 'google_email', 'expires_at']);
+
         return view('admin.class-sessions.index', compact(
-            'sessions', 'guestEmails', 'nonGmailCount', 'emailHong', 'sapHetHan'
+            'sessions', 'guestEmails', 'nonGmailCount', 'emailHong', 'sapHetHan', 'canGoBo', 'lanDongBo'
         ));
     }
 
