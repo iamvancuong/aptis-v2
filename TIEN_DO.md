@@ -2,7 +2,7 @@
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
 > Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · **(T) chấm Nói bằng AI đã code, CHỜ DEPLOY — §27** ·
-> việc tồn: **§26** · **146 test pass** · deploy cPanel: xem 🟠 dưới.
+> việc tồn: **§26** · **154 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -799,6 +799,26 @@ bao nhiêu % · điểm AI lệch điểm cô Dung bao nhiêu. Bù lại bằng 
 `.env`: `SPEAKING_AI_ENABLED=false` → bài mới về lại luồng giáo viên chấm tay, không cần deploy.
 Đổi model phiên âm: `OPENAI_TRANSCRIBE_MODEL=` (mặc định `gpt-4o-mini-transcribe`).
 
+### 🔧 Chẩn đoán khi "AI có vẻ không chạy"
+
+```
+php artisan speaking:grade-attempt {attempt_id}
+```
+
+Chấm ngay tại chỗ và **in lỗi thẳng ra màn hình** thay vì để nó nằm im trong log —
+30 giây là biết host có gọi ra `api.openai.com` được không. Cũng dùng để **cứu bài lẻ**
+(nộp trước khi bật tính năng, hoặc job chết vì mạng). `--force` để chấm lại phần đã có kết quả.
+> ⚠️ ID trên URL `/mock-test/{id}/result` là **MockTest**, không phải Attempt.
+> Tra: `MockTest::find(id)->attempts()->first()->id`.
+
+### Trạng thái phải LUÔN hiện ra
+Bản đầu chỉ vẽ khối AI khi đã có kết quả → trong lúc chờ, trang trống trơn và học viên
+tưởng tính năng không tồn tại (người dùng báo thật). Giờ mọi trạng thái đều có nhãn:
+**AI đang chấm…** · **AI chấm nháp x/10** · **Chấm tự động lỗi** (kèm lý do + "không bị trừ lượt")
+· **Không có bản ghi âm** · **Hết lượt AI** · **Giảng viên chấm**.
+Tắt bằng `SPEAKING_AI_ENABLED=false` thì không nhãn nào hứa "AI đang chấm" nữa.
+Có `SpeakingHistoryDisplayTest` giữ đúng các trạng thái này.
+
 ### 🔴 Việc còn lại của mục này
 - **`speaking:cleanup-audio` CHƯA BẬT CRON — cố ý.** Lệnh xoá audio thật, không khôi phục được.
   Dòng schedule đã viết sẵn nhưng **để comment** trong `routes/console.php`.
@@ -807,10 +827,10 @@ bao nhiêu % · điểm AI lệch điểm cô Dung bao nhiêu. Bù lại bằng 
 - Khi bật lại quảng cáo chấm Speaking của **giáo viên** (§19): còn thiếu nhãn Có phí/Miễn phí
   cho `/admin/speaking-reviews` (Writing đã làm ở §20).
 
-**Kiểm chứng:** `SpeakingAiGradingTest` (14 ca — chủ yếu nhánh hỏng: mất file, không có tiếng nói,
+**Kiểm chứng:** `SpeakingAiGradingTest` (17 ca — chủ yếu nhánh hỏng: mất file, không có tiếng nói,
 401, quá 25MB, JSON hỏng, 500 phải retry, không ghi đè điểm giáo viên, không phiên âm lại,
 hết lượt, phần trống không bị trừ lượt, công tắc tắt) + `SpeakingReviewQueueTest` (5 ca).
-**Tổng 146 pass** (trước phiên này 127).
+**Tổng 154 pass** (trước phiên này 127).
 
 **Deploy:** **CẦN `php artisan migrate --force`** (bảng `speaking_ai_usages`).
 **KHÔNG cần `npm run build`** — đã đối chiếu từng class Tailwind mới với `public/build/assets/app-*.css`,

@@ -23,8 +23,20 @@
         </div>
     </div>
 
+    @php $speakingAiOn = config('services.openai.speaking_ai_enabled', true); @endphp
+
     {{-- Items List --}}
     @foreach($attempt->attemptAnswers as $answer)
+        @php
+            $hasRecording = \App\Support\SpeakingAudio::hasRecording($answer->answer);
+            // "Đang chấm" = có bản ghi, chưa có kết quả máy, và chưa ai chốt điểm.
+            // Trạng thái này PHẢI hiện ra: không hiện gì thì học viên không phân
+            // biệt được "máy đang chạy" với "không có tính năng nào cả".
+            $aiRunning = $speakingAiOn
+                && $hasRecording
+                && empty($answer->ai_metadata)
+                && !in_array($answer->grading_status, ['graded', 'manually_graded', 'ai_failed', 'limit_reached'], true);
+        @endphp
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {{-- Part Header --}}
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
@@ -46,11 +58,15 @@
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                             Đã hết lượt chấm AI
                         </span>
-                    @elseif(!\App\Support\SpeakingAudio::hasRecording($answer->answer))
+                    @elseif(!$hasRecording)
                         {{-- Không ghi âm thì sẽ không bao giờ có ai chấm. Hiện "Chờ chấm"
                              ở đây là hứa suông với học viên. --}}
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                             Không có bản ghi âm
+                        </span>
+                    @elseif($aiRunning)
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                            🤖 AI đang chấm…
                         </span>
                     @else
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
@@ -238,6 +254,30 @@
                             {{ $aiError['message'] ?? 'Chấm tự động chưa hoàn tất cho phần này.' }}
                         </p>
                         <p class="text-xs text-gray-500 mt-1">Lượt chấm AI của bạn không bị trừ. Bài vẫn nằm trong danh sách chờ giảng viên chấm.</p>
+                    </div>
+                @elseif($aiRunning)
+                    <div class="p-6 bg-amber-50 border-t border-amber-100">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold shadow-sm">
+                                AI
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-sm font-bold text-amber-800 mb-1">Nhận xét tự động đang được tạo</h3>
+                                <p class="text-sm text-gray-700">
+                                    Máy đang nghe bản ghi của bạn và viết nhận xét. Việc này thường mất
+                                    <strong>1–3 phút</strong> — hãy tải lại trang sau ít phút.
+                                </p>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Nhận xét tự động đánh giá nội dung, từ vựng, ngữ pháp và mạch lạc;
+                                    không đánh giá phát âm và độ trôi chảy.
+                                </p>
+                                {{-- Chỉ dùng class Tailwind đã có trong public/build: bundle bị
+                                     gitignore nên class mới sẽ mất sạch style trên production (§25). --}}
+                                <a href="{{ request()->fullUrl() }}" class="inline-block mt-3 px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors">
+                                    Tải lại trang
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 @endif
 
