@@ -15,6 +15,13 @@
             : collect();
         $hasAiScore = $answersByPart->contains(fn ($a) => $a->grading_status === 'ai_graded');
         $hasTeacherScore = $answersByPart->contains(fn ($a) => in_array($a->grading_status, ['graded', 'manually_graded'], true));
+
+        // Còn phần nào có bản ghi mà chưa ra kết quả → máy vẫn đang chạy.
+        $aiRunning = $mockTest->skill === 'speaking'
+            && config('services.openai.speaking_ai_enabled', true)
+            && $answersByPart->contains(fn ($a) => \App\Support\SpeakingAudio::hasRecording($a->answer)
+                && empty($a->ai_metadata)
+                && !in_array($a->grading_status, ['graded', 'manually_graded', 'ai_failed', 'limit_reached'], true));
     @endphp
 
     {{-- Header --}}
@@ -80,6 +87,9 @@
                     Máy đánh giá nội dung, từ vựng, ngữ pháp, mạch lạc —
                     <strong>không chấm phát âm và độ trôi chảy</strong>. Đây chưa phải điểm chính thức.
                 </p>
+            @elseif($aiRunning)
+                <p class="text-amber-700 mt-2 text-sm font-semibold">AI đang chấm bài của bạn</p>
+                <p class="text-gray-500 text-sm mt-1">Thường mất 1–3 phút. Hãy tải lại trang sau ít phút.</p>
             @else
                 <p class="text-amber-600 mt-2 text-sm">Bài thi đang chờ chấm điểm</p>
             @endif
@@ -163,6 +173,8 @@
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Hết lượt AI</span>
                             @elseif($mockTest->skill === 'speaking' && !\App\Support\SpeakingAudio::hasRecording($partAnswer->answer ?? null))
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Không ghi âm</span>
+                            @elseif($mockTest->skill === 'speaking' && config('services.openai.speaking_ai_enabled', true))
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">AI đang chấm…</span>
                             @else
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">Chờ chấm</span>
                             @endif
