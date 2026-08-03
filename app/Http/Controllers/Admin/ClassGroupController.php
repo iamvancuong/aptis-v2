@@ -157,6 +157,9 @@ class ClassGroupController extends Controller
 
     private function validated(Request $request): array
     {
+        // Nhận cả `meet.google.com/abc-defg-hij` lẫn mỗi mã phòng — xem `MeetLink`.
+        $request->merge(['meet_link' => \App\Support\MeetLink::normalize($request->input('meet_link'))]);
+
         $data = $request->validate([
             'name'          => 'required|string|max:255',
             'description'   => 'nullable|string',
@@ -165,11 +168,14 @@ class ClassGroupController extends Controller
             'meet_link'     => 'nullable|url|max:500',
             'is_active'     => 'boolean',
         ], [
-            'meet_link.url' => 'Link phòng học phải là một URL hợp lệ (bắt đầu bằng https://).',
+            'meet_link.url' => 'Link phòng học không hợp lệ. Dán nguyên link Meet (hoặc chỉ mã phòng dạng abc-defg-hij) là được.',
         ]);
 
-        $data['source_filter'] = $data['source_filter'] ?: null;
-        $data['meet_link']     = $data['meet_link'] ?: null;
+        // `?? null` bắt buộc: `validate()` KHÔNG trả về key nào vắng mặt trong
+        // request. Form đầy đủ thì luôn có, nhưng chỉ cần một ô bị bỏ khỏi form
+        // là "Undefined array key" → lỗi 500. Đã dính thật khi test.
+        $data['source_filter'] = ($data['source_filter'] ?? null) ?: null;
+        $data['meet_link']     = ($data['meet_link'] ?? null) ?: null;
 
         return $data;
     }

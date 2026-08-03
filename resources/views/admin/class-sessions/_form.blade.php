@@ -41,19 +41,25 @@
     @enderror
 </div>
 
+{{-- `type="text"` chứ không phải `type="url"`: trình duyệt sẽ tự chặn
+     `meet.google.com/abc-defg-hij` (thiếu https) ngay tại chỗ, không cho gửi lên,
+     nên phần chuẩn hoá ở server không bao giờ chạy tới. --}}
 <x-input
-    type="url"
     name="meet_link"
-    label="Link phòng học riêng cho buổi này (bỏ trống nếu dùng link của lớp)"
+    label="Link phòng học riêng cho buổi này (không bắt buộc)"
     :value="$session?->meet_link ?? ''"
-    placeholder="https://meet.google.com/abc-defg-hij"
+    placeholder="meet.google.com/abc-defg-hij  —  hoặc chỉ abc-defg-hij"
     error="{{ $errors->first('meet_link') }}"
 />
 <p class="-mt-2 mb-3 text-xs text-gray-500">
-    Đã chọn lớp có link phòng thì <strong>để trống ô này</strong> — buổi sẽ dùng link của lớp.
-    Chỉ điền khi buổi này cần một phòng khác. Buổi không gắn lớp thì bắt buộc phải có link riêng.
-    Link <strong>không hiển thị</strong> cho học viên — họ chỉ thấy nút “Vào lớp”, hệ thống kiểm tra
-    tư cách thành viên, hạn tài khoản và giờ học rồi mới chuyển sang phòng.
+    Gõ kiểu nào cũng được: <code>meet.google.com/abc-defg-hij</code>, có <code>https://</code> hay không,
+    hoặc dán mỗi mã phòng <code>abc-defg-hij</code> — hệ thống tự bổ sung phần còn lại.
+</p>
+<p class="-mt-1 mb-3 text-xs text-gray-500">
+    Đã chọn lớp có link phòng thì <strong>để trống ô này</strong>, buổi sẽ dùng link của lớp.
+    Để trống cả hai cũng lưu được (lên lịch trước, mở phòng sau) — nhưng học viên chưa vào được
+    cho tới khi có link. Link <strong>không hiển thị</strong> cho học viên: họ chỉ thấy nút “Vào lớp”,
+    hệ thống kiểm tra tư cách thành viên, hạn tài khoản và giờ học rồi mới chuyển sang phòng.
 </p>
 
 {{-- Nhắc ngay chỗ dán link: web chỉ chặn được khâu LẤY link, không chặn được

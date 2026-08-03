@@ -40,15 +40,21 @@
     @enderror
 </div>
 
+{{-- `type="text"` chứ không phải `type="url"`: trình duyệt sẽ tự chặn
+     `meet.google.com/abc-defg-hij` (thiếu https) ngay tại chỗ, không cho gửi lên,
+     nên phần chuẩn hoá ở server không bao giờ chạy tới. --}}
 <x-input
-    type="url"
     name="meet_link"
-    label="Link phòng Meet của lớp (tuỳ chọn)"
+    label="Link phòng Meet của lớp (không bắt buộc)"
     :value="old('meet_link', $group?->meet_link ?? '')"
-    placeholder="https://meet.google.com/abc-defg-hij"
+    placeholder="meet.google.com/abc-defg-hij  —  hoặc chỉ abc-defg-hij"
     error="{{ $errors->first('meet_link') }}"
 />
-<p class="-mt-2 mb-4 text-xs text-gray-500">
+<p class="-mt-2 mb-2 text-xs text-gray-500">
+    Gõ kiểu nào cũng được: có <code>https://</code> hay không, hoặc dán mỗi mã phòng
+    <code>abc-defg-hij</code> — hệ thống tự bổ sung phần còn lại.
+</p>
+<p class="mb-4 text-xs text-gray-500">
     Dán <strong>một lần</strong> ở đây thì mọi buổi của lớp tự dùng link này — khỏi phải dán lại từng buổi.
     Cách làm ít thao tác nhất: tạo <strong>một sự kiện Google Calendar lặp lại</strong> cho lớp
     (“19h30 thứ 7 hàng tuần”), Google giữ nguyên một link Meet cho cả chuỗi, dán link đó vào đây.

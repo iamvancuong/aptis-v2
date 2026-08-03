@@ -126,8 +126,7 @@ class ClassSessionController extends Controller
         $session = ClassSession::create($this->validated($request));
         $this->syncExtraMembers($request, $session);
 
-        return redirect()->route('admin.class-sessions.index')
-            ->with('success', 'Đã tạo buổi học.');
+        return $this->veDanhSach($session, 'Đã tạo buổi học.');
     }
 
     public function edit(ClassSession $classSession)
@@ -146,8 +145,25 @@ class ClassSessionController extends Controller
         $classSession->update($this->validated($request));
         $this->syncExtraMembers($request, $classSession->refresh());
 
-        return redirect()->route('admin.class-sessions.index')
-            ->with('success', 'Đã cập nhật buổi học.');
+        return $this->veDanhSach($classSession, 'Đã cập nhật buổi học.');
+    }
+
+    /**
+     * Lưu buổi thiếu link là chuyện bình thường (lên lịch trước, mở phòng sau),
+     * nhưng phải NÓI RA. Không nói thì admin tưởng xong việc, tới giờ học viên
+     * mở `/lop-hoc` không thấy nút và không ai hiểu vì sao.
+     */
+    private function veDanhSach(ClassSession $session, string $thongBao)
+    {
+        $redirect = redirect()->route('admin.class-sessions.index');
+
+        if (! $session->load('classGroup')->hasMeetLink()) {
+            return $redirect->with('warning', $thongBao
+                . ' ⚠️ Buổi này CHƯA CÓ link phòng nên học viên chưa vào được —'
+                . ' dán link vào buổi, hoặc vào lớp dán link dùng chung cho cả lớp.');
+        }
+
+        return $redirect->with('success', $thongBao);
     }
 
     /**
@@ -196,25 +212,25 @@ class ClassSessionController extends Controller
         // rule `after:starts_at` sẽ đem so với một giá trị rỗng.
         $bothTimesGiven = $request->filled('starts_at') && $request->filled('ends_at');
 
-        // Link buổi chỉ BẮT BUỘC khi không kế thừa được từ lớp. Chọn lớp đã có
-        // link rồi mà vẫn bắt dán lại thì đúng là lúc admin dán nhầm link lớp khác.
-        $lopCoLink = $request->filled('class_group_id')
-            && \App\Models\ClassGroup::whereKey($request->input('class_group_id'))
-                ->whereNotNull('meet_link')->exists();
+        // Nhận cả `meet.google.com/abc-defg-hij` lẫn mỗi mã phòng — xem `MeetLink`.
+        $request->merge(['meet_link' => \App\Support\MeetLink::normalize($request->input('meet_link'))]);
 
         $data = $request->validate([
             'title'          => 'required|string|max:255',
             'description'    => 'nullable|string',
             'class_group_id' => 'nullable|exists:class_groups,id',
-            // Để url chung (không ép meet.google.com) phòng khi dùng nền tảng khác.
-            'meet_link'      => ($lopCoLink ? 'nullable' : 'required') . '|url|max:500',
+            // KHÔNG bắt buộc: quy trình thật là lên lịch buổi trước, mở phòng Meet
+            // sau. Buổi thiếu link thì `isJoinable()` trả false nên học viên không
+            // thấy nút, màn admin tô đỏ "Chưa có link", và controller nhắc một câu
+            // lúc lưu. Chặn ngay lúc nhập chỉ ép admin dán link giả cho qua cửa.
+            // Để `url` chung (không ép meet.google.com) phòng khi đổi nền tảng.
+            'meet_link'      => 'nullable|url|max:500',
             'starts_at'      => 'nullable|date',
             'ends_at'        => 'nullable|date' . ($bothTimesGiven ? '|after:starts_at' : ''),
             'is_active'      => 'boolean',
         ], [
-            'ends_at.after'      => 'Giờ kết thúc phải sau giờ bắt đầu.',
-            'meet_link.url'      => 'Link phòng học phải là một URL hợp lệ (bắt đầu bằng https://).',
-            'meet_link.required' => 'Buổi này chưa có link phòng. Dán link vào đây, hoặc chọn một lớp đã có link phòng.',
+            'ends_at.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
+            'meet_link.url' => 'Link phòng học không hợp lệ. Dán nguyên link Meet (hoặc chỉ mã phòng dạng abc-defg-hij) là được.',
         ]);
 
         // Ô trống về DB là null (không phải chuỗi rỗng) để các hàm giờ hiểu đúng.

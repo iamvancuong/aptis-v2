@@ -335,10 +335,60 @@ class ClassGroupAccessTest extends TestCase
         ]);
     }
 
-    public function test_buoi_khong_lop_va_khong_link_thi_bi_bat_loi(): void
+    public function test_buoi_khong_link_van_luu_duoc_nhung_phai_canh_bao(): void
     {
+        // Lên lịch buổi trước, mở phòng Meet sau là quy trình thật. Chặn lúc nhập
+        // chỉ ép admin dán link giả cho qua cửa. Nhưng phải NÓI RA, không thì tới
+        // giờ học viên không thấy nút và không ai hiểu vì sao.
         $this->actingAs($this->admin())->post(route('admin.class-sessions.store'), [
             'title' => 'Buổi thiếu link', 'class_group_id' => '', 'meet_link' => '', 'is_active' => 1,
-        ])->assertSessionHasErrors('meet_link');
+        ])->assertSessionHasNoErrors()->assertSessionHas('warning');
+
+        $buoi = ClassSession::firstWhere('title', 'Buổi thiếu link');
+
+        // Không có link ⇒ không mở cửa ⇒ học viên không thấy nút.
+        $this->assertFalse($buoi->isJoinable());
+        $this->actingAs($this->student())
+            ->get(route('classes.join', $buoi))
+            ->assertRedirect(route('classes.index'))
+            ->assertSessionHas('error');
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('cachGoLink')]
+    public function test_nhap_link_thieu_https_hoac_chi_ma_phong_van_luu_duoc(string $nhap, string $mongDoi): void
+    {
+        $this->actingAs($this->admin())->post(route('admin.class-sessions.store'), [
+            'title' => 'Buổi test link', 'class_group_id' => '', 'meet_link' => $nhap, 'is_active' => 1,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame($mongDoi, ClassSession::firstWhere('title', 'Buổi test link')->meet_link);
+    }
+
+    public static function cachGoLink(): array
+    {
+        return [
+            'thiếu https'      => ['meet.google.com/bbb-tigq-saf', 'https://meet.google.com/bbb-tigq-saf'],
+            'đủ https'         => ['https://meet.google.com/bbb-tigq-saf', 'https://meet.google.com/bbb-tigq-saf'],
+            'chỉ mã phòng'     => ['bbb-tigq-saf', 'https://meet.google.com/bbb-tigq-saf'],
+            'mã phòng CHỮ HOA' => ['BBB-TIGQ-SAF', 'https://meet.google.com/bbb-tigq-saf'],
+            'thừa khoảng trắng'=> ['  meet.google.com/bbb-tigq-saf  ', 'https://meet.google.com/bbb-tigq-saf'],
+            'giữ nguyên http'  => ['http://meet.google.com/bbb-tigq-saf', 'http://meet.google.com/bbb-tigq-saf'],
+        ];
+    }
+
+    public function test_link_cua_lop_cung_duoc_chuan_hoa(): void
+    {
+        // ⚠️ Phải khẳng định cả REDIRECT, không chỉ `assertSessionHasNoErrors`:
+        // trang lỗi 500 cũng "không có lỗi trong session" nên assert kia một mình
+        // sẽ xanh trong khi thực tế controller đang nổ. Chính ca này bắt được lỗi
+        // "Undefined array key source_filter" — form không gửi ô đó thì 500.
+        $this->actingAs($this->admin())->post(route('admin.class-groups.store'), [
+            'name' => 'Lớp nhập link tắt', 'meet_link' => 'meet.google.com/xyz-abcd-efg', 'is_active' => 1,
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $this->assertSame(
+            'https://meet.google.com/xyz-abcd-efg',
+            ClassGroup::firstWhere('name', 'Lớp nhập link tắt')->meet_link
+        );
     }
 }
