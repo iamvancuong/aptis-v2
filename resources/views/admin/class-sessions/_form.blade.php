@@ -83,22 +83,85 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-4">
-    <x-input
-        type="datetime-local"
-        name="starts_at"
-        label="Bắt đầu (không bắt buộc)"
-        :value="$session?->starts_at?->format('Y-m-d\TH:i') ?? ''"
-        error="{{ $errors->first('starts_at') }}"
-    />
-    <x-input
-        type="datetime-local"
-        name="ends_at"
-        label="Kết thúc (không bắt buộc)"
-        :value="$session?->ends_at?->format('Y-m-d\TH:i') ?? ''"
-        error="{{ $errors->first('ends_at') }}"
-    />
+{{-- Giờ học kèm DIỄN GIẢI TRỰC TIẾP.
+     Bản trước chỉ có hai ô datetime rỗng: nhập xong không có gì nói cho admin biết
+     giờ đó nghĩa là gì, nên gõ nhầm 23:05 trong khi định để 21:05 thì phải tới lúc
+     học viên kêu "không vào được" mới biết. Đã xảy ra thật (buổi #7). --}}
+@php
+    $batDauCu  = old('starts_at', $session?->starts_at?->format('Y-m-d\TH:i') ?? '');
+    $ketThucCu = old('ends_at', $session?->ends_at?->format('Y-m-d\TH:i') ?? '');
+@endphp
+
+<div x-data="{
+        batDau: @js($batDauCu),
+        ketThuc: @js($ketThucCu),
+        somPhut: {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }},
+        moNgay() {
+            // Lấy giờ máy dưới dạng YYYY-MM-DDTHH:mm (giờ ĐỊA PHƯƠNG, không phải UTC).
+            const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+            this.batDau = d.toISOString().slice(0, 16);
+        },
+        xoaGio() { this.batDau = ''; this.ketThuc = ''; },
+        get cuaMo() {
+            if (!this.batDau) return null;
+            const t = new Date(this.batDau);
+            return isNaN(t) ? null : new Date(t.getTime() - this.somPhut * 60000);
+        },
+        get dangMo() { return this.cuaMo !== null && this.cuaMo <= new Date(); },
+        get moTa() {
+            if (!this.batDau && !this.ketThuc) {
+                return 'Mở tự do — học viên vào được ngay khi buổi đang bật, không giới hạn giờ.';
+            }
+            const c = this.cuaMo;
+            if (!c) return 'Chưa đặt giờ bắt đầu — buổi mở ngay khi bật.';
+            const gio = c.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+            let phut = Math.round((c - new Date()) / 60000);
+            if (phut <= 0) return 'Cửa lớp ĐANG MỞ (từ ' + gio + ').';
+            const ngay = Math.floor(phut / 1440); phut -= ngay * 1440;
+            const h = Math.floor(phut / 60), m = phut % 60;
+            const con = (ngay ? ngay + ' ngày ' : '') + (h ? h + ' giờ ' : '') + m + ' phút';
+            return 'Cửa lớp mở lúc ' + gio + ' — CÒN ' + con + ' NỮA, học viên chưa vào được trước lúc đó.';
+        }
+     }">
+    <div class="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-4">
+        <x-input
+            type="datetime-local"
+            name="starts_at"
+            label="Bắt đầu (không bắt buộc)"
+            :value="$batDauCu"
+            x-model="batDau"
+            error="{{ $errors->first('starts_at') }}"
+        />
+        <x-input
+            type="datetime-local"
+            name="ends_at"
+            label="Kết thúc (không bắt buộc)"
+            :value="$ketThucCu"
+            x-model="ketThuc"
+            error="{{ $errors->first('ends_at') }}"
+        />
+    </div>
+
+    <div class="-mt-2 mb-3 flex flex-wrap gap-2">
+        <button type="button" x-on:click="moNgay()"
+                class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            Bắt đầu ngay bây giờ
+        </button>
+        <button type="button" x-on:click="xoaGio()"
+                class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            Xoá giờ (mở tự do)
+        </button>
+    </div>
+
+    {{-- Câu này là thứ đáng lẽ phải có ngay từ đầu: nói thẳng hệ quả của giờ vừa nhập. --}}
+    <div class="mb-4 p-3 rounded-lg border text-xs"
+         x-bind:class="dangMo || (!batDau && !ketThuc)
+            ? 'bg-green-50 border-green-200 text-green-800'
+            : 'bg-amber-50 border-amber-200 text-amber-800'">
+        <span x-text="moTa"></span>
+    </div>
 </div>
+
 <div class="-mt-2 mb-4 text-xs text-gray-500 space-y-1">
     <p><strong>Để trống cả hai ô là xong</strong> — lớp mở ngay khi bật, đóng khi bạn bỏ tick “Bật buổi học”. Cách này ít thao tác nhất.</p>
     <p>Nếu có điền: nút “Vào lớp” tự bật trước giờ bắt đầu {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }} phút và tự tắt khi qua giờ kết thúc — không cần nhớ tắt tay.</p>

@@ -206,6 +206,14 @@
                                 };
                             @endphp
                             <x-badge :variant="$variant">{{ $session->statusLabel() }}</x-badge>
+                            @if($session->is_active && $session->isUpcoming())
+                                {{-- Nói rõ giờ CỬA MỞ, không phải giờ bắt đầu: hai giờ này
+                                     lệch nhau {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }} phút
+                                     và học viên kêu "không vào được" chính là ở khoảng giữa. --}}
+                                <span class="block mt-1 text-xs text-amber-700">
+                                    Mở lúc {{ $session->joinOpensAt()->format('H:i d/m') }}
+                                </span>
+                            @endif
                         </td>
                         <td class="px-6 py-4">
                             @php $link = $session->effectiveMeetLink(); @endphp

@@ -376,6 +376,62 @@ class ClassGroupAccessTest extends TestCase
         ];
     }
 
+    public function test_buoi_thieu_link_noi_ro_ly_do_chu_khong_in_mo_luc_trong(): void
+    {
+        // Bản trước in "Mở lúc {joinOpensAt}" cho MỌI trường hợp không vào được.
+        // Buổi thiếu link mà đang trong giờ thì `joinOpensAt` là giờ quá khứ hoặc
+        // null → học viên đọc được "Mở lúc" cụt hoặc một giờ đã trôi qua, và không
+        // ai hiểu vì sao không có nút.
+        $lop  = $this->group(['meet_link' => null]);
+        $buoi = $this->buoi(['class_group_id' => $lop->id, 'title' => 'Buổi chưa có phòng']);
+        $hv   = $this->student();
+        $lop->members()->attach($hv->id);
+
+        $this->actingAs($hv)->get(route('classes.index'))
+            ->assertSee('Buổi chưa có phòng')
+            ->assertSee('Giảng viên chưa mở phòng')
+            ->assertDontSee('Mở lúc');
+    }
+
+    public function test_form_buoi_hoc_co_nut_bat_dau_ngay_va_o_dien_giai_gio(): void
+    {
+        // Khối Alpine diễn giải giờ là phần chính của bản vá "tưởng đặt giờ hiện
+        // tại mà thật ra 2 tiếng nữa". Nếu Blade escape hỏng thì nó biến mất âm
+        // thầm — trang vẫn 200, chỉ là không còn tác dụng gì.
+        $this->actingAs($this->admin())
+            ->get(route('admin.class-sessions.create'))
+            ->assertOk()
+            ->assertSee('Bắt đầu ngay bây giờ')
+            ->assertSee('Xoá giờ (mở tự do)')
+            ->assertSee('x-text="moTa"', false);
+    }
+
+    public function test_lenh_chan_doan_chi_dung_cua_dang_chan(): void
+    {
+        $lop  = $this->group(['meet_link' => null, 'name' => 'Lớp chưa có link']);
+        $buoi = $this->buoi(['class_group_id' => $lop->id]);
+        $ngoaiLop = $this->student();
+
+        $this->artisan("classes:diagnose {$buoi->id} --user={$ngoaiLop->email}")
+            ->expectsOutputToContain('Có link phòng')
+            ->expectsOutputToContain('CHƯA CÓ LINK')
+            ->expectsOutputToContain('CHƯA CÓ THÀNH VIÊN NÀO')
+            ->expectsOutputToContain('KHÔNG VÀO ĐƯỢC')
+            ->assertSuccessful();
+    }
+
+    public function test_lenh_chan_doan_bao_vao_duoc_khi_moi_thu_dung(): void
+    {
+        $lop  = $this->group();
+        $buoi = $this->buoi(['class_group_id' => $lop->id]);
+        $hv   = $this->student();
+        $lop->members()->attach($hv->id);
+
+        $this->artisan("classes:diagnose {$buoi->id} --user={$hv->email}")
+            ->expectsOutputToContain('VÀO ĐƯỢC')
+            ->assertSuccessful();
+    }
+
     public function test_link_cua_lop_cung_duoc_chuan_hoa(): void
     {
         // ⚠️ Phải khẳng định cả REDIRECT, không chỉ `assertSessionHasNoErrors`:

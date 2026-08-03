@@ -118,8 +118,18 @@
                             Vào lớp
                         </a>
                     @else
+                        {{-- `isJoinable()` false vì NHIỀU lý do, không chỉ "chưa tới giờ".
+                             Bản trước in thẳng "Mở lúc {joinOpensAt}" — buổi thiếu link
+                             hoặc buổi mở tự do đều có `joinOpensAt` = null nên học viên
+                             đọc được đúng chữ "Mở lúc" trống trơn. Phải nói lý do thật. --}}
                         <span class="inline-block px-4 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-lg">
-                            Mở lúc {{ $session->joinOpensAt()?->format('H:i d/m') }}
+                            @if(! $session->hasMeetLink())
+                                Giảng viên chưa mở phòng
+                            @elseif($session->isUpcoming())
+                                Mở lúc {{ $session->joinOpensAt()->format('H:i d/m') }}
+                            @else
+                                Chưa mở
+                            @endif
                         </span>
                     @endif
                 </div>
