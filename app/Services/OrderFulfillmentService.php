@@ -99,6 +99,12 @@ class OrderFulfillmentService
                     'email'                => $order->email,
                     'password'             => Hash::make(self::DEFAULT_PASSWORD),
                     'role'                 => 'user',
+                    // Tài khoản sinh ra từ một đơn đã thanh toán.
+                    // ⚠️ Nhánh GIA HẠN ở trên cố ý KHÔNG đụng tới `source`: tài
+                    // khoản admin tạo tay rồi sau đó tự gia hạn bằng chuyển khoản
+                    // vẫn là tài khoản tạo tay. "Đã từng trả tiền chưa" hỏi bảng
+                    // `orders`, không hỏi cột này.
+                    'source'               => User::SOURCE_PURCHASE,
                     'status'               => 'active',
                     'max_devices'          => 2,
                     'violation_count'      => 0,

@@ -16,7 +16,10 @@ class ClassSessionController extends Controller
 {
     public function index()
     {
-        $sessions = ClassSession::visibleToStudents()->get();
+        $sessions = ClassSession::visibleToStudents()
+            ->allowedFor(auth()->user())
+            ->with('classGroup:id,name')
+            ->get();
 
         return view('class-sessions.index', compact('sessions'));
     }
@@ -34,11 +37,21 @@ class ClassSessionController extends Controller
                 ->with('error', 'Tài khoản của bạn đã hết hạn. Vui lòng gia hạn để vào lớp.');
         }
 
+        // Tư cách thành viên. Danh sách ở `index` đã lọc, nhưng KHÔNG được tin vào
+        // việc đó: đây là chỗ duy nhất trả link Meet ra ngoài, và ai cũng gõ thẳng
+        // được `/lop-hoc/9/join`. Cùng một luật, kiểm tra lại lần nữa tại cổng.
+        if (! $user->canJoinClassSession($classSession)) {
+            return redirect()->route('classes.index')
+                ->with('error', 'Buổi học này không thuộc lớp của bạn.');
+        }
+
         if (!$classSession->isJoinable()) {
             $message = $classSession->hasEnded() || !$classSession->is_active
                 ? 'Buổi học này đã kết thúc.'
-                : 'Chưa tới giờ vào lớp. Cửa lớp mở trước giờ học '
-                    . ClassSession::JOIN_EARLY_MINUTES . ' phút.';
+                : (! $classSession->hasMeetLink()
+                    ? 'Buổi học chưa có link phòng. Vui lòng báo giảng viên.'
+                    : 'Chưa tới giờ vào lớp. Cửa lớp mở trước giờ học '
+                        . ClassSession::JOIN_EARLY_MINUTES . ' phút.');
 
             return redirect()->route('classes.index')->with('error', $message);
         }
@@ -52,7 +65,7 @@ class ClassSessionController extends Controller
             'user_agent'       => substr((string) request()->userAgent(), 0, 512),
         ]);
 
-        return redirect()->away($classSession->meet_link);
+        return redirect()->away($classSession->effectiveMeetLink());
     }
 
     /**

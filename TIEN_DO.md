@@ -915,3 +915,106 @@ Trang hướng dẫn cô Dung dùng lớp online + bảng giá gói Google Meet:
 Nội dung: cài đặt một lần cho cả khoá (sự kiện Calendar lặp lại) · học viên thấy gì · xử lý trong lúc dạy ·
 bảng giá (Business Plus ~$22/tháng cho 500 người — **chỉ host trả tiền, học viên vào miễn phí**).
 > Sửa trang này thì bảo Claude cập nhật kèm đúng URL trên để giữ nguyên link đã gửi.
+
+---
+
+## 29. 🎓 PHIÊN 03/08/2026 (V) — LỚP HỌC + THÀNH VIÊN (GĐ1 của `PLAN_LOP_ONLINE.md`)
+
+> 📄 Bối cảnh, khảo sát Google Workspace và lộ trình 4 giai đoạn: **`PLAN_LOP_ONLINE.md`**.
+> Mục này chỉ ghi phần đã cài đặt. Nhánh `feature/class-groups` — **chưa merge, chưa deploy**.
+
+### Yêu cầu chủ dự án
+① phân biệt tài khoản tạo tay vs mua chuyển khoản · ② từ đó chia lớp khác nhau · ③ tạo lớp rồi tự chọn
+thành viên được vào buổi · ④ chỉ tài khoản web vào thẳng, còn lại xin duyệt · ⑤ chống học chui.
+
+### 🔴 Phát hiện quan trọng nhất: `orders` KHÔNG phân biệt được nguồn tài khoản
+Đếm trên DB test: **848 học viên, chỉ 2 người có đơn CK đã thanh toán**. PayOS lên production 28/07/2026,
+nên gần như toàn bộ học viên hiện tại được tạo tay/import — **không phải vì họ không trả tiền, mà vì lúc
+họ vào thì hệ thống thu tiền chưa tồn tại**. Code kiểu *"có đơn ⇒ mua CK"* sẽ xếp nhầm 846 người.
+→ Phải là **cột `users.source`** gán tại lúc tạo + backfill một lần. 🔴 **Đếm lại trên production trước khi backfill.**
+
+### Mô hình dữ liệu
+- **`users.source`** — `purchase` (PayOS tạo) · `manual` (admin tạo) · `import` (trước 28/07, không rõ nguồn).
+  > ⚠️ Là **cách tài khoản được TẠO RA**, bất biến. Tài khoản `manual` gia hạn bằng CK **vẫn là `manual`** —
+  > có test khẳng định. "Đã từng trả tiền chưa" là câu hỏi khác, hỏi bảng `orders`. Nhồi hai khái niệm vào
+  > một cột thì vài tháng nữa không tách ra được nữa.
+- **`class_groups`** — lớp: `name` · `source_filter` · **`meet_link`** · `is_active`.
+- **`class_group_user`** — thành viên lớp (danh sách tường minh).
+- **`class_session_user`** — khách mời THÊM cho riêng một buổi (học thử, học bù).
+- **`class_sessions.class_group_id`** nullable · **`meet_link` chuyển thành nullable**.
+- **unique index `users.google_email`** (0/848 người đã khai → lúc rẻ nhất để thêm).
+
+### Luật vào buổi
+| `class_group_id` | Ai vào được |
+|---|---|
+| `NULL` | Mọi học viên còn hạn — **hành vi Pha 0 giữ nguyên**, 3 buổi đang chạy không đổi |
+| có giá trị | Thành viên lớp **∪** khách mời riêng của buổi — **và lớp phải đang bật** |
+
+- **`User::canJoinClassSession()` là nguồn sự thật duy nhất.** Ba nơi gọi: `/lop-hoc`, cổng `join`, dashboard.
+- Cổng `join` **kiểm tra lại** dù `index` đã lọc — đây là chỗ DUY NHẤT trả link Meet ra ngoài, và ai cũng
+  gõ thẳng `/lop-hoc/9/join` được.
+- `classes:remind` **chỉ nhắc thành viên của buổi**. Quên chỗ này là gửi mail cho hàng trăm người về một
+  buổi họ không vào được — lỗi chỉ lộ ra sau khi đã gửi.
+
+### `source_filter` KHÔNG phải luật, chỉ là bộ lọc
+Nếu lớp tự động = "mọi người có `source = X`" thì admin mất quyền tự chọn, và ca thật "học viên tạo tay
+nhưng cần vào lớp trả phí" chỉ xử lý được bằng cách **sửa `source`** — tức là làm hỏng dữ liệu nguồn gốc
+để lách một luật hiển thị. Nên: lọc để chọn nhanh (2 cú bấm cho cả trăm người), quyền thì đọc pivot.
+
+### Link Meet ở mức LỚP, buổi kế thừa
+Dán một lần cho cả khoá (sự kiện Calendar lặp lại giữ nguyên một link). Buổi vẫn đặt được link riêng để
+ghi đè. **Không chỉ là tiện**: bắt dán lại mỗi buổi thì sớm muộn cũng có lần dán nhầm link của lớp khác —
+và đó là rò phòng học, không phải lỗi chính tả. `ClassSession::effectiveMeetLink()`.
+Không có link ở cả buổi lẫn lớp → `isJoinable()` trả false (không hiện nút thay vì dẫn tới trang lỗi).
+
+### Những chỗ dễ sai đã xử lý sẵn
+- **Khoá ngoại `restrictOnDelete`** cho `class_group_id`, KHÔNG phải `nullOnDelete`: để `null` thì xoá nhầm
+  một lớp sẽ biến mọi buổi của nó thành "mở cho toàn trường" — một thao tác xoá lại thành **lộ quyền truy
+  cập, im lặng**. Controller bắt trước để admin đọc câu tiếng Việt thay vì trang lỗi SQL.
+- **Tắt lớp = đóng mọi buổi của lớp**, kể cả với khách mời riêng.
+- **Buổi không gắn lớp thì xoá sạch khách mời** — mọi người đã vào được rồi, giữ danh sách lại chỉ tạo ảo
+  giác là nó đang hạn chế ai đó.
+- **`validate()` không trả về key vắng mặt trong request** → dùng `($data['x'] ?? null) ?: null`.
+  Đã dính lỗi này lúc code (2 test đỏ), không phải suy đoán.
+- **`->change()` tách khỏi việc thêm khoá ngoại** trong migration: trên SQLite `change()` dựng lại bảng,
+  gộp chung một closure thì thứ tự thao tác không đảm bảo.
+- **Test đối chiếu HAI CHIỀU của luật quyền** (`canJoinClassSession` ↔ `forClassSession` ↔ `allowedFor`):
+  ba chỗ mô tả cùng một luật thì sẽ lệch nhau lúc nào đó; ca này là cái chuông báo.
+
+### ⚠️ Giới hạn phải nhớ — web và Meet là HAI danh sách khác nhau
+Web chọn thành viên **theo từng buổi**. Nhưng với sự kiện Calendar lặp lại (1 lớp = 1 link cố định), Google
+chỉ biết danh sách khách mời **của cả chuỗi**, không theo buổi. Người bị bỏ khỏi buổi X **vẫn vào thẳng
+phòng được nếu còn giữ link**. Khớp tuyệt đối cần mỗi buổi một sự kiện riêng → **GĐ3 (Calendar API)**.
+Đã ghi cảnh báo này ngay trên màn `/admin/class-groups` để admin không hiểu nhầm.
+
+### Quyết định của chủ dự án (03/08)
+- **`max_devices` = 3, giữ nguyên. Không đụng `SessionLimit`.** Lý do: 1 tài khoản = 1 người, người đó dùng
+  điện thoại + iPad + máy tính.
+  > 🔴 Lỗi đếm thiết bị ở `SessionLimit.php:38` (tra `device_id` không kèm `user_id` → đổi tài khoản trên
+  > cùng máy thì bỏ qua phép đếm; DB có tài khoản giữ 4 row dù `max_devices`=3) **vẫn còn thật**, đã tách
+  > thành việc riêng, không nằm trong nhánh này.
+  > 🟡 Câu thông báo `SessionLimit.php:63,73` vẫn ghi "chỉ cho phép 1 thiết bị" trong khi thực tế cho 3.
+- **Workspace `milaedu.com`, host `support@milaedu.com`** → GĐ3 (service account + DWD) khả thi.
+
+### File
+**Thêm:** 4 migration · `ClassGroup` · `Admin/ClassGroupController` · `BackfillUserSource` ·
+`admin/class-groups/{index,create,edit,_form,members}` · `ClassGroupAccessTest` (16 ca) · `UserSourceTest` (6 ca).
+**Sửa:** `User` (source + quan hệ + `canJoinClassSession` + `forClassSession` + `ofSource`) ·
+`ClassSession` (`classGroup`/`extraMembers`/`effectiveMeetLink`/`allowedFor`/`isJoinable`) ·
+`ClassSessionController` · `Admin/ClassSessionController` · `Admin/UserController` ·
+`OrderFulfillmentService` · `SendClassReminders` · `routes/web.php` · `layouts/admin` ·
+`admin/class-sessions/{_form,index}` · `class-sessions/index`.
+
+**Kiểm chứng:** `php artisan test` = **200 pass** (trước 178).
+Đã đối chiếu từng class Tailwind mới với `public/build/assets/app-*.css` (bẫy §25) — **không thiếu class nào**
+(`hover:text-slate-900` thiếu nhưng là code cũ, không thuộc phiên này).
+
+**Deploy:** **CẦN `php artisan migrate --force`** (4 migration). **KHÔNG cần `npm run build`**.
+Sau khi migrate: chạy `php artisan users:backfill-source --dry-run` xem số liệu, rồi bỏ `--dry-run`.
+
+### 🔴 Việc còn lại
+- **CỔNG DỪNG 1 chưa qua:** phải dạy 2 buổi thật với lớp đã chia. Test tự động chỉ chứng minh luật đúng
+  trong SQLite, không chứng minh quy trình đúng với người thật.
+- **GĐ0 (thao tác Google Workspace) chưa ai làm** — xem `PLAN_LOP_ONLINE.md` §6-GĐ0, đặc biệt **bước 6**
+  (thử 1 Gmail được mời + 1 Gmail không được mời) và **bước 8** (kiểm CSV điểm danh có đúng cột không).
+- **GĐ2 (đối chiếu điểm danh)** và **GĐ3 (Calendar API)** chưa code.

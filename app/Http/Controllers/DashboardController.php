@@ -129,7 +129,11 @@ class DashboardController extends Controller
             ->count();
 
         // Buổi học online gần nhất còn hiệu lực (đang diễn ra hoặc sắp tới).
-        $nextClass = \App\Models\ClassSession::visibleToStudents()->first();
+        // Phải lọc theo lớp — nếu không, học viên thấy thẻ "lớp sắp tới" của lớp
+        // không phải của mình, bấm vào thì bị cổng join chặn: khó hiểu và khó chịu.
+        $nextClass = \App\Models\ClassSession::visibleToStudents()
+            ->allowedFor(auth()->user())
+            ->first();
 
         return view('dashboard', compact(
             'nextClass',

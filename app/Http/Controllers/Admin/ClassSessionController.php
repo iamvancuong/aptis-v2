@@ -32,7 +32,10 @@ class ClassSessionController extends Controller
 
     public function index()
     {
-        $sessions = ClassSession::withCount('joins')->orderByDesc('starts_at')->paginate(15);
+        $sessions = ClassSession::with('classGroup:id,name')
+            ->withCount(['joins', 'extraMembers'])
+            ->orderByDesc('starts_at')
+            ->paginate(15);
 
         // Danh sách mời qua Google Calendar: mọi học viên còn hạn. Mặc định lấy
         // email tài khoản; ai đã khai Gmail riêng thì lấy Gmail đó.
@@ -92,7 +95,10 @@ class ClassSessionController extends Controller
 
     public function create()
     {
-        return view('admin.class-sessions.create');
+        return view('admin.class-sessions.create', [
+            'groups'     => \App\Models\ClassGroup::orderBy('name')->get(['id', 'name', 'meet_link', 'is_active']),
+            'ungVien'    => $this->ungVienKhachMoi(),
+        ]);
     }
 
     /**
@@ -117,7 +123,8 @@ class ClassSessionController extends Controller
 
     public function store(Request $request)
     {
-        ClassSession::create($this->validated($request));
+        $session = ClassSession::create($this->validated($request));
+        $this->syncExtraMembers($request, $session);
 
         return redirect()->route('admin.class-sessions.index')
             ->with('success', 'Đã tạo buổi học.');
@@ -125,15 +132,53 @@ class ClassSessionController extends Controller
 
     public function edit(ClassSession $classSession)
     {
-        return view('admin.class-sessions.edit', compact('classSession'));
+        $classSession->load('extraMembers:id,name,email');
+
+        return view('admin.class-sessions.edit', [
+            'classSession' => $classSession,
+            'groups'       => \App\Models\ClassGroup::orderBy('name')->get(['id', 'name', 'meet_link', 'is_active']),
+            'ungVien'      => $this->ungVienKhachMoi(),
+        ]);
     }
 
     public function update(Request $request, ClassSession $classSession)
     {
         $classSession->update($this->validated($request));
+        $this->syncExtraMembers($request, $classSession->refresh());
 
         return redirect()->route('admin.class-sessions.index')
             ->with('success', 'Đã cập nhật buổi học.');
+    }
+
+    /**
+     * Khách được mời thêm cho riêng buổi này (học thử, học bù).
+     *
+     * Buổi KHÔNG gắn lớp thì mọi học viên còn hạn đã vào được rồi — giữ lại danh
+     * sách khách lúc đó chỉ tạo ảo giác là nó đang hạn chế ai đó. Xoá sạch cho
+     * khỏi hiểu nhầm.
+     */
+    /**
+     * Ứng viên cho ô "khách mời thêm". Chỉ học viên còn hạn — mời người đã hết
+     * hạn là mời vào một cánh cửa mà `canJoinClassSession` vẫn đóng.
+     */
+    private function ungVienKhachMoi(): \Illuminate\Support\Collection
+    {
+        return \App\Models\User::invitableToClass()->get(['id', 'name', 'email']);
+    }
+
+    private function syncExtraMembers(Request $request, ClassSession $session): void
+    {
+        if ($session->class_group_id === null) {
+            $session->extraMembers()->sync([]);
+            return;
+        }
+
+        $ids = \App\Models\User::whereIn('id', (array) $request->input('extra_user_ids', []))
+            ->where('role', '!=', 'admin')
+            ->pluck('id')
+            ->all();
+
+        $session->extraMembers()->sync($ids);
     }
 
     public function destroy(ClassSession $classSession)
@@ -151,22 +196,35 @@ class ClassSessionController extends Controller
         // rule `after:starts_at` sẽ đem so với một giá trị rỗng.
         $bothTimesGiven = $request->filled('starts_at') && $request->filled('ends_at');
 
+        // Link buổi chỉ BẮT BUỘC khi không kế thừa được từ lớp. Chọn lớp đã có
+        // link rồi mà vẫn bắt dán lại thì đúng là lúc admin dán nhầm link lớp khác.
+        $lopCoLink = $request->filled('class_group_id')
+            && \App\Models\ClassGroup::whereKey($request->input('class_group_id'))
+                ->whereNotNull('meet_link')->exists();
+
         $data = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'title'          => 'required|string|max:255',
+            'description'    => 'nullable|string',
+            'class_group_id' => 'nullable|exists:class_groups,id',
             // Để url chung (không ép meet.google.com) phòng khi dùng nền tảng khác.
-            'meet_link'   => 'required|url|max:500',
-            'starts_at'   => 'nullable|date',
-            'ends_at'     => 'nullable|date' . ($bothTimesGiven ? '|after:starts_at' : ''),
-            'is_active'   => 'boolean',
+            'meet_link'      => ($lopCoLink ? 'nullable' : 'required') . '|url|max:500',
+            'starts_at'      => 'nullable|date',
+            'ends_at'        => 'nullable|date' . ($bothTimesGiven ? '|after:starts_at' : ''),
+            'is_active'      => 'boolean',
         ], [
-            'ends_at.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
-            'meet_link.url' => 'Link phòng học phải là một URL hợp lệ (bắt đầu bằng https://).',
+            'ends_at.after'      => 'Giờ kết thúc phải sau giờ bắt đầu.',
+            'meet_link.url'      => 'Link phòng học phải là một URL hợp lệ (bắt đầu bằng https://).',
+            'meet_link.required' => 'Buổi này chưa có link phòng. Dán link vào đây, hoặc chọn một lớp đã có link phòng.',
         ]);
 
         // Ô trống về DB là null (không phải chuỗi rỗng) để các hàm giờ hiểu đúng.
-        $data['starts_at'] = $data['starts_at'] ?: null;
-        $data['ends_at']   = $data['ends_at'] ?: null;
+        // Dùng `?? null` chứ không phải `$data['x'] ?: null`: `validate()` KHÔNG trả
+        // về key nào không có trong request, nên trường bỏ trống hoàn toàn (form
+        // khác, hoặc gọi qua API) sẽ ném "Undefined array key" chứ không âm thầm.
+        $data['starts_at']      = ($data['starts_at'] ?? null) ?: null;
+        $data['ends_at']        = ($data['ends_at'] ?? null) ?: null;
+        $data['meet_link']      = ($data['meet_link'] ?? null) ?: null;
+        $data['class_group_id'] = ($data['class_group_id'] ?? null) ?: null;
 
         return $data;
     }
