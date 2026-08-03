@@ -25,8 +25,8 @@ class User extends Authenticatable
     public const SOURCE_IMPORT   = 'import';    // dữ liệu cũ, có trước khi có cột này
 
     public const SOURCE_LABELS = [
-        self::SOURCE_PURCHASE => 'Mua qua chuyển khoản',
-        self::SOURCE_MANUAL   => 'Admin tạo tay',
+        self::SOURCE_PURCHASE => 'Thanh toán qua web',
+        self::SOURCE_MANUAL   => 'Admin tự thêm',
         self::SOURCE_IMPORT   => 'Dữ liệu cũ',
     ];
 
@@ -262,6 +262,66 @@ class User extends Authenticatable
     public function scopeOfSource(\Illuminate\Database\Eloquent\Builder $query, ?string $source): \Illuminate\Database\Eloquent\Builder
     {
         return $source ? $query->where('source', $source) : $query;
+    }
+
+    /**
+     * Bộ lọc dùng chung cho màn `/admin/users` VÀ cho Export Excel.
+     *
+     * ⚠️ Trước đây hai chỗ này chép logic của nhau và đã lệch: `UsersExport` chỉ
+     * hiểu search/role/status, nên lọc "sắp hết hạn" trên màn rồi bấm Export sẽ
+     * ra file chứa TOÀN BỘ người dùng — sai âm thầm, không báo lỗi gì. Gom về một
+     * hàm để không thể lệch nữa; thêm bộ lọc mới thì cả hai chỗ được luôn.
+     */
+    public function scopeFilter(\Illuminate\Database\Eloquent\Builder $query, array $f): \Illuminate\Database\Eloquent\Builder
+    {
+        if (! empty($f['search'])) {
+            $tuKhoa = $f['search'];
+            $query->where(fn ($q) => $q
+                ->where('name', 'like', "%{$tuKhoa}%")
+                ->orWhere('email', 'like', "%{$tuKhoa}%"));
+        }
+
+        foreach (['role', 'status', 'source'] as $cot) {
+            if (! empty($f[$cot])) {
+                $query->where($cot, $f[$cot]);
+            }
+        }
+
+        if (! empty($f['account_type'])) {
+            match ($f['account_type']) {
+                'unlimited' => $query->whereNull('expires_at'),
+                'limited'   => $query->whereNotNull('expires_at'),
+                default     => $query,
+            };
+        }
+
+        // "Mới thêm trong N ngày" — tính theo `created_at`, tức là NGÀY TẠO TÀI
+        // KHOẢN, không phải ngày thanh toán. Tài khoản cũ gia hạn không hiện ở đây.
+        $soNgay = match ($f['joined'] ?? '') {
+            '7', '14', '30' => (int) $f['joined'],
+            'custom'        => (int) ($f['joined_days'] ?? 0),
+            default         => 0,
+        };
+
+        if ($soNgay > 0) {
+            $query->where('created_at', '>=', now()->subDays($soNgay)->startOfDay());
+        }
+
+        if (! empty($f['expiration'])) {
+            match ($f['expiration']) {
+                'expired' => $query->where('expires_at', '<', now()),
+                'warning' => $query->whereBetween('expires_at', [now(), now()->addDays(7)]),
+                'active'  => $query->where('expires_at', '>', now()->addDays(7)),
+                'never'   => $query->whereNull('expires_at'),
+                'custom'  => empty($f['expire_days']) ? $query : $query->whereBetween('expires_at', [
+                    now()->startOfDay(),
+                    now()->addDays((int) $f['expire_days'])->endOfDay(),
+                ]),
+                default   => $query,
+            };
+        }
+
+        return $query;
     }
 
     public function recordWritingAiUsage(int $part): void

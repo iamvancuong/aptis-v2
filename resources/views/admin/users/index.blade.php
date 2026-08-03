@@ -13,60 +13,123 @@
 
 <!-- Filter & Actions Card -->
 <x-card class="mb-6">
-    <div class="flex flex-col md:flex-row gap-4 mb-6">
-        <form method="GET" class="flex-1 flex flex-col md:flex-row gap-4">
-            <input 
-                type="text" 
-                name="search" 
-                placeholder="Search name or email..." 
+    @php
+        $khoaLoc = ['search', 'role', 'status', 'source', 'account_type', 'joined', 'joined_days', 'expiration', 'expire_days'];
+        $dangLoc = request()->hasAny($khoaLoc);
+    @endphp
+
+    <form method="GET" class="mb-6">
+        {{-- Ô tìm kiếm để riêng một hàng: nó là thứ được dùng nhiều nhất, nhét
+             chung hàng với 6 ô select thì bị bóp còn một mẩu. --}}
+        <div class="flex flex-col sm:flex-row gap-3 mb-4">
+            <input
+                type="text"
+                name="search"
+                placeholder="Tìm theo tên hoặc email…"
                 value="{{ request('search') }}"
-                class="flex- px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-            <x-select name="role">
-                <option value="">All Roles</option>
-                <option value="user" {{ request('role') === 'user' ? 'selected' : '' }}>User</option>
-                <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-            </x-select>
-            <x-select name="status">
-                <option value="">All Status</option>
-                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                <option value="blocked" {{ request('status') === 'blocked' ? 'selected' : '' }}>Blocked</option>
-            </x-select>
-            <x-select name="account_type">
-                <option value="">Loại tài khoản</option>
-                <option value="unlimited" {{ request('account_type') === 'unlimited' ? 'selected' : '' }}>Vô hạn</option>
-                <option value="limited" {{ request('account_type') === 'limited' ? 'selected' : '' }}>Có thời hạn</option>
-            </x-select>
-            <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex items-center gap-2">
-                <x-select name="expiration" x-model="exp">
-                    <option value="">Lọc ngày thi</option>
-                    <option value="expired">Đã quá hạn</option>
-                    <option value="warning">Sắp thi (7 ngày)</option>
-                    <option value="custom">Sắp thi (Tùy chỉnh ngày)</option>
-                    <option value="active">Chưa thi</option>
-                    <option value="never">Không giới hạn</option>
-                </x-select>
-                <input 
-                    x-show="exp === 'custom'"
-                    type="number" 
-                    name="expire_days" 
-                    value="{{ request('expire_days') }}"
-                    placeholder="Số ngày..." 
-                    class="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="1"
-                    x-cloak
-                >
-            </div>
             <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap">
-                Filter
+                Lọc
             </button>
-            @if(request()->hasAny(['search', 'role', 'status', 'account_type', 'expiration', 'expire_days']))
-                <a href="{{ route('admin.users.index') }}" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 whitespace-nowrap">
-                    Clear
+            @if($dangLoc)
+                <a href="{{ route('admin.users.index') }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 whitespace-nowrap text-center">
+                    Xoá lọc
                 </a>
             @endif
-        </form>
-    </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {{-- Nguồn tài khoản: tự mua qua web vs admin tạo tay. Kèm số lượng
+                 ngay trên nhãn để khỏi phải bấm từng cái mới biết nhóm nào bao nhiêu. --}}
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Nguồn tài khoản</label>
+                <x-select name="source">
+                    <option value="">Tất cả nguồn</option>
+                    @foreach(\App\Models\User::SOURCE_LABELS as $key => $label)
+                        <option value="{{ $key }}" {{ request('source') === $key ? 'selected' : '' }}>
+                            {{ $label }}@if(isset($demNguon[$key])) ({{ $demNguon[$key] }})@endif
+                        </option>
+                    @endforeach
+                </x-select>
+            </div>
+
+            {{-- Mới thêm trong N ngày — theo NGÀY TẠO tài khoản. --}}
+            <div x-data="{ moi: '{{ request('joined') }}' }">
+                <label class="block text-xs font-medium text-gray-600 mb-1">Mới thêm trong</label>
+                <div class="flex gap-2">
+                    <x-select name="joined" x-model="moi">
+                        <option value="">Mọi lúc</option>
+                        <option value="7" {{ request('joined') === '7' ? 'selected' : '' }}>7 ngày qua</option>
+                        <option value="14" {{ request('joined') === '14' ? 'selected' : '' }}>14 ngày qua</option>
+                        <option value="30" {{ request('joined') === '30' ? 'selected' : '' }}>30 ngày qua</option>
+                        <option value="custom" {{ request('joined') === 'custom' ? 'selected' : '' }}>Tuỳ chỉnh…</option>
+                    </x-select>
+                    <input
+                        x-show="moi === 'custom'"
+                        type="number" name="joined_days" min="1"
+                        value="{{ request('joined_days') }}" placeholder="ngày"
+                        class="w-20 px-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        x-cloak>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Ngày thi</label>
+                <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex gap-2">
+                    <x-select name="expiration" x-model="exp">
+                        <option value="">Tất cả</option>
+                        <option value="expired" {{ request('expiration') === 'expired' ? 'selected' : '' }}>Đã quá hạn</option>
+                        <option value="warning" {{ request('expiration') === 'warning' ? 'selected' : '' }}>Sắp thi (7 ngày)</option>
+                        <option value="custom" {{ request('expiration') === 'custom' ? 'selected' : '' }}>Sắp thi (tuỳ chỉnh)</option>
+                        <option value="active" {{ request('expiration') === 'active' ? 'selected' : '' }}>Chưa thi</option>
+                        <option value="never" {{ request('expiration') === 'never' ? 'selected' : '' }}>Không giới hạn</option>
+                    </x-select>
+                    <input
+                        x-show="exp === 'custom'"
+                        type="number" name="expire_days" min="1"
+                        value="{{ request('expire_days') }}" placeholder="ngày"
+                        class="w-20 px-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        x-cloak>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Trạng thái</label>
+                <x-select name="status">
+                    <option value="">Tất cả</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Đang hoạt động</option>
+                    <option value="blocked" {{ request('status') === 'blocked' ? 'selected' : '' }}>Bị khoá</option>
+                </x-select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Vai trò</label>
+                    <x-select name="role">
+                        <option value="">Tất cả</option>
+                        <option value="user" {{ request('role') === 'user' ? 'selected' : '' }}>Học viên</option>
+                        <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
+                    </x-select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Loại</label>
+                    <x-select name="account_type">
+                        <option value="">Tất cả</option>
+                        <option value="unlimited" {{ request('account_type') === 'unlimited' ? 'selected' : '' }}>Vô hạn</option>
+                        <option value="limited" {{ request('account_type') === 'limited' ? 'selected' : '' }}>Có thời hạn</option>
+                    </x-select>
+                </div>
+            </div>
+        </div>
+
+        @if($dangLoc)
+            <p class="mt-3 text-sm text-gray-600">
+                Đang lọc — <strong>{{ $users->total() }}</strong> tài khoản khớp.
+                Nút <strong>Export Excel</strong> bên dưới xuất đúng {{ $users->total() }} tài khoản này.
+            </p>
+        @endif
+    </form>
 
     <div class="flex flex-wrap gap-3">
         <button id="bulk-delete-btn" style="display: none;" onclick="bulkDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm shadow-sm transition-all items-center">
@@ -116,7 +179,25 @@
                     @endif
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">{{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}</td>
-                <td class="px-6 py-4 text-sm">{{ $user->name }}</td>
+                <td class="px-6 py-4 text-sm">
+                    {{ $user->name }}
+                    @unless($user->isAdmin())
+                        {{-- Nguồn + ngày tạo ngay dưới tên: đây đúng là hai thứ hai
+                             bộ lọc mới dùng, để cạnh nhau thì lọc xong nhìn phát biết
+                             ngay có đúng nhóm mình cần không. --}}
+                        <span class="block mt-0.5 text-xs text-gray-500">
+                            @php
+                                $bienThe = match($user->source) {
+                                    \App\Models\User::SOURCE_PURCHASE => 'success',
+                                    \App\Models\User::SOURCE_MANUAL   => 'warning',
+                                    default                           => 'default',
+                                };
+                            @endphp
+                            <x-badge :variant="$bienThe">{{ $user->sourceLabel() }}</x-badge>
+                            <span class="ml-1">{{ $user->created_at->format('d/m/Y') }}</span>
+                        </span>
+                    @endunless
+                </td>
                 <td class="px-6 py-4 text-sm">{{ $user->email }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <x-badge :variant="$user->role === 'admin' ? 'warning' : 'default'">

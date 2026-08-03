@@ -16,28 +16,16 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping
         $this->filters = $filters;
     }
 
+    /**
+     * Dùng CHUNG `User::scopeFilter` với màn `/admin/users`.
+     *
+     * Bản cũ chép lại logic lọc nhưng chỉ hiểu search/role/status, nên lọc
+     * "sắp hết hạn" trên màn rồi bấm Export sẽ ra file chứa toàn bộ người dùng —
+     * sai âm thầm. Giờ thêm bộ lọc mới là cả hai chỗ có ngay.
+     */
     public function collection()
     {
-        $query = User::query();
-
-        // Apply same filters as index
-        if (!empty($this->filters['search'])) {
-            $search = $this->filters['search'];
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        if (!empty($this->filters['role'])) {
-            $query->where('role', $this->filters['role']);
-        }
-
-        if (!empty($this->filters['status'])) {
-            $query->where('status', $this->filters['status']);
-        }
-
-        return $query->orderBy('id')->get();
+        return User::filter($this->filters)->orderBy('id')->get();
     }
 
     public function headings(): array
@@ -47,7 +35,9 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping
             'Name',
             'Email',
             'Role',
+            'Nguồn tài khoản',
             'Status',
+            'Ngày hết hạn',
             'Max Devices',
             'Violation Count',
             'Created At',
@@ -61,7 +51,9 @@ class UsersExport implements FromCollection, WithHeadings, WithMapping
             $user->name,
             $user->email,
             ucfirst($user->role),
+            $user->sourceLabel(),
             ucfirst($user->status),
+            $user->expires_at?->format('Y-m-d') ?? 'Không giới hạn',
             $user->max_devices,
             $user->violation_count,
             $user->created_at->format('Y-m-d H:i:s'),

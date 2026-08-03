@@ -19,66 +19,11 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->integer('per_page', 10);
-        
-        $query = User::query();
 
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        // Filter by role
-        if ($request->filled('role')) {
-            $query->where('role', $request->role);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by account type (unlimited vs limited)
-        if ($request->filled('account_type')) {
-            if ($request->account_type === 'unlimited') {
-                $query->whereNull('expires_at');
-            } elseif ($request->account_type === 'limited') {
-                $query->whereNotNull('expires_at');
-            }
-        }
-        
-        // Filter by expiration status
-        if ($request->filled('expiration')) {
-            switch ($request->expiration) {
-                case 'expired':
-                    $query->where('expires_at', '<', now());
-                    break;
-                case 'warning': // 1-7 days
-                    $query->whereBetween('expires_at', [
-                        now(),
-                        now()->addDays(7)
-                    ]);
-                    break;
-                case 'custom':
-                    if ($request->filled('expire_days')) {
-                        $days = (int) $request->expire_days;
-                        $query->whereBetween('expires_at', [
-                            now()->startOfDay(),
-                            now()->addDays($days)->endOfDay()
-                        ]);
-                    }
-                    break;
-                case 'active': // > 7 days
-                    $query->where('expires_at', '>', now()->addDays(7));
-                    break;
-                case 'never':
-                    $query->whereNull('expires_at');
-                    break;
-            }
-        }
+        // Bộ lọc nằm ở `User::scopeFilter` để màn này và Export Excel dùng CHUNG
+        // một logic — trước đây hai chỗ chép của nhau và đã lệch (xem chú thích
+        // ở scope).
+        $query = User::filter($request->all());
 
         // Count DevTools detections per user so the list can flag repeat offenders.
         $query->withCount(['securityFlags as devtools_flag_count' => function ($q) {
@@ -89,7 +34,14 @@ class UserController extends Controller
                       ->paginate($perPage)
                       ->withQueryString();
 
-        return view('admin.users.index', compact('users'));
+        // Đếm nhanh theo nguồn để admin thấy ngay cơ cấu tài khoản, không phải
+        // bấm từng bộ lọc mới biết mỗi nhóm có bao nhiêu người.
+        $demNguon = User::where('role', '!=', 'admin')
+            ->selectRaw('source, COUNT(*) as tong')
+            ->groupBy('source')
+            ->pluck('tong', 'source');
+
+        return view('admin.users.index', compact('users', 'demNguon'));
     }
 
     public function show(User $user)
