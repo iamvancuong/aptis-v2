@@ -374,6 +374,17 @@ class MockTestController extends Controller
         // Bài Nói: chấm AI tự động (phiên âm → chấm transcript). Điểm AI là nháp
         // tham khảo, giáo viên chấm tay vẫn ghi đè được.
         if ($mockTest->skill === 'speaking') {
+            // Giáo viên chấm TẤT CẢ bài Nói, không thu phí và không bắt học viên
+            // bấm yêu cầu (nút đó đã bỏ khỏi trang kết quả). Phải tự bật cờ ở đây
+            // vì `/admin/speaking-reviews` lọc theo `is_grading_requested` —
+            // không bật thì hàng chờ của cô Dung sẽ trống trơn.
+            if (!$attempt->is_grading_requested) {
+                $attempt->update([
+                    'is_grading_requested' => true,
+                    'grading_requested_at' => now(),
+                ]);
+            }
+
             $this->speakingAiDispatcher->dispatchFor($attempt, auth()->user());
         }
 

@@ -2,7 +2,7 @@
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
 > Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · **(T) chấm Nói bằng AI đã code, CHỜ DEPLOY — §27** ·
-> việc tồn: **§26** · **154 test pass** · deploy cPanel: xem 🟠 dưới.
+> việc tồn: **§26** · **161 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -799,6 +799,20 @@ bao nhiêu % · điểm AI lệch điểm cô Dung bao nhiêu. Bù lại bằng 
 `.env`: `SPEAKING_AI_ENABLED=false` → bài mới về lại luồng giáo viên chấm tay, không cần deploy.
 Đổi model phiên âm: `OPENAI_TRANSCRIBE_MODEL=` (mặc định `gpt-4o-mini-transcribe`).
 
+### Điều chỉnh theo yêu cầu (02/08, sau khi dùng thử)
+- **Bỏ nút "Yêu cầu giáo viên chấm" khỏi bài Nói** — giáo viên chấm hết, miễn phí.
+  > ⚠️ Kèm theo đó, `MockTestController` phải **tự bật `is_grading_requested`** khi nộp bài Nói.
+  > `/admin/speaking-reviews` lọc theo cờ này; bỏ nút mà không bật cờ thì hàng chờ của cô Dung
+  > trống trơn. Chỉ bật cho **bài nộp mới** — 2.537 bài tồn vẫn đứng ngoài, đúng phạm vi đã chốt.
+  > Writing **giữ nguyên** luồng trả phí 99k.
+- **Band CEFR** (`A1`→`C2`) cho mỗi Part, hiện ở nhãn, trong khối nhận xét, ở trang result và ở
+  panel của giáo viên. Prompt dặn: chỉ đọc transcript nên **phân vân thì chọn bậc THẤP HƠN**.
+  `normalizeCefrLevel()` ép các biến thể ("B2+", "level b2") về đúng 6 bậc, không đọc được thì
+  suy từ điểm — học viên không bao giờ thấy chuỗi lạ. `schema_version` lên **2**.
+- **Đoạn giải thích "máy không chấm phát âm" chỉ còn MỘT lần** ở đầu trang, thay vì lặp ở cả 4
+  Part. Có test đếm số lần xuất hiện để không tái diễn.
+- **Nút "Nói (Speaking)"** ở thẻ "Lịch sử làm bài" trên dashboard, cạnh nút Writing.
+
 ### 🔧 Chẩn đoán khi "AI có vẻ không chạy"
 
 ```
@@ -830,7 +844,7 @@ Có `SpeakingHistoryDisplayTest` giữ đúng các trạng thái này.
 **Kiểm chứng:** `SpeakingAiGradingTest` (17 ca — chủ yếu nhánh hỏng: mất file, không có tiếng nói,
 401, quá 25MB, JSON hỏng, 500 phải retry, không ghi đè điểm giáo viên, không phiên âm lại,
 hết lượt, phần trống không bị trừ lượt, công tắc tắt) + `SpeakingReviewQueueTest` (5 ca).
-**Tổng 154 pass** (trước phiên này 127).
+**Tổng 161 pass** (trước phiên này 127).
 
 **Deploy:** **CẦN `php artisan migrate --force`** (bảng `speaking_ai_usages`).
 **KHÔNG cần `npm run build`** — đã đối chiếu từng class Tailwind mới với `public/build/assets/app-*.css`,

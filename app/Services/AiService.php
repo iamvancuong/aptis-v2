@@ -335,10 +335,12 @@ class AiService
         };
 
         return [
-            'schema_version'   => 1,
+            'schema_version'   => 2,
             'part'             => $part,
             'scores'           => $scores,
             'overall_score_10' => $overall,
+            'cefr_level'       => $this->normalizeCefrLevel($feedback['cefr_level'] ?? null, $overall),
+            'cefr_reason'      => is_string($feedback['cefr_reason'] ?? null) ? trim($feedback['cefr_reason']) : '',
             'feedback'         => $texts,
             'key_mistakes'     => $toStringList($feedback['key_mistakes'] ?? []),
             'suggestions'      => $toStringList($feedback['suggestions'] ?? []),
@@ -349,6 +351,29 @@ class AiService
             // cũng tự mang theo giới hạn của chính nó, kể cả khi sau này đổi view.
             'not_assessed'     => ['pronunciation', 'fluency'],
         ];
+    }
+
+    /**
+     * Ép `cefr_level` về đúng 6 bậc APTIS công nhận.
+     *
+     * Model hay trả biến thể ("B2+", "b2", "Level B2", "B2/C1"). Học viên đọc bậc
+     * này để biết mình đang ở đâu nên không được để lọt chuỗi lạ ra giao diện —
+     * bắt được bậc nào thì lấy bậc đó, không thì suy từ điểm.
+     */
+    protected function normalizeCefrLevel(mixed $raw, float $overallScore10): string
+    {
+        if (is_string($raw) && preg_match('/\b([ABC][12])\b/i', $raw, $m)) {
+            return strtoupper($m[1]);
+        }
+
+        // Suy từ thang 10 — cùng mốc với hướng dẫn trong system prompt.
+        return match (true) {
+            $overallScore10 >= 9 => 'C1',
+            $overallScore10 >= 7 => 'B2',
+            $overallScore10 >= 5 => 'B1',
+            $overallScore10 >= 3 => 'A2',
+            default              => 'A1',
+        };
     }
 
     protected function getMockSpeakingResponse(int $part, string $transcript): array

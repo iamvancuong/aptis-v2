@@ -95,8 +95,11 @@
             @endif
         </div>
 
-        {{-- Grading Request Section (writing/speaking) --}}
-        @if(($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') && $attempts->first())
+        {{-- Yêu cầu chấm: CHỈ Writing.
+             Bài Nói giờ được giáo viên chấm hết, miễn phí và tự động vào hàng chờ
+             (cờ `is_grading_requested` bật ngay lúc nộp trong MockTestController),
+             nên không còn gì để học viên phải bấm. --}}
+        @if($mockTest->skill === 'writing' && $attempts->first())
             @php $gradingPrice = (int) config('pricing.grading_price'); @endphp
             <div class="mt-8 pt-8 border-t border-gray-100 bg-indigo-50/30 -mx-8 -mb-8 px-8 pb-8 rounded-b-2xl">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -166,7 +169,12 @@
                             @elseif($partAnswer && $partAnswer->grading_status === 'ai_graded')
                                 <span class="text-2xl font-black text-amber-600">{{ number_format($partAnswer->score ?? 0, 1) }}</span>
                                 <span class="text-sm text-gray-400">/10</span>
-                                <div class="text-xs text-gray-500 mt-0.5">AI chấm nháp</div>
+                                <div class="text-xs text-gray-500 mt-0.5">
+                                    AI chấm nháp
+                                    @if(!empty($partAnswer->ai_metadata['feedback']['cefr_level']))
+                                        · <span class="font-bold text-amber-700">{{ $partAnswer->ai_metadata['feedback']['cefr_level'] }}</span>
+                                    @endif
+                                </div>
                             @elseif($partAnswer && $partAnswer->grading_status === 'ai_failed')
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Chấm tự động lỗi</span>
                             @elseif($partAnswer && $partAnswer->grading_status === 'limit_reached')
