@@ -12,11 +12,30 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    /**
+     * Nguồn gốc tài khoản — cách nó được TẠO RA, và không đổi về sau.
+     *
+     * ⚠️ Đừng ghi đè `manual` thành `purchase` khi tài khoản đó gia hạn bằng
+     * chuyển khoản. "Được tạo ra thế nào" và "đã từng trả tiền chưa" là hai câu
+     * hỏi khác nhau; câu thứ hai trả lời bằng bảng `orders`. Nhồi cả hai vào một
+     * cột thì vài tháng nữa không còn tách ra được nữa.
+     */
+    public const SOURCE_PURCHASE = 'purchase';  // tự mua qua PayOS
+    public const SOURCE_MANUAL   = 'manual';    // admin tạo tay ở /admin/users
+    public const SOURCE_IMPORT   = 'import';    // dữ liệu cũ, có trước khi có cột này
+
+    public const SOURCE_LABELS = [
+        self::SOURCE_PURCHASE => 'Mua qua chuyển khoản',
+        self::SOURCE_MANUAL   => 'Admin tạo tay',
+        self::SOURCE_IMPORT   => 'Dữ liệu cũ',
+    ];
+
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
+        'source',
         'status',
         'violation_count',
         'devtools_guard_disabled',
@@ -163,6 +182,86 @@ class User extends Authenticatable
     public function classInviteEmail(): string
     {
         return $this->google_email ?: $this->email;
+    }
+
+    public function sourceLabel(): string
+    {
+        return self::SOURCE_LABELS[$this->source] ?? $this->source;
+    }
+
+    /** Các lớp học viên là thành viên. */
+    public function classGroups(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(ClassGroup::class, 'class_group_user')->withPivot('added_at');
+    }
+
+    /** Buổi học được mời THÊM với tư cách khách (ngoài lớp của mình). */
+    public function classSessionInvites(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(ClassSession::class, 'class_session_user')->withTimestamps();
+    }
+
+    /**
+     * NGUỒN SỰ THẬT DUY NHẤT cho câu hỏi "người này có được vào buổi đó không".
+     *
+     * Ba nơi gọi: danh sách `/lop-hoc`, cổng `join`, và thẻ lớp trên dashboard.
+     * Viết lại luật ở từng nơi là cách chắc chắn nhất để chúng lệch nhau sau vài
+     * tháng — và chỗ lệch sẽ là cổng `join`, tức là chỗ trả link Meet ra ngoài.
+     *
+     * Chỉ xét TƯ CÁCH THÀNH VIÊN + trạng thái tài khoản. Buổi đã mở cửa chưa là
+     * câu hỏi độc lập (`ClassSession::isJoinable()`); phải thoả cả hai.
+     */
+    public function canJoinClassSession(ClassSession $session): bool
+    {
+        if ($this->isBlocked() || $this->isExpired()) {
+            return false;
+        }
+
+        // Buổi không gắn lớp = mở cho mọi học viên còn hạn (hành vi Pha 0).
+        if ($session->class_group_id === null) {
+            return true;
+        }
+
+        // Tắt cả lớp thì mọi buổi của lớp đóng theo, kể cả với khách mời riêng.
+        if (! $session->classGroup?->is_active) {
+            return false;
+        }
+
+        return $this->classGroups()->whereKey($session->class_group_id)->exists()
+            || $this->classSessionInvites()->whereKey($session->getKey())->exists();
+    }
+
+    /**
+     * Ảnh phản chiếu của `canJoinClassSession` theo chiều ngược lại: cho một
+     * buổi, ai được vào. Dùng cho email nhắc giờ và cho danh sách mời Calendar.
+     *
+     * ⚠️ Hàm này và `canJoinClassSession` mô tả CÙNG một luật ở hai chiều. Sửa
+     * một cái phải sửa cái kia. `ClassPermissionConsistencyTest` khẳng định hai
+     * chiều luôn cho cùng kết quả — nếu nó đỏ thì đúng là chúng đã lệch nhau.
+     */
+    public function scopeForClassSession(\Illuminate\Database\Eloquent\Builder $query, ClassSession $session): \Illuminate\Database\Eloquent\Builder
+    {
+        $query->invitableToClass();
+
+        if ($session->class_group_id === null) {
+            return $query;
+        }
+
+        // Lớp đã tắt → không ai được vào. `whereRaw('1 = 0')` thay vì trả về
+        // collection rỗng để hàm luôn trả Builder, chỗ gọi còn nối scope tiếp được.
+        if (! $session->classGroup?->is_active) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(fn (\Illuminate\Database\Eloquent\Builder $q) => $q
+            ->whereHas('classGroups', fn ($g) => $g->whereKey($session->class_group_id))
+            ->orWhereHas('classSessionInvites', fn ($s) => $s->whereKey($session->getKey())));
+    }
+
+    /** Lọc theo nguồn tài khoản ở màn chọn thành viên. Null/rỗng = không lọc. */
+    public function scopeOfSource(\Illuminate\Database\Eloquent\Builder $query, ?string $source): \Illuminate\Database\Eloquent\Builder
+    {
+        return $source ? $query->where('source', $source) : $query;
     }
 
     public function recordWritingAiUsage(int $part): void

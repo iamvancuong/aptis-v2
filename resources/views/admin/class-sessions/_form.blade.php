@@ -1,6 +1,8 @@
 @php
     // create.blade.php không truyền $classSession — dùng chung 1 form cho cả tạo/sửa.
-    $session = $classSession ?? null;
+    $session   = $classSession ?? null;
+    $chonSan   = old('class_group_id', $session?->class_group_id);
+    $khachCu   = old('extra_user_ids', $session?->extraMembers->pluck('id')->all() ?? []);
 @endphp
 
 <x-input
@@ -13,6 +15,25 @@
 />
 
 <div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700 mb-2">Lớp học</label>
+    <x-select name="class_group_id">
+        <option value="">— Không gắn lớp: MỌI học viên còn hạn đều vào được —</option>
+        @foreach($groups as $g)
+            <option value="{{ $g->id }}" {{ (string) $chonSan === (string) $g->id ? 'selected' : '' }}>
+                {{ $g->name }}{{ $g->meet_link ? ' (đã có link phòng)' : ' (chưa có link phòng)' }}{{ $g->is_active ? '' : ' — ĐANG TẮT' }}
+            </option>
+        @endforeach
+    </x-select>
+    <p class="mt-1 text-xs text-gray-500">
+        Gắn lớp thì <strong>chỉ thành viên lớp đó</strong> thấy và vào được buổi này.
+        Lớp đã dán link phòng thì buổi tự dùng link đó — để trống ô link bên dưới là được.
+    </p>
+    @error('class_group_id')
+        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+    @enderror
+</div>
+
+<div class="mb-4">
     <label class="block text-sm font-medium text-gray-700 mb-2">Nội dung buổi học (tuỳ chọn)</label>
     <x-textarea name="description" rows="3" placeholder="VD: Chữa đề tuần trước, luyện viết email trang trọng.">{{ old('description', $session?->description) }}</x-textarea>
     @error('description')
@@ -23,15 +44,16 @@
 <x-input
     type="url"
     name="meet_link"
-    label="Link phòng học (Google Meet)"
+    label="Link phòng học riêng cho buổi này (bỏ trống nếu dùng link của lớp)"
     :value="$session?->meet_link ?? ''"
-    required
     placeholder="https://meet.google.com/abc-defg-hij"
     error="{{ $errors->first('meet_link') }}"
 />
 <p class="-mt-2 mb-3 text-xs text-gray-500">
-    Tự tạo phòng trên Google Meet rồi dán link vào đây. Link này <strong>không hiển thị</strong> cho học viên —
-    họ chỉ thấy nút “Vào lớp”, hệ thống kiểm tra hạn tài khoản và giờ học rồi mới chuyển sang phòng.
+    Đã chọn lớp có link phòng thì <strong>để trống ô này</strong> — buổi sẽ dùng link của lớp.
+    Chỉ điền khi buổi này cần một phòng khác. Buổi không gắn lớp thì bắt buộc phải có link riêng.
+    Link <strong>không hiển thị</strong> cho học viên — họ chỉ thấy nút “Vào lớp”, hệ thống kiểm tra
+    tư cách thành viên, hạn tài khoản và giờ học rồi mới chuyển sang phòng.
 </p>
 
 {{-- Nhắc ngay chỗ dán link: web chỉ chặn được khâu LẤY link, không chặn được
@@ -84,4 +106,29 @@
     <label for="is_active" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">
         Bật buổi học (học viên nhìn thấy và vào được)
     </label>
+</div>
+
+{{-- Khách mời riêng cho buổi này. Chỉ có tác dụng khi buổi đã gắn lớp — buổi
+     không gắn lớp thì ai còn hạn cũng vào được rồi, giữ danh sách này lại chỉ
+     tạo ảo giác là nó đang hạn chế ai đó (controller cũng xoá sạch khi lưu). --}}
+<div class="mt-6 pt-6 border-t border-gray-100">
+    <label class="block text-sm font-medium text-gray-700 mb-2">
+        Mời thêm khách cho riêng buổi này (tuỳ chọn)
+    </label>
+    <select name="extra_user_ids[]" multiple size="8"
+            class="w-full px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+        @foreach($ungVien as $u)
+            <option value="{{ $u->id }}" {{ in_array($u->id, (array) $khachCu) ? 'selected' : '' }}>
+                {{ $u->name }} — {{ $u->email }}
+            </option>
+        @endforeach
+    </select>
+    <p class="mt-1 text-xs text-gray-500">
+        Dành cho học viên <strong>ngoài lớp</strong> cần vào đúng buổi này (học thử, học bù).
+        Giữ Ctrl (hoặc Cmd) để chọn nhiều người. Chỉ có tác dụng khi buổi đã gắn lớp.
+    </p>
+    <p class="mt-1 text-xs text-amber-700">
+        ⚠️ Web sẽ cho họ lấy link, nhưng Google <strong>vẫn bắt họ xin duyệt</strong> nếu chưa có tên
+        trong lời mời Calendar của lớp. Nhớ duyệt cho họ vào khi bắt đầu buổi.
+    </p>
 </div>

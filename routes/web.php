@@ -269,4 +269,12 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::get('class-sessions/{classSession}/nhat-ky', [\App\Http\Controllers\Admin\ClassSessionController::class, 'joins'])->name('class-sessions.joins');
     Route::post('class-sessions/da-cap-nhat-loi-moi', [\App\Http\Controllers\Admin\ClassSessionController::class, 'markInviteSynced'])->name('class-sessions.invite-synced');
     Route::resource('class-sessions', \App\Http\Controllers\Admin\ClassSessionController::class)->except('show');
+
+    // Lớp học — nhóm học viên cố định, buổi học gắn vào lớp.
+    // Các route con phải khai TRƯỚC resource, nếu không `{classGroup}` nuốt hết.
+    Route::get('class-groups/{classGroup}/thanh-vien', [\App\Http\Controllers\Admin\ClassGroupController::class, 'members'])->name('class-groups.members');
+    Route::post('class-groups/{classGroup}/thanh-vien', [\App\Http\Controllers\Admin\ClassGroupController::class, 'addMembers'])->name('class-groups.members.add');
+    Route::post('class-groups/{classGroup}/thanh-vien/tat-ca', [\App\Http\Controllers\Admin\ClassGroupController::class, 'addAllMatching'])->name('class-groups.members.add-all');
+    Route::delete('class-groups/{classGroup}/thanh-vien/{user}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'removeMember'])->name('class-groups.members.remove');
+    Route::resource('class-groups', \App\Http\Controllers\Admin\ClassGroupController::class)->except('show');
 });

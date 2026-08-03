@@ -25,7 +25,8 @@ class SendClassReminders extends Command
     {
         $truoc = (int) $this->option('minutes');
 
-        $sessions = ClassSession::where('is_active', true)
+        $sessions = ClassSession::with('classGroup')       // `forClassSession` đọc lớp
+            ->where('is_active', true)
             ->whereNull('reminder_sent_at')
             ->whereNotNull('starts_at')
             ->where('starts_at', '>', now())                     // chưa bắt đầu
@@ -41,8 +42,11 @@ class SendClassReminders extends Command
             // còn hơn lượt cron sau gửi lại từ đầu cho những người đã nhận.
             $session->update(['reminder_sent_at' => now()]);
 
+            // ⚠️ CHỈ nhắc thành viên của buổi, không phải toàn trường. Dùng
+            // `invitableToClass()` ở đây là gửi mail cho hàng trăm người về một
+            // buổi họ không được vào — lỗi loại này chỉ lộ ra sau khi đã gửi.
             $nhan = 0;
-            User::invitableToClass()->get(['id', 'email'])->each(function ($u) use ($session, &$nhan) {
+            User::forClassSession($session)->get(['id', 'name', 'email'])->each(function ($u) use ($session, &$nhan) {
                 try {
                     Mail::to($u->email)->send(new ClassSessionReminderMail($session));
                     $nhan++;

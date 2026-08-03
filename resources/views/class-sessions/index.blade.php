@@ -97,7 +97,13 @@
                             </span>
                         @endif
                     </div>
-                    <p class="text-sm text-gray-600">{{ $session->timeLabel() }}</p>
+                    <p class="text-sm text-gray-600">
+                        {{ $session->timeLabel() }}
+                        @if($session->classGroup)
+                            <span class="text-gray-400">·</span>
+                            <span class="text-gray-700">{{ $session->classGroup->name }}</span>
+                        @endif
+                    </p>
                     @if($session->description)
                         <p class="mt-2 text-sm text-gray-500">{{ $session->description }}</p>
                     @endif

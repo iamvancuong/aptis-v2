@@ -113,6 +113,10 @@ class UserController extends Controller
         $data = $request->validated();
         $data['status'] = $data['status'] ?? 'active';
         $data['violation_count'] = 0;
+        // Gán ở controller chứ không qua rules(): `validated()` chỉ trả về các key
+        // đã khai trong rules, nên để trong form request thì admin sửa được nguồn
+        // bằng cách thêm field vào POST. Nguồn tài khoản không phải input.
+        $data['source'] = \App\Models\User::SOURCE_MANUAL;
         
         // Hash password if provided
         if (isset($data['password'])) {

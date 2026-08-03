@@ -174,6 +174,14 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4">
                             <div class="text-sm font-medium text-gray-900">{{ $session->title }}</div>
+                            @if($session->classGroup)
+                                <div class="text-xs text-blue-700">Lớp: {{ $session->classGroup->name }}</div>
+                            @else
+                                <div class="text-xs text-amber-700">Mở cho MỌI học viên còn hạn</div>
+                            @endif
+                            @if($session->extra_members_count)
+                                <div class="text-xs text-gray-500">+{{ $session->extra_members_count }} khách mời riêng</div>
+                            @endif
                             @if($session->description)
                                 <div class="text-sm text-gray-500 max-w-xs truncate" title="{{ $session->description }}">{{ $session->description }}</div>
                             @endif
@@ -200,9 +208,19 @@
                             <x-badge :variant="$variant">{{ $session->statusLabel() }}</x-badge>
                         </td>
                         <td class="px-6 py-4">
-                            <a href="{{ $session->meet_link }}" target="_blank" rel="noopener"
-                               class="text-sm text-blue-600 hover:text-blue-800 underline max-w-[14rem] truncate inline-block align-bottom"
-                               title="{{ $session->meet_link }}">{{ $session->meet_link }}</a>
+                            @php $link = $session->effectiveMeetLink(); @endphp
+                            @if($link)
+                                <a href="{{ $link }}" target="_blank" rel="noopener"
+                                   class="text-sm text-blue-600 hover:text-blue-800 underline max-w-[14rem] truncate inline-block align-bottom"
+                                   title="{{ $link }}">{{ $link }}</a>
+                                @if(! $session->meet_link)
+                                    <span class="block text-xs text-gray-500">kế thừa từ lớp</span>
+                                @endif
+                            @else
+                                {{-- Không có link ở cả buổi lẫn lớp: `isJoinable()` trả false nên
+                                     học viên không thấy nút. Nói rõ để admin biết mà dán link. --}}
+                                <span class="text-sm text-red-600">Chưa có link — học viên không vào được</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-3">
