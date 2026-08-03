@@ -2,7 +2,7 @@
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
 > Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · **(T) chấm Nói bằng AI đã code, CHỜ DEPLOY — §27** ·
-> việc tồn: **§26** · **172 test pass** · deploy cPanel: xem 🟠 dưới.
+> việc tồn: **§26** · **178 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -873,9 +873,39 @@ Học viên ôn theo đề thật nên thấy "Part 3" trên web mà "Part 4" tr
 > gửi kèm trong `sectionsJson` (`part_label`) — **không** dựng bản đồ ánh xạ thứ hai bằng JS,
 > vì hai bản đồ ở hai nơi sớm muộn cũng lệch nhau.
 
-**Kiểm chứng:** `tests/Unit/PartLabelTest.php` (11 ca: 4 mốc ánh xạ, 4 kỹ năng khác không đổi,
-part ngoài bảng, dữ liệu thiếu không làm vỡ giao diện, khoá dạng chuỗi từ `groupBy`).
-**Tổng 172 pass.** Deploy: không migration, không cần `npm run build`.
+**Tiêu đề trong DB cũng nhúng số Part** (`quizzes.title`, `sets.title` — 8 dòng; `questions` thì không).
+Helper chỉ đổi nhãn do code sinh ra, nên phải đồng bộ dữ liệu bằng lệnh:
+```
+php artisan reading:relabel-parts --dry-run   # xem trước
+php artisan reading:relabel-parts             # ghi thật
+```
+Lấy `PartLabel` làm nguồn, chỉ đổi CON SỐ (giữ nguyên chữ mô tả), chạy lại nhiều lần vô hại.
+
+> 📌 **Tên dạng bài trong tiêu đề đang SAI so với đề thật** — Part 1 ghi "Matching" nhưng code
+> render Sentence Gap Fill; Part 2 ghi "Multiple Choice" nhưng thực tế là Paragraph Ordering…
+> Lệnh trên **cố ý không đụng** phần chữ: đó là nội dung học thuật, cần người quyết.
+
+**Kiểm chứng:** `tests/Unit/PartLabelTest.php` (11 ca) + `RelabelReadingPartsTest` (6 ca, có ca
+chạy 3 lần liên tiếp để chắc không ra "Part 2-3-3").
+**Tổng 178 pass.** Deploy: không migration, không cần `npm run build`.
+
+---
+
+## ⛔ TINKER KHÔNG CHẠY ĐƯỢC TRÊN CPANEL CỦA DỰ ÁN NÀY
+
+```
+php artisan tinker  →  Error: Call to undefined function shell_exec()
+```
+Host tắt `shell_exec`, PsySH chết ngay khi khởi động. **Mọi việc chẩn đoán/sửa dữ liệu trên
+production phải là artisan command thật**, đừng đưa lệnh `tinker --execute` (đã mất một vòng
+trao đổi vì chuyện này). Các lệnh chỉ-đọc hiện có:
+
+| Lệnh | Dùng để |
+|---|---|
+| `speaking:inspect` | Tình trạng chấm bài Nói mới nhất + cấu hình OpenAI + số job chờ/thất bại |
+| `speaking:inspect --mock=80922` | Tra theo ID trên URL `/mock-test/{id}/result` (là MockTest, **không** phải Attempt) |
+| `speaking:grade-attempt {id}` | Chấm ngay tại chỗ, in lỗi thẳng ra màn hình |
+| `reading:relabel-parts --dry-run` | Xem trước thay đổi tiêu đề |
 
 ---
 
