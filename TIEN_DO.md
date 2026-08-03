@@ -2,7 +2,7 @@
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
 > Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · **(T) chấm Nói bằng AI đã code, CHỜ DEPLOY — §27** ·
-> việc tồn: **§26** · **161 test pass** · deploy cPanel: xem 🟠 dưới.
+> việc tồn: **§26** · **172 test pass** · deploy cPanel: xem 🟠 dưới.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -849,6 +849,33 @@ hết lượt, phần trống không bị trừ lượt, công tắc tắt) + `S
 **Deploy:** **CẦN `php artisan migrate --force`** (bảng `speaking_ai_usages`).
 **KHÔNG cần `npm run build`** — đã đối chiếu từng class Tailwind mới với `public/build/assets/app-*.css`,
 không thiếu class nào (bẫy §25).
+
+---
+
+---
+
+## 28. 🔢 PHIÊN 02/08/2026 (U) — NHÃN PART READING THEO ĐỀ APTIS THẬT
+
+Đề Reading của APTIS có **5 phần**, hệ thống lưu **4** (phần 2 ở đây gộp phần 2+3 của đề thật).
+Học viên ôn theo đề thật nên thấy "Part 3" trên web mà "Part 4" trong sách là rối.
+
+**Ánh xạ (chỉ Reading):** `1→1` · `2→2-3` · `3→4` · `4→5`. Kỹ năng khác giữ nguyên.
+
+⚠️ **CHỈ đổi NHÃN.** `quizzes.part`, `questions.part`, tham số URL và dữ liệu chấm điểm vẫn là
+1–4. Đổi cả dữ liệu thì phải migrate mọi bảng và mọi bộ đề đã nhập — không đáng.
+**Khu admin cố ý giữ số nội bộ** để việc nhập đề khớp cấu trúc thật của hệ thống.
+
+**Một nguồn duy nhất:** `app/Support/PartLabel.php` (`::text()` ra "Part 2-3", `::number()` ra "2-3").
+Đã áp cho các trang học viên thấy: `skills/show` · `sets/index` (cả thẻ title) · `sets/show` ·
+`practice/show` · `mock-test/lobby` · `mock-test/show` · `mock-test/result` · `history/result`.
+
+> Giao diện làm bài dùng Alpine nên không gọi được helper PHP. Nhãn được tính sẵn ở server và
+> gửi kèm trong `sectionsJson` (`part_label`) — **không** dựng bản đồ ánh xạ thứ hai bằng JS,
+> vì hai bản đồ ở hai nơi sớm muộn cũng lệch nhau.
+
+**Kiểm chứng:** `tests/Unit/PartLabelTest.php` (11 ca: 4 mốc ánh xạ, 4 kỹ năng khác không đổi,
+part ngoài bảng, dữ liệu thiếu không làm vỡ giao diện, khoá dạng chuỗi từ `groupBy`).
+**Tổng 172 pass.** Deploy: không migration, không cần `npm run build`.
 
 ---
 

@@ -60,7 +60,7 @@
                         <span class="w-8 h-8 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-sm font-bold text-gray-600">
                             {{ $index + 1 }}
                         </span>
-                        <span class="text-sm font-medium text-gray-700">Part {{ $part }}</span>
+                        <span class="text-sm font-medium text-gray-700">{{ \App\Support\PartLabel::text($skill, $part) }}</span>
                         @php
                             $partInfo = $partCounts[$part] ?? null;
                         @endphp

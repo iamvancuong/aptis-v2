@@ -188,6 +188,10 @@ class MockTestController extends Controller
             return [
                 'index' => $s['index'],
                 'part' => $s['part'],
+                // Nhãn theo đề APTIS thật (Reading: 2→"2-3", 3→"4", 4→"5"). Tính sẵn
+                // ở server để giao diện Alpine không phải mang theo bản đồ ánh xạ
+                // riêng — hai bản đồ ở hai nơi thì sớm muộn cũng lệch nhau.
+                'part_label' => \App\Support\PartLabel::number($mockTest->skill, $s['part']),
                 'set_id' => $s['set_id'],
                 // Answer keys are stripped here: this is a graded, timed exam,
                 // so nothing the learner could score from may reach the browser.

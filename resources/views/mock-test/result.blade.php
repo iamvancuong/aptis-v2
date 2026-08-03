@@ -150,7 +150,7 @@
                         {{ $index + 1 }}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-gray-800">Part {{ $section['part'] }}</div>
+                        <div class="font-semibold text-gray-800">{{ \App\Support\PartLabel::text($mockTest->skill, $section['part']) }}</div>
                         <div class="text-xs text-gray-400 mt-0.5 truncate">{{ $section['set']->quiz->title ?? '' }}</div>
                         @if($mockTest->skill !== 'writing' && $mockTest->skill !== 'speaking' && $sectionScore !== null)
                             <div class="mt-2 w-full bg-gray-100 rounded-full h-1.5">
@@ -222,7 +222,7 @@
                         <div class="flex items-center gap-3">
                             <span class="w-9 h-9 rounded-full bg-white/20 text-white font-black flex items-center justify-center text-sm">{{ $part }}</span>
                             <div>
-                                <div class="text-white font-bold">Part {{ $part }}</div>
+                                <div class="text-white font-bold">{{ \App\Support\PartLabel::text($mockTest->skill, $part) }}</div>
                                 <div class="text-white/80 text-xs">{{ $pCorrect }}/{{ $pTotal }} câu đúng</div>
                             </div>
                         </div>
@@ -244,7 +244,7 @@
                                     <span class="text-base shrink-0 mt-0.5">{{ $isCorrect ? '✅' : ($isCorrect === false ? '❌' : '⬜') }}</span>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-2">
-                                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Part {{ $q->part }} — Câu {{ $qi + 1 }}</span>
+                                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">{{ \App\Support\PartLabel::text($mockTest->skill, $q->part) }} — Câu {{ $qi + 1 }}</span>
                                             @if($q->title)
                                                 <span class="text-xs text-gray-500 truncate">— {{ $q->title }}</span>
                                             @endif
