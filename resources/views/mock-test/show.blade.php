@@ -45,7 +45,7 @@
                             ? 'bg-blue-600 text-white shadow-md'
                             : (sectionAnswered({{ $index }}) ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200')">
                         <span class="flex items-center gap-2">
-                            <span>{{ $index + 1 }}. Part {{ $section['part'] }}</span>
+                            <span>{{ $index + 1 }}. {{ \App\Support\PartLabel::text($mockTest->skill, $section['part']) }}</span>
                             <template x-if="sectionAnswered({{ $index }})">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                             </template>
@@ -93,7 +93,7 @@
                 <div class="p-6 border-b border-gray-100 bg-blue-50">
                     <div class="max-w-3xl mx-auto">
                         <div class="text-sm text-gray-500 mb-2">
-                            Section <span x-text="currentSectionIndex + 1"></span> — Part <span x-text="sections[currentSectionIndex].part"></span>
+                            Section <span x-text="currentSectionIndex + 1"></span> — Part <span x-text="sections[currentSectionIndex].part_label ?? sections[currentSectionIndex].part"></span>
                             <template x-if="questions.length > 1">
                                 <span> — Câu <span x-text="currentIndex + 1"></span>/<span x-text="questions.length"></span></span>
                             </template>

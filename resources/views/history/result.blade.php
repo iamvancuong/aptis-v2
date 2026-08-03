@@ -70,7 +70,7 @@
                         $pColor   = $pPct >= 80 ? 'bg-green-500' : ($pPct >= 50 ? 'bg-amber-400' : 'bg-red-400');
                     @endphp
                     <div class="px-5 py-3 flex items-center gap-4">
-                        <span class="text-sm font-bold text-gray-700 w-16 shrink-0">Part {{ $part }}</span>
+                        <span class="text-sm font-bold text-gray-700 w-16 shrink-0">{{ \App\Support\PartLabel::text($attempt->skill, $part) }}</span>
                         <div class="flex-1 bg-gray-100 rounded-full h-2.5">
                             <div class="{{ $pColor }} h-2.5 rounded-full transition-all" style="width: {{ $pPct }}%"></div>
                         </div>
@@ -103,7 +103,7 @@
                         <span class="text-base shrink-0 mt-0.5">{{ $icon }}</span>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="text-xs font-bold text-gray-400 uppercase">Part {{ $q->part ?? '?' }} · Câu {{ $i + 1 }}</span>
+                                <span class="text-xs font-bold text-gray-400 uppercase">{{ \App\Support\PartLabel::text($attempt->skill, $q->part ?? null) }} · Câu {{ $i + 1 }}</span>
                                 @if($q->title)
                                     <span class="text-xs text-gray-500">— {{ $q->title }}</span>
                                 @endif

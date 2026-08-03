@@ -40,7 +40,9 @@
                 <x-card>
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg font-semibold">Part {{ $quiz->part }}</h3>
+                            {{-- Nhãn theo đề thật (Reading: 2→"2-3", 3→"4", 4→"5").
+                                 Link bên dưới vẫn dùng số nội bộ $quiz->part. --}}
+                            <h3 class="text-lg font-semibold">{{ \App\Support\PartLabel::text($skill, $quiz->part) }}</h3>
                             <p class="text-gray-600 text-sm">{{ $quiz->title }}</p>
                             @if($quiz->duration_minutes)
                                 <p class="text-gray-500 text-xs mt-1">⏱ {{ $quiz->duration_minutes }} phút</p>

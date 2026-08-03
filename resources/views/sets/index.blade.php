@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', ucfirst($skill) . ' Part ' . $part . ' - Milaedu')
+@section('title', ucfirst($skill) . ' ' . \App\Support\PartLabel::text($skill, $part) . ' - Milaedu')
 
 @section('content')
 <div class="mb-8">
     <a href="{{ route('skills.show', $skill) }}" class="text-blue-600 hover:text-blue-700 mb-4 inline-block">
         ← Quay lại {{ ucfirst($skill) }}
     </a>
-    <h1 class="text-3xl font-bold text-gray-900">{{ ucfirst($skill) }} - Part {{ $part }}</h1>
+    <h1 class="text-3xl font-bold text-gray-900">{{ ucfirst($skill) }} - {{ \App\Support\PartLabel::text($skill, $part) }}</h1>
     <p class="mt-2 text-gray-600">{{ $quiz->title }}</p>
     @if($quiz->duration_minutes)
         <p class="text-sm text-gray-500 mt-1">⏱ Thời gian: {{ $quiz->duration_minutes }} phút</p>

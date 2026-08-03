@@ -27,7 +27,9 @@
                 <div class="flex flex-col flex-1 min-w-0 text-center sm:text-left md:flex-row md:items-baseline md:justify-center md:gap-3">
                     <h1 class="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate tracking-tight">
                         <span class="capitalize" x-text="currentQuestion?.skill || '{{ ucfirst($set->quiz->skill) }}'"></span> 
-                        Part <span x-text="currentQuestion?.part || '{{ $set->quiz->part }}'"></span>
+                        {{-- Một bộ đề luyện tập chỉ thuộc một Part, nên nhãn tính sẵn ở
+                             server thay vì đọc từ từng câu hỏi. --}}
+                        {{ \App\Support\PartLabel::text($set->quiz->skill, $set->quiz->part) }}
                         <span class="hidden md:inline text-gray-300 mx-1">|</span>
                     </h1>
                     <p class="text-sm font-medium text-indigo-600 truncate mt-0.5 md:mt-0">
@@ -140,7 +142,7 @@
                                         </div>
 
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Part <span x-text="q.part"></span></p>
+                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">{{ \App\Support\PartLabel::text($set->quiz->skill, $set->quiz->part) }}</p>
                                             <p class="text-sm text-gray-800 line-clamp-2" x-text="q.title || q.stem || 'Câu hỏi #' + (q.originalIndex + 1)"></p>
                                         </div>
                                     </button>

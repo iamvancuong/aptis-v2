@@ -14,7 +14,7 @@
         <div>
             <h1 class="text-3xl font-bold text-gray-900">{{ $set->title }}</h1>
             <p class="mt-2 text-gray-600">
-                {{ $set->quiz->name }} - Part {{ $set->quiz->part }} 
+                {{ $set->quiz->name }} - {{ \App\Support\PartLabel::text($set->quiz->skill, $set->quiz->part) }}
                 <span class="mx-2">•</span>
                 <span class="capitalize">{{ $set->quiz->skill }}</span>
             </p>
