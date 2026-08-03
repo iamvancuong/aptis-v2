@@ -38,6 +38,7 @@ class User extends Authenticatable
         'source',
         'status',
         'violation_count',
+        'last_violation_at',
         'devtools_guard_disabled',
         'must_change_password',
         'ai_reset_version',
@@ -70,6 +71,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'expires_at' => 'datetime',
+            'last_violation_at' => 'datetime',
             'devtools_guard_disabled' => 'boolean',
             'must_change_password' => 'boolean',
         ];

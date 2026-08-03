@@ -3,91 +3,107 @@
 namespace App\Http\Middleware;
 
 use App\Models\LoginSession;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Giới hạn số thiết bị dùng ĐỒNG THỜI trên một tài khoản.
+ *
+ * Luật (cấu hình ở `config/devices.php`):
+ *   - Tối đa `max_devices` thiết bị hoạt động cùng lúc.
+ *   - Thiết bị vượt trần → +1 vi phạm, đá thiết bị lâu nhất, VẪN cho vào.
+ *   - Đủ `block_after_violations` vi phạm → khoá tài khoản.
+ *   - Vi phạm cũ hơn `violation_reset_days` ngày thì bỏ qua, đếm lại từ đầu.
+ *
+ * ⚠️ HAI LỖI CŨ ĐÃ VÁ Ở ĐÂY — đừng vô tình dựng lại:
+ *
+ * 1. ĐẾM CẢ LỊCH SỬ. Bản cũ `count()` mọi dòng `login_sessions` của user, mà dòng
+ *    chỉ mất khi bấm Đăng xuất. Đóng trình duyệt không xoá gì; tab ẩn danh thì mất
+ *    cookie nên mỗi lần mở lại là một "thiết bị" mới VĨNH VIỄN. Kết quả: một người
+ *    ngồi một máy mở ẩn danh vài lần là bị khoá. Nay chỉ đếm phiên còn phát sinh
+ *    request trong `activity_window_hours`.
+ *
+ * 2. TRA `device_id` KHÔNG KÈM `user_id`. Máy đã có dòng của tài khoản A, nay tài
+ *    khoản B đăng nhập → dòng bị gán sang B rồi `return` sớm, BỎ QUA phép đếm của
+ *    B. Bằng chứng trong DB: có tài khoản giữ 4 dòng dù trần là 3. Nay tra theo
+ *    cặp (device_id, user_id) — unique cũng đã đổi theo cặp nên không còn phải
+ *    cướp dòng của nhau.
+ */
 class SessionLimit
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return $next($request);
         }
 
+        /** @var User $user */
         $user = auth()->user();
-        
-        // Admins are exempt from session limits
+
+        // Admin không bị giới hạn thiết bị.
         if ($user->isAdmin()) {
             return $next($request);
         }
 
-        $deviceId = $request->cookie('aptis_device_id');
+        $deviceId    = $request->cookie('aptis_device_id');
         $isNewDevice = false;
 
-        if (!$deviceId) {
-            $deviceId = hash('sha256', Str::uuid() . time());
+        if (! $deviceId) {
+            $deviceId    = hash('sha256', Str::uuid() . time());
             $isNewDevice = true;
         }
 
-        // Update or create session for this device
-        $existingSession = LoginSession::where('device_id', $deviceId)->first();
+        // Thiết bị đã biết CỦA CHÍNH tài khoản này → chỉ cập nhật mốc hoạt động.
+        $phienHienCo = LoginSession::where('device_id', $deviceId)
+            ->where('user_id', $user->id)
+            ->first();
 
-        if ($existingSession) {
-            // Update last active time
-            $existingSession->update([
-                'user_id' => $user->id,
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'last_active_at' => now()
+        if ($phienHienCo) {
+            $phienHienCo->update([
+                'ip_address'     => $request->ip(),
+                'user_agent'     => $request->userAgent(),
+                'last_active_at' => now(),
             ]);
+
             return $next($request);
         }
 
-        // Count active sessions for this user
-        $activeSessions = LoginSession::where('user_id', $user->id)->count();
+        // Thiết bị mới với tài khoản này → xét trần.
+        $moc = now()->subHours((int) config('devices.activity_window_hours'));
 
-        if ($activeSessions >= $user->max_devices) {
-            // Increment violation count
-            $user->increment('violation_count');
-            $newViolationCount = $user->violation_count;
+        $dangHoatDong = LoginSession::where('user_id', $user->id)
+            ->where('last_active_at', '>=', $moc)
+            ->count();
 
-            // Block if violations >= 3
-            if ($newViolationCount >= 3) {
-                $user->update(['status' => 'blocked']);
-                auth()->logout();
-                return redirect()->route('login')->with('error', 'Tài khoản đã bị khóa do vi phạm đăng nhập quá nhiều thiết bị (hệ thống chỉ cho phép đăng nhập đồng thời 1 thiết bị).');
+        $tran = $user->max_devices ?: (int) config('devices.max_devices');
+
+        if ($dangHoatDong >= $tran) {
+            if ($response = $this->xuLyViPham($user, $tran)) {
+                return $response;
             }
 
-            // Remove oldest session (kicking out the previous device)
+            // Đá thiết bị lâu không dùng nhất để nhường suất cho thiết bị này.
             LoginSession::where('user_id', $user->id)
-                ->orderBy('last_active_at', 'asc')
+                ->orderBy('last_active_at')
                 ->first()
                 ?->delete();
-                
-            // Set alert message for the new session
-            session()->flash('warning', "Cảnh báo: Bạn vừa đăng nhập trên thiết bị mới trong khi thiết bị cũ vẫn đang hoạt động. Đây là vi phạm lần {$newViolationCount}/3. Hệ thống không cho phép dùng 2 thiết bị cùng lúc. Nếu vi phạm 3 lần, tài khoản sẽ bị khóa.");
         }
 
-        // Create new session for this device
         LoginSession::create([
-            'user_id' => $user->id,
-            'device_id' => $deviceId,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
+            'user_id'        => $user->id,
+            'device_id'      => $deviceId,
+            'ip_address'     => $request->ip(),
+            'user_agent'     => $request->userAgent(),
             'last_active_at' => now(),
         ]);
 
         $response = $next($request);
-        
-        // Attach the device ID cookie if it's new.
-        // Set it on the headers rather than via withCookie(), which only exists
-        // on Laravel's own response classes — streamed and file responses (such
-        // as question audio) are plain Symfony responses and would fatal here.
+
+        // Gắn cookie qua headers thay vì withCookie(): response dạng stream hoặc
+        // file (audio đề bài) là Symfony Response thuần, không có withCookie().
         if ($isNewDevice) {
             $response->headers->setCookie(cookie()->forever('aptis_device_id', $deviceId));
         }
@@ -95,4 +111,48 @@ class SessionLimit
         return $response;
     }
 
+    /**
+     * Ghi nhận vi phạm và khoá nếu đã đủ ngưỡng.
+     *
+     * Trả về Response khi tài khoản bị khoá (dừng request tại đây), null khi chỉ
+     * cảnh báo và cho đi tiếp.
+     */
+    private function xuLyViPham(User $user, int $tran): ?Response
+    {
+        $hanReset = (int) config('devices.violation_reset_days');
+
+        // Vi phạm gần nhất đã quá lâu → coi như làm lại từ đầu. `last_violation_at`
+        // null là dữ liệu có trước khi có cột này; cũng tính là hết hạn.
+        $daHetHan = $user->last_violation_at === null
+            || $user->last_violation_at->lt(now()->subDays($hanReset));
+
+        $soViPham = ($daHetHan ? 0 : (int) $user->violation_count) + 1;
+
+        $user->forceFill([
+            'violation_count'   => $soViPham,
+            'last_violation_at' => now(),
+        ])->save();
+
+        $nguong = (int) config('devices.block_after_violations');
+
+        if ($soViPham >= $nguong) {
+            $user->update(['status' => 'blocked']);
+            LoginSession::where('user_id', $user->id)->delete();
+            auth()->logout();
+
+            return redirect()->route('login')->with('error',
+                "Tài khoản đã bị khoá do đăng nhập quá {$tran} thiết bị cùng lúc nhiều lần."
+                . ' Vui lòng liên hệ giảng viên để được mở lại.');
+        }
+
+        $conLai = $nguong - $soViPham;
+
+        session()->flash('warning',
+            "Cảnh báo {$soViPham}/{$nguong}: tài khoản của bạn vừa đăng nhập trên thiết bị mới"
+            . " trong khi đã có {$tran} thiết bị đang dùng. Hệ thống chỉ cho phép {$tran} thiết bị"
+            . " cùng lúc — thiết bị lâu không dùng nhất đã bị đăng xuất."
+            . " Vi phạm thêm {$conLai} lần nữa là tài khoản bị khoá.");
+
+        return null;
+    }
 }

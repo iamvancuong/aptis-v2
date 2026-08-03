@@ -24,6 +24,11 @@ Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
 // (cột `class_sessions.reminder_sent_at`) nên chạy dày cũng không spam.
 Schedule::command('classes:remind')->everyFiveMinutes()->withoutOverlapping();
 
+// Dọn phiên đăng nhập chết từ lâu (mỗi lần học viên xoá cookie là một dòng ở lại
+// vĩnh viễn). An toàn: phép đếm thiết bị đã lọc theo cửa sổ hoạt động nên xoá các
+// dòng này không mở thêm quyền cho ai.
+Schedule::command('sessions:prune')->dailyAt('04:00')->withoutOverlapping();
+
 // ⚠️ CỐ Ý ĐỂ TẮT. Dọn file ghi âm bài Nói cũ (hosting 30GB chia 21 web).
 // Lệnh này XOÁ AUDIO THẬT CỦA HỌC VIÊN và không khôi phục được, nên không tự
 // bật. Chạy thử trước rồi mới bỏ comment dòng dưới:

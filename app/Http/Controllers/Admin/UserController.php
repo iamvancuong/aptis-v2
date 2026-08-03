@@ -195,11 +195,23 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'User has been blocked successfully.');
     }
 
+    /**
+     * Gỡ khoá PHẢI reset vi phạm cùng lúc.
+     *
+     * Bẫy của bản cũ: chỉ đổi `status` về active, `violation_count` giữ nguyên ở
+     * mức đã chạm ngưỡng. Tài khoản vừa mở ra là lần đăng nhập thiết bị mới kế
+     * tiếp lại khoá ngay — admin bấm Unblock thấy "thành công" rồi học viên vẫn
+     * kêu không vào được, không ai hiểu vì sao.
+     */
     public function unblock(User $user)
     {
-        $user->update(['status' => 'active']);
+        $user->update([
+            'status'            => 'active',
+            'violation_count'   => 0,
+            'last_violation_at' => null,
+        ]);
 
-        return redirect()->back()->with('success', 'User has been unblocked successfully.');
+        return redirect()->back()->with('success', 'Đã mở khoá tài khoản và xoá số lần vi phạm.');
     }
 
     public function resetViolations(User $user)
