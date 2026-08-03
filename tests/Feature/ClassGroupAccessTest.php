@@ -403,7 +403,27 @@ class ClassGroupAccessTest extends TestCase
             ->assertOk()
             ->assertSee('Bắt đầu ngay bây giờ')
             ->assertSee('Xoá giờ (mở tự do)')
-            ->assertSee('x-text="moTa"', false);
+            ->assertSee('x-text="moTa"', false)
+            // Đồng hồ server + cảnh báo lệch múi giờ: bản vá cho ca admin ngồi ở
+            // UTC+9 gõ "bây giờ" mà hệ thống hiểu là giờ VN (lệch 2 tiếng, im lặng).
+            ->assertSee('x-text="serverChu"', false)
+            ->assertSee('lệch múi giờ với hệ thống')
+            // Giờ server phải được nhúng sẵn vào trang — mọi phép tính dựa vào nó,
+            // không được dùng `new Date()` của trình duyệt.
+            ->assertSee(now()->format('Y-m-d\TH'), false);
+    }
+
+    public function test_gio_server_duoc_nhung_vao_form_theo_dung_mui_gio_app(): void
+    {
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.class-sessions.create'))
+            ->getContent();
+
+        // Nếu có ai đổi `serverGoc` sang giờ UTC hoặc bỏ đi, ca này đỏ ngay.
+        // ⚠️ Không so nguyên "Asia/Ho_Chi_Minh": `@js()` dùng json_encode nên dấu
+        // gạch chéo ra thành `Asia\/Ho_Chi_Minh` trong HTML. So phần không có `/`.
+        $this->assertStringContainsString('Ho_Chi_Minh', $html);
+        $this->assertStringContainsString(now()->format('P'), $html);   // +07:00
     }
 
     public function test_lenh_chan_doan_chi_dung_cua_dang_chan(): void

@@ -92,30 +92,68 @@
     $ketThucCu = old('ends_at', $session?->ends_at?->format('Y-m-d\TH:i') ?? '');
 @endphp
 
+{{-- ⚠️ MÚI GIỜ — cái bẫy đã cắn thật, đọc trước khi sửa file này.
+     `<input type="datetime-local">` KHÔNG mang múi giờ. Trình duyệt hiển thị và
+     gợi ý theo giờ MÁY CỦA ADMIN, còn server lưu nguyên chuỗi rồi hiểu là giờ
+     Việt Nam. Admin ngồi ở Nhật (UTC+9) gõ "bây giờ" = 23:30 thì hệ thống hiểu
+     là 23:30 giờ VN, tức 2 tiếng nữa — và học viên không vào được.
+
+     Nên MỌI phép tính giờ ở đây phải dựa vào ĐỒNG HỒ SERVER, tuyệt đối không
+     dùng `new Date()` để lấy "bây giờ". Cách làm: quy cả hai về "mốc treo tường"
+     (Date.UTC của các thành phần y/m/d h:m) rồi mới trừ nhau — như vậy múi giờ
+     trình duyệt không còn tham gia vào phép tính nào cả. --}}
 <div x-data="{
         batDau: @js($batDauCu),
         ketThuc: @js($ketThucCu),
         somPhut: {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }},
+        serverGoc: @js(now()->format('Y-m-d\TH:i:s')),
+        serverTen: @js(config('app.timezone')),
+        serverOffset: @js(now()->format('P')),
+        taiLuc: Date.now(),
+
+        /* Đổi 'YYYY-MM-DDTHH:mm[:ss]' thành mili-giây theo ĐỒNG HỒ TREO TƯỜNG. */
+        mocTuong(s) {
+            const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/);
+            return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)) : null;
+        },
+        dinhDang(ms) {
+            const d = new Date(ms), n = (x) => String(x).padStart(2, '0');
+            return n(d.getUTCHours()) + ':' + n(d.getUTCMinutes())
+                 + ' ' + n(d.getUTCDate()) + '/' + n(d.getUTCMonth() + 1);
+        },
+        /* 'Bây giờ' theo server, có cộng thêm thời gian trang đã mở. */
+        get serverBayGio() { return this.mocTuong(this.serverGoc) + (Date.now() - this.taiLuc); },
+        get serverChu() { return this.dinhDang(this.serverBayGio); },
+
+        /* Chênh lệch giữa đồng hồ MÁY ADMIN và đồng hồ server, tính bằng phút. */
+        get lechPhut() {
+            const may = Date.now() - new Date().getTimezoneOffset() * 60000;
+            return Math.round((may - this.serverBayGio) / 60000);
+        },
+        get lechNhieu() { return Math.abs(this.lechPhut) >= 5; },
+        get lechChu() {
+            const p = Math.abs(this.lechPhut), h = Math.floor(p / 60), m = p % 60;
+            return (h ? h + ' giờ ' : '') + m + ' phút ' + (this.lechPhut > 0 ? 'NHANH hơn' : 'CHẬM hơn');
+        },
+
         moNgay() {
-            // Lấy giờ máy dưới dạng YYYY-MM-DDTHH:mm (giờ ĐỊA PHƯƠNG, không phải UTC).
-            const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
-            this.batDau = d.toISOString().slice(0, 16);
+            /* Lấy giờ SERVER, không phải giờ máy — đây đúng là chỗ đã sai. */
+            this.batDau = new Date(this.serverBayGio).toISOString().slice(0, 16);
         },
         xoaGio() { this.batDau = ''; this.ketThuc = ''; },
         get cuaMo() {
-            if (!this.batDau) return null;
-            const t = new Date(this.batDau);
-            return isNaN(t) ? null : new Date(t.getTime() - this.somPhut * 60000);
+            const t = this.mocTuong(this.batDau);
+            return t === null ? null : t - this.somPhut * 60000;
         },
-        get dangMo() { return this.cuaMo !== null && this.cuaMo <= new Date(); },
+        get dangMo() { return this.cuaMo !== null && this.cuaMo <= this.serverBayGio; },
         get moTa() {
             if (!this.batDau && !this.ketThuc) {
                 return 'Mở tự do — học viên vào được ngay khi buổi đang bật, không giới hạn giờ.';
             }
             const c = this.cuaMo;
-            if (!c) return 'Chưa đặt giờ bắt đầu — buổi mở ngay khi bật.';
-            const gio = c.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
-            let phut = Math.round((c - new Date()) / 60000);
+            if (c === null) return 'Chưa đặt giờ bắt đầu — buổi mở ngay khi bật.';
+            const gio = this.dinhDang(c);
+            let phut = Math.round((c - this.serverBayGio) / 60000);
             if (phut <= 0) return 'Cửa lớp ĐANG MỞ (từ ' + gio + ').';
             const ngay = Math.floor(phut / 1440); phut -= ngay * 1440;
             const h = Math.floor(phut / 60), m = phut % 60;
@@ -123,6 +161,29 @@
             return 'Cửa lớp mở lúc ' + gio + ' — CÒN ' + con + ' NỮA, học viên chưa vào được trước lúc đó.';
         }
      }">
+    {{-- Đồng hồ SERVER, luôn hiện. Đây là đồng hồ duy nhất có ý nghĩa với hệ thống. --}}
+    <p class="mb-2 text-xs text-gray-600">
+        Giờ hệ thống bây giờ: <strong x-text="serverChu"></strong>
+        (<span x-text="serverTen"></span>, <span x-text="serverOffset"></span>).
+        Mọi giờ bạn nhập bên dưới được hiểu theo đồng hồ này.
+    </p>
+
+    {{-- Cảnh báo lệch múi giờ. Không có nó thì admin ở múi giờ khác gõ "bây giờ"
+         theo đồng hồ máy mình và buổi học lệch đúng bằng khoảng chênh, im lặng. --}}
+    <div x-cloak x-show="lechNhieu"
+         class="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
+        <p class="font-semibold mb-1">⚠️ Máy bạn đang lệch múi giờ với hệ thống</p>
+        <p>
+            Đồng hồ máy bạn đang <strong x-text="lechChu"></strong> đồng hồ hệ thống.
+            Ô chọn giờ bên dưới hiển thị theo <strong>giờ máy bạn</strong>, nhưng hệ thống
+            hiểu con số bạn nhập là <strong x-text="serverTen"></strong>.
+        </p>
+        <p class="mt-1">
+            Gõ giờ theo <strong>đồng hồ hệ thống</strong> ở trên, đừng gõ theo đồng hồ máy —
+            hoặc bấm “Bắt đầu ngay bây giờ”, nút đó lấy giờ hệ thống nên luôn đúng.
+        </p>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-4">
         <x-input
             type="datetime-local"
