@@ -165,6 +165,63 @@ class SpeakingAiGradingTest extends TestCase
         $this->assertSame("Câu một.\nCâu hai.", $answer->refresh()->ai_metadata['transcript']);
     }
 
+    /* ───────────────────────── band CEFR ───────────────────────── */
+
+    public function test_band_cefr_duoc_luu_cung_nhan_xet(): void
+    {
+        $body = $this->fakeGradeBody();
+        $content = json_decode($body['choices'][0]['message']['content'], true);
+        $content['cefr_level'] = 'B2';
+        $content['cefr_reason'] = 'Nói được ý rõ ràng.';
+        $body['choices'][0]['message']['content'] = json_encode($content);
+
+        Http::fake([
+            '*/audio/transcriptions' => Http::response(['text' => 'I come from Hanoi.']),
+            '*/chat/completions' => Http::response($body),
+        ]);
+
+        $answer = $this->submittedAnswer($this->student());
+        $this->runJob($answer);
+
+        $this->assertSame('B2', $answer->refresh()->ai_metadata['feedback']['cefr_level']);
+        $this->assertSame('Nói được ý rõ ràng.', $answer->ai_metadata['feedback']['cefr_reason']);
+    }
+
+    /**
+     * Model hay trả biến thể: "B2+", "level b2", "B2/C1". Học viên đọc bậc này để
+     * biết mình đang ở đâu nên không được để lọt chuỗi lạ ra giao diện.
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('cefrBienTheProvider')]
+    public function test_bien_the_cua_band_duoc_ep_ve_dung_bac(string $raw, string $mongDoi): void
+    {
+        $body = $this->fakeGradeBody();
+        $content = json_decode($body['choices'][0]['message']['content'], true);
+        $content['cefr_level'] = $raw;
+        $body['choices'][0]['message']['content'] = json_encode($content);
+
+        Http::fake([
+            '*/audio/transcriptions' => Http::response(['text' => 'Hello.']),
+            '*/chat/completions' => Http::response($body),
+        ]);
+
+        $answer = $this->submittedAnswer($this->student());
+        $this->runJob($answer);
+
+        $this->assertSame($mongDoi, $answer->refresh()->ai_metadata['feedback']['cefr_level']);
+    }
+
+    public static function cefrBienTheProvider(): array
+    {
+        return [
+            'có dấu cộng'   => ['B2+', 'B2'],
+            'viết thường'   => ['b1', 'B1'],
+            'có tiền tố'    => ['Level C1', 'C1'],
+            // Không đọc được → suy từ điểm 7/10 theo đúng mốc trong system prompt.
+            'rác'           => ['không rõ', 'B2'],
+            'rỗng'          => ['', 'B2'],
+        ];
+    }
+
     /* ───────────────────────── nhánh hỏng ───────────────────────── */
 
     public function test_khong_co_file_ghi_am_thi_bao_hong_va_hoan_lai_luot(): void

@@ -205,9 +205,21 @@
                                             @if(!empty($aiFeedback['not_assessed']))
                                                 <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
                                                     <span class="font-bold">Máy chỉ đọc transcript.</span>
-                                                    Điểm trên KHÔNG bao gồm phát âm và độ trôi chảy — hai mục đó cần cô nghe trực tiếp.
+                                                    Điểm và band trên KHÔNG bao gồm phát âm và độ trôi chảy — hai mục đó cần cô nghe trực tiếp.
                                                     Học viên cũng được báo đúng như vậy.
                                                 </div>
+
+                                                @if(!empty($aiFeedback['cefr_level']))
+                                                    <div class="bg-white border border-gray-200 rounded-lg p-3 flex items-center gap-3">
+                                                        <div>
+                                                            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Band máy ước lượng</div>
+                                                            <div class="text-2xl font-black text-indigo-600 leading-none">{{ $aiFeedback['cefr_level'] }}</div>
+                                                        </div>
+                                                        @if(!empty($aiFeedback['cefr_reason']))
+                                                            <p class="text-xs text-gray-600 flex-1">{{ $aiFeedback['cefr_reason'] }}</p>
+                                                        @endif
+                                                    </div>
+                                                @endif
 
                                                 @if(!empty($ans->ai_metadata['transcript']))
                                                     <div>

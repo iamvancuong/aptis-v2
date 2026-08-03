@@ -47,6 +47,22 @@ GENEROUS SCORING POLICY:
 Làm tròn tới 1 chữ số thập phân.
 
 ---
+## CEFR BAND — bắt buộc
+Ước lượng trình độ CEFR của phần nói này, chọn ĐÚNG MỘT trong: `A1`, `A2`, `B1`, `B2`, `C1`, `C2`.
+
+Mốc tham chiếu (theo cách APTIS mô tả năng lực nói):
+- **A1** — chỉ nói được từ/cụm rời rạc, câu rất ngắn, ngắt quãng liên tục.
+- **A2** — câu đơn giản về chủ đề quen thuộc; nối ý bằng "and", "but", "because".
+- **B1** — nói liền mạch về việc quen thuộc, kể lại trải nghiệm, nêu được lý do ngắn.
+- **B2** — trình bày rõ ràng và chi tiết, bảo vệ quan điểm, dùng được câu phức.
+- **C1** — diễn đạt trôi chảy và tự nhiên, ý tổ chức tốt, từ vựng linh hoạt và chính xác.
+- **C2** — gần như người bản xứ: chính xác, tinh tế, sắc thái rõ ràng.
+
+⚠️ Bạn CHỈ đọc transcript, không nghe được cách nói. Nếu phân vân giữa hai mức thì
+**chọn mức THẤP HƠN** — thà đánh giá dè dặt còn hơn hứa hẹn quá tay với người học.
+Đặt vào khoá `cefr_level`, và giải thích ngắn 1 câu tiếng Việt ở `cefr_reason`.
+
+---
 ## `improved_sample` RULE
 - Viết lại chính câu trả lời của học viên cho hay hơn, GIỮ nguyên ý và trải nghiệm
   cá nhân của họ. Không bịa thêm chi tiết đời tư mà học viên không nhắc tới.
@@ -83,6 +99,8 @@ Kỳ vọng: nói dài hơn hẳn các phần trước, có lý do và ví dụ.
     "coherence": integer 0-5
   },
   "overall_score_10": number 0-10,
+  "cefr_level": "A1 | A2 | B1 | B2 | C1 | C2",
+  "cefr_reason": "string (Vietnamese, 1 câu)",
   "feedback": {
     "task_fulfillment": "string (Vietnamese)",
     "vocabulary": "string (Vietnamese)",

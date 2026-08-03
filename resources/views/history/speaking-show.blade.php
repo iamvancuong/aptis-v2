@@ -23,7 +23,24 @@
         </div>
     </div>
 
-    @php $speakingAiOn = config('services.openai.speaking_ai_enabled', true); @endphp
+    @php
+        $speakingAiOn = config('services.openai.speaking_ai_enabled', true);
+        $anyAiFeedback = $attempt->attemptAnswers->contains(fn ($a) => !empty($a->ai_metadata['feedback']));
+    @endphp
+
+    {{-- Giải thích về nhận xét tự động: ĐÚNG MỘT LẦN cho cả trang.
+         Trước đây lặp ở từng Part — bài Nói có 4 Part nên học viên phải đọc cùng
+         một đoạn 4 lần, làm loãng hẳn phần nhận xét thật. --}}
+    @if($anyAiFeedback)
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p class="text-sm text-gray-800">
+                <strong>Về nhận xét tự động (AI) bên dưới:</strong>
+                máy đánh giá <strong>nội dung, từ vựng, ngữ pháp và mạch lạc</strong> dựa trên lời bạn nói.
+                Máy <strong>KHÔNG chấm phát âm và độ trôi chảy</strong> — hai mục này phải do giảng viên
+                nghe trực tiếp. Điểm và band CEFR ở đây là <strong>tham khảo</strong>, chưa phải kết quả cuối cùng.
+            </p>
+        </div>
+    @endif
 
     {{-- Items List --}}
     @foreach($attempt->attemptAnswers as $answer)
@@ -48,7 +65,11 @@
                         </span>
                     @elseif($answer->grading_status === 'ai_graded')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
-                            🤖 AI chấm nháp: {{ number_format($answer->score ?? 0, 1) }}/10
+                            🤖 AI chấm nháp:
+                            @if(!empty($answer->ai_metadata['feedback']['cefr_level']))
+                                {{ $answer->ai_metadata['feedback']['cefr_level'] }} ·
+                            @endif
+                            {{ number_format($answer->score ?? 0, 1) }}/10
                         </span>
                     @elseif($answer->grading_status === 'ai_failed')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
@@ -182,15 +203,19 @@
                                 AI
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h3 class="text-sm font-bold text-amber-800 mb-1">Nhận xét tự động (bản nháp)</h3>
+                                <h3 class="text-sm font-bold text-amber-800 mb-3">Nhận xét tự động (bản nháp)</h3>
 
-                                {{-- Công bố giới hạn: cách chấm này đọc lời nói đã được
-                                     chuyển thành chữ, nên không nghe được cách phát âm. --}}
-                                <div class="bg-white p-3 rounded-lg border border-amber-200 text-sm text-gray-700 mb-4">
-                                    <p class="font-semibold text-gray-900 mb-1">Bản nháp này đánh giá được gì?</p>
-                                    <p>Máy đọc <strong>nội dung</strong> bài nói của bạn: trả lời đúng yêu cầu chưa, từ vựng, ngữ pháp, mạch lạc.</p>
-                                    <p class="mt-1"><strong>Máy KHÔNG chấm phát âm và độ trôi chảy</strong> — hai mục này phải do giảng viên nghe trực tiếp mới đánh giá được. Điểm dưới đây là <strong>nháp tham khảo</strong>, không phải điểm cuối cùng.</p>
-                                </div>
+                                @if(!empty($ai['cefr_level']))
+                                    <div class="bg-white p-4 rounded-lg border border-amber-200 mb-4 flex items-center gap-4">
+                                        <div>
+                                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Band ước lượng</div>
+                                            <div class="text-3xl font-black text-amber-700 leading-none">{{ $ai['cefr_level'] }}</div>
+                                        </div>
+                                        @if(!empty($ai['cefr_reason']))
+                                            <p class="text-sm text-gray-700 leading-relaxed flex-1">{{ $ai['cefr_reason'] }}</p>
+                                        @endif
+                                    </div>
+                                @endif
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                     @foreach($criteriaLabels as $key => $label)
