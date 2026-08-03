@@ -1,8 +1,9 @@
 # 📌 MILAEDU — TÀI LIỆU BÀN GIAO & TIẾN ĐỘ
 
 > File DUY NHẤT để nắm toàn bộ dự án. Đọc file này là đủ để tiếp tục, không cần chat cũ.
-> Cập nhật: 02/08/2026 · **ĐÃ DEPLOY production** (A–S) · **(T) chấm Nói bằng AI đã code, CHỜ DEPLOY — §27** ·
-> việc tồn: **§26** · **178 test pass** · deploy cPanel: xem 🟠 dưới.
+> Cập nhật: **04/08/2026** · **232 test pass** · deploy cPanel: xem 🟠 dưới.
+> **Trạng thái gọn nhất nằm ở §30 — đọc mục đó trước.**
+> Việc tồn cũ: **§26** · lớp online: **§29 + `PLAN_LOP_ONLINE.md`** · thiết bị: **§30**.
 > Ký hiệu: ✅ xong · 🧪 xong-mới-test-giả-lập · 🔴 chờ bạn · 💡 nên làm · ⬜ tùy chọn
 >
 > Các batch đã làm: **(A) vá bảo mật** · **(B) thương mại hóa** (PayOS/chấm bài/doanh số) ·
@@ -1018,3 +1019,76 @@ Sau khi migrate: chạy `php artisan users:backfill-source --dry-run` xem số l
 - **GĐ0 (thao tác Google Workspace) chưa ai làm** — xem `PLAN_LOP_ONLINE.md` §6-GĐ0, đặc biệt **bước 6**
   (thử 1 Gmail được mời + 1 Gmail không được mời) và **bước 8** (kiểm CSV điểm danh có đúng cột không).
 - **GĐ2 (đối chiếu điểm danh)** và **GĐ3 (Calendar API)** chưa code.
+
+---
+
+## 30. 📦 TRẠNG THÁI 04/08/2026 — ĐANG LÀM GÌ, CÒN GÌ, GÌ CHƯA TEST
+
+> Mục **tổng hợp**, đọc trước mọi mục khác. Chi tiết kỹ thuật ở §29 (lớp học),
+> `PLAN_LOP_ONLINE.md` (lộ trình Google Meet 4 giai đoạn), và phần (W) dưới đây.
+
+### (W) 04/08 — Chính sách thiết bị mới (đã code, đã push `main`)
+
+**Chốt:** tối đa **2 thiết bị cùng lúc** · thiết bị thứ 3 → **cảnh báo 1** ·
+cố tình lần nữa → **khoá**. Chỉnh ở `config/devices.php`, không phải sửa code.
+
+**Nhưng siết còn 2/2 mà giữ phép đếm cũ là khoá oan hàng loạt** — nên vá chung một mẻ:
+
+| | Trước | Sau |
+|---|---|---|
+| Đếm cái gì | **Mọi lần đăng nhập từng có** | Phiên còn hoạt động trong **6 giờ** |
+| Đóng trình duyệt | Chiếm suất vĩnh viễn | Hết 6h thì nhả |
+| Mở ẩn danh 3 lần | **Khoá tài khoản** | Không sao |
+| 3 máy dùng **lần lượt** | Tích vi phạm | Không sao |
+| 3 máy dùng **cùng lúc** | — | **Cảnh báo → khoá** ✅ |
+
+**Ba lỗi đã vá kèm:**
+1. **Lỗ hổng đếm** (`SessionLimit:38`): máy đã có phiên của tài khoản A thì tài khoản B
+   đăng nhập sẽ **cướp** dòng đó rồi thoát sớm, **bỏ qua phép đếm của B**. Gốc rễ là ràng
+   buộc `device_id` unique **toàn cục** ép code phải cướp → đổi thành unique cặp
+   `(device_id, user_id)`. Bằng chứng trước khi vá: có tài khoản giữ 4 dòng dù trần là 3.
+2. **`violation_count` không bao giờ giảm** → thêm `users.last_violation_at`, vi phạm cũ
+   hơn 30 ngày không cộng dồn. Chữ "cố tình" hàm ý hai lần **gần nhau**.
+3. **Bẫy `unblock()`**: chỉ đổi `status`, vi phạm giữ nguyên ở mức chạm ngưỡng → tài khoản
+   **khoá lại ngay** lần đăng nhập thiết bị mới kế tiếp. Nay reset luôn.
+
+**Lệnh mới:** `devices:apply-policy --dry-run` (áp chính sách, một lần khi deploy) ·
+`sessions:prune` (dọn phiên chết, đã lên lịch 04:00 hằng ngày).
+
+**Số đo production (dry-run 04/08):** 707 tài khoản đổi `max_devices` về 2 · 76 tài khoản
+có vi phạm cần reset · **25 trong đó sẽ bị KHOÁ OAN nếu không reset** · 37 phiên chết cần dọn.
+> ⚠️ Lệnh **cố ý KHÔNG tự mở khoá ai** — tài khoản có thể đang bị khoá vì lý do khác.
+
+### 🟢 ĐÃ XONG + ĐÃ DEPLOY
+- Toàn bộ nền tảng luyện thi, PayOS, chấm Writing/Speaking AI (A–U).
+- **Lớp online Pha 0** (§23): admin dán link Meet thủ công, nhật ký vào lớp, email nhắc giờ.
+
+### 🟡 ĐÃ CODE + ĐÃ PUSH `main`, CHỜ DEPLOY / CHỜ CHẠY LỆNH
+| Việc | Cần làm khi deploy |
+|---|---|
+| **(V) Lớp học + thành viên** (§29) | `migrate --force` + `users:backfill-source` |
+| **(W) Chính sách thiết bị** (mục này) | `migrate --force` + `devices:apply-policy --dry-run` rồi chạy thật |
+| Vá lệch múi giờ form buổi học | Chỉ Blade, không cần gì thêm |
+| Lệnh `classes:diagnose` | Không cần gì thêm |
+> Không lần nào cần `npm run build` — đã đối chiếu từng class Tailwind với `public/build`.
+
+### 🔴 CHƯA LÀM / CHƯA AI TEST THẬT
+| Việc | Vì sao còn treo |
+|---|---|
+| **GĐ0 bước 5** — thử 1 Gmail **được mời** + 1 Gmail **không được mời** vào phòng Meet | Đây là thứ **duy nhất** chứng minh "người lạ phải xin duyệt" hoạt động. Test tự động không chạm tới Google được |
+| **GĐ0 bước 8** — dạy thử 1 buổi, mở email điểm danh xem CSV có đủ cột | Cả GĐ2 (đối chiếu chống học chui) dựng trên file này |
+| **`curl` tới `www.googleapis.com` từ cPanel** | 30 giây. Không ra `200` thì **GĐ3 bất khả thi**. Đúng loại rủi ro đã bỏ qua với `api.openai.com` |
+| **Cổng dừng 1** — dạy 2 buổi thật với lớp đã chia | Test chỉ chứng minh luật đúng trong SQLite, không chứng minh quy trình đúng với người thật |
+| **GĐ2** — đối chiếu điểm danh Meet (chống học chui) | Chưa code. Chờ CSV thật ở bước 8 |
+| **GĐ3** — Calendar API tự sinh phòng + tự gỡ người hết hạn | Chưa code. Chờ kết quả `curl` |
+| `speaking:cleanup-audio` bật cron | Cố ý tắt — lệnh xoá audio thật (§27) |
+| Chuyển email sang SendGrid/SES + SPF/DKIM | Quan trọng dần: có email nhắc giờ học, rơi spam là mất tác dụng |
+| Bio + ảnh thật cô Dung, testimonial thật, DNS verify Search Console | Chờ nội dung thật (§26) |
+
+### ⚠️ BIẾT RÕ NHƯNG CHƯA VÁ
+- **Câu thông báo `SessionLimit` cũ** đã sửa theo con số thật, nhưng nếu sau này đổi
+  `config/devices.php` thì nhớ câu chữ lấy từ config chứ đừng hard-code lại.
+- **Lỗ hổng §25②** (người hết hạn còn lời mời Calendar → vào thẳng Meet không qua web)
+  vẫn phải **gỡ tay**; chỉ GĐ3 mới vá hẳn.
+- **Web chọn thành viên theo từng buổi, Google chỉ biết danh sách của cả chuỗi** (§29) —
+  người bị bỏ khỏi một buổi vẫn vào được nếu còn giữ link. Cũng chỉ GĐ3 vá được.
