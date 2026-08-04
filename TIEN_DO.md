@@ -1114,12 +1114,15 @@ cd /home/ujxmchhx/repositories/aptis-v2 && git fetch origin && git reset --hard 
 ```
 > **KHÔNG cần `npm run build`** — đã đối chiếu từng class Tailwind mới với `public/build/assets/app-*.css` (bẫy §25).
 
-**B3. Hai lệnh dữ liệu — chạy `--dry-run` trước, xem số rồi mới bỏ cờ:**
+**B3. Ba lệnh dữ liệu — chạy `--dry-run` trước, xem số rồi mới bỏ cờ:**
 ```bash
-cd /home/ujxmchhx/repositories/aptis-v2 && php artisan users:backfill-source --dry-run && php artisan devices:apply-policy --dry-run
+cd /home/ujxmchhx/repositories/aptis-v2 && php artisan users:backfill-source --dry-run && php artisan devices:apply-policy --dry-run && php artisan speaking:apply-ai-limit --dry-run
 ```
 Số production đã đo 04/08: backfill = **9 / 478 / 224** · thiết bị = **707 / 76 / 25 / 37**.
-Khớp thì chạy lại **bỏ `--dry-run`** ở cả hai.
+Khớp thì chạy lại **bỏ `--dry-run`** ở cả ba.
+> `speaking:apply-ai-limit` đặt hạn mức **10 BÀI** và nâng `speaking_ai_reset_version` để dữ liệu
+> đếm KIỂU CŨ (theo phần) hết hiệu lực — không nâng thì học viên từng nộp 3 bài hiện ra là đã
+> dùng 12 lượt, hết sạch. Không xoá dòng nào, vẫn tra cứu được.
 
 **B4. Kiểm sau khi deploy:**
 ```bash
@@ -1131,3 +1134,38 @@ Thêm `--user=email@hocvien` để kiểm luôn tư cách của một học viê
 > 🔴 **`devices:apply-policy` cố ý KHÔNG mở khoá ai.** Sau khi chạy, xem lại danh sách tài khoản
 > đang `blocked` ở `/admin/users` — ai bị khoá oan theo luật cũ thì bấm **Unblock** (nút này
 > nay reset luôn số vi phạm, không còn khoá lại ngay như trước).
+
+### (X) 04/08 — Hạn mức AI chấm Nói: 10 BÀI mỗi học viên
+
+**Chốt:** mỗi học viên được AI chấm **10 bài Nói**. Chỉnh ở `/admin/settings`, ô
+*"Số BÀI Nói được AI chấm"*.
+
+**Ba thứ đã sai trước đó, phải sửa cùng lúc:**
+
+1. **Đơn vị đếm là PHẦN, không phải BÀI.** `SpeakingAiDispatcher` trừ lượt cho *từng phần
+   có ghi âm*, mà đề Nói có 4 phần → **một bài nộp tiêu 4 lượt**. Hạn mức 10 thực ra chỉ
+   được **2 bài rưỡi**, và không ai đoán ra điều đó từ con số 10.
+   → Nay 1 bài = 1 lượt. `attempt_id` nằm trong UNIQUE nên nộp lại cùng bài không trừ lần hai —
+   tính duy nhất do **cấu trúc dữ liệu** bảo đảm, không do chỗ gọi nhớ kiểm tra.
+2. **Dùng chung hạn mức với Writing.** Cả hai đọc `default_ai_limit` (production đang để **20**),
+   nên hạ xuống 10 cho Nói là Writing tụt theo. → Tách setting riêng **`speaking_ai_limit`**.
+3. 🔴 **Trừ lượt SAU khi đẩy job.** Với queue chạy đồng bộ, job hỏng → **hoàn lượt** → xong dòng
+   dưới mới **trừ lượt** ⇒ học viên bị tính tiền cho một lần chấm hỏng. Phát hiện khi viết test,
+   không phải suy đoán. → Nay **trừ trước, đẩy job sau**: tệ nhất là hoàn lại, không mất của ai.
+
+**Hoàn lượt:** chỉ khi **không phần nào** trong bài chấm được. Bài 4 phần hỏng 1 phần thì học
+viên vẫn nhận 3 phần kết quả — hoàn nguyên lượt lúc đó là cho không một lượt. Các phần chạy
+song song nên còn phải đợi mọi phần ngã ngũ mới quyết.
+
+> ⚠️ Bẫy đã dính: `SpeakingAiUsage::$fillable` thiếu `attempt_id` → mass assignment bỏ qua
+> **im lặng**, dòng vẫn tạo nhưng `attempt_id` = null nên lượt không trừ đúng và hoàn lượt
+> không tìm thấy dòng nào. Thêm cột vào bảng mà quên `$fillable` là lỗi không báo gì cả.
+
+**Lệnh triển khai:** `speaking:apply-ai-limit --limit=10 --dry-run` — đặt setting và nâng
+`speaking_ai_reset_version` cho dữ liệu đếm kiểu cũ hết hiệu lực (không xoá dòng nào).
+
+**Kiểm chứng:** 7 ca mới trong `SpeakingAiGradingTest` (1 bài 4 phần = 1 lượt · nộp lại không
+trừ thêm · mặc định 10 · không ăn theo hạn mức Writing · hoàn khi cả bài hỏng · KHÔNG hoàn khi
+đã có phần chấm được · lệnh triển khai). **Tổng 239 pass.**
+
+**Deploy:** cần `migrate --force` + `speaking:apply-ai-limit`. Không cần `npm run build`.

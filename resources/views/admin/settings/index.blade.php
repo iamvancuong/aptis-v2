@@ -151,9 +151,9 @@
                     @enderror
                 </div>
                 
-                <!-- Default AI Limit -->
+                <!-- Default AI Limit (Writing) -->
                 <div>
-                    <label for="default_ai_limit" class="block text-sm font-semibold text-gray-700 mb-2">Số lượt AI chấm điểm mặc định (lần) <span class="text-red-500">*</span></label>
+                    <label for="default_ai_limit" class="block text-sm font-semibold text-gray-700 mb-2">Số lượt AI chấm <strong>Writing</strong> (lần) <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -164,6 +164,27 @@
                             required>
                     </div>
                     @error('default_ai_limit')
+                        <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Speaking AI Limit — ĐẾM THEO BÀI, không theo phần -->
+                <div>
+                    <label for="speaking_ai_limit" class="block text-sm font-semibold text-gray-700 mb-2">Số <strong>BÀI</strong> Nói được AI chấm <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0-4a3 3 0 01-3-3V5a3 3 0 016 0v10a3 3 0 01-3 3z"></path></svg>
+                        </div>
+                        <input type="number" id="speaking_ai_limit" name="speaking_ai_limit"
+                            value="{{ old('speaking_ai_limit', $speakingAiLimit->value ?? \App\Models\User::SPEAKING_AI_LIMIT_MAC_DINH) }}" min="1" max="1000"
+                            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Tính theo <strong>bài nộp</strong>: một bài Nói có 4 phần vẫn chỉ tiêu <strong>1 lượt</strong>.
+                        Để riêng khỏi ô Writing bên trên vì hai kỹ năng khác chi phí API.
+                    </p>
+                    @error('speaking_ai_limit')
                         <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
                     @enderror
                 </div>

@@ -176,16 +176,46 @@ class ProcessSpeakingGrading implements ShouldQueue
         $this->refundCredit($answer);
     }
 
-    /** Hoàn lượt đã trừ lúc nộp bài, vì học viên không nhận được kết quả nào. */
+    /**
+     * Hoàn lượt của CẢ BÀI — chỉ khi không phần nào chấm được.
+     *
+     * Lượt tính theo bài (1 bài = 1 lượt, dù 4 phần), nên không thể hoàn "một
+     * phần của lượt". Bài 4 phần mà hỏng 1 phần thì học viên vẫn nhận được 3
+     * phần kết quả — hoàn nguyên lượt lúc đó là cho không một lượt.
+     *
+     * Vì các phần chạy song song, phần hỏng có thể xong TRƯỚC phần đang chấm dở.
+     * Nên chỉ hoàn khi mọi phần đều đã ngã ngũ và không phần nào có kết quả thật.
+     */
     protected function refundCredit(AttemptAnswer $answer): void
     {
         try {
-            $user = $answer->attempt?->user;
-            $part = (int) ($this->questionData['part'] ?? 0);
+            $attempt = $answer->attempt;
+            $user    = $attempt?->user;
 
-            if ($user && $part > 0) {
-                $user->refundSpeakingAiUsage($part);
+            if (! $user || ! $attempt) {
+                return;
             }
+
+            $conDangCho = false;
+            $coKetQua   = false;
+
+            foreach ($attempt->attemptAnswers()->get(['grading_status', 'ai_metadata']) as $phan) {
+                // Có `ai_metadata` mà không phải khối lỗi = đã chấm được thật.
+                if (! empty($phan->ai_metadata) && empty($phan->ai_metadata['error'])) {
+                    $coKetQua = true;
+                    break;
+                }
+
+                if (in_array($phan->grading_status, ['pending', 'processing'], true)) {
+                    $conDangCho = true;
+                }
+            }
+
+            if ($coKetQua || $conDangCho) {
+                return;
+            }
+
+            $user->refundSpeakingAiUsageForAttempt($attempt->id);
         } catch (\Throwable $e) {
             Log::error("ProcessSpeakingGrading: hoàn lượt thất bại cho #{$answer->id}: " . $e->getMessage());
         }

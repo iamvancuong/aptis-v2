@@ -342,20 +342,33 @@ class User extends Authenticatable
     }
 
     /**
-     * AI Speaking Credit Helpers
+     * AI Speaking Credit Helpers — đếm theo BÀI, không theo phần.
      *
-     * Đếm riêng khỏi Writing (bảng riêng + `speaking_ai_reset_version` riêng),
-     * nhưng dùng chung hạn mức `default_ai_limit` — nghĩa là học viên có N lượt
-     * Writing VÀ N lượt Speaking, không phải N lượt gộp.
+     * ⚠️ Đơn vị đếm là **một bài nộp (attempt)**, dù bài đó có 4 phần ghi âm.
+     * Bản đầu trừ lượt cho từng phần nên hạn mức 10 thực ra chỉ được 2 bài rưỡi —
+     * không ai đoán ra điều đó từ con số 10. Đừng đổi ngược lại.
+     *
+     * Hạn mức lấy từ setting **`speaking_ai_limit`** RIÊNG, không dùng chung
+     * `default_ai_limit` với Writing: hai kỹ năng có chi phí API và nhu cầu khác
+     * nhau, dùng chung thì chỉnh bên này vô tình đổi bên kia.
      *
      * Trả về int chứ không phải int|string như bản Writing: bản Writing trả
      * chuỗi 'unlimited' cho admin, khiến chỗ gọi phải so sánh `$credits > 0`
      * giữa string và int — chạy đúng chỉ nhờ luật ép kiểu của PHP. Ở đây admin
      * nhận PHP_INT_MAX nên mọi so sánh số học đều đúng nghĩa đen.
      */
+    public const SPEAKING_AI_LIMIT_MAC_DINH = 10;
+
     public function speakingAiUsages()
     {
         return $this->hasMany(SpeakingAiUsage::class);
+    }
+
+    public function getSpeakingAiLimit(): int
+    {
+        $limit = \App\Models\Setting::where('key', 'speaking_ai_limit')->value('value');
+
+        return (int) ($limit ?? self::SPEAKING_AI_LIMIT_MAC_DINH) + ($this->ai_extra_uses ?? 0);
     }
 
     public function getRemainingSpeakingAiCredits(): int
@@ -364,51 +377,56 @@ class User extends Authenticatable
             return PHP_INT_MAX;
         }
 
-        $resetVersion = $this->speaking_ai_reset_version ?? 0;
-        $used = (int) $this->speakingAiUsages()
-            ->where('reset_version', $resetVersion)
+        $daDung = (int) $this->speakingAiUsages()
+            ->where('reset_version', $this->speaking_ai_reset_version ?? 0)
             ->sum('usage_count');
 
-        $defaultLimit = (int) (\App\Models\Setting::where('key', 'default_ai_limit')->value('value') ?? 10);
-        $totalLimit = $defaultLimit + ($this->ai_extra_uses ?? 0);
-
-        return max(0, $totalLimit - $used);
-    }
-
-    public function recordSpeakingAiUsage(int $part): void
-    {
-        if ($this->isAdmin()) {
-            return;
-        }
-
-        $usage = $this->speakingAiUsages()->firstOrCreate([
-            'speaking_part' => $part,
-            'reset_version' => $this->speaking_ai_reset_version ?? 0,
-        ]);
-
-        $usage->increment('usage_count');
+        return max(0, $this->getSpeakingAiLimit() - $daDung);
     }
 
     /**
-     * Trả lại lượt đã trừ khi AI hỏng hẳn.
+     * Trừ MỘT lượt cho cả bài, gọi bao nhiêu lần cũng chỉ trừ một.
      *
-     * Lượt bị trừ ngay lúc nộp bài (trước khi job chạy) để hai bài nộp liên tiếp
-     * không cùng tiêu một lượt. Nhưng nếu job chết vĩnh viễn thì học viên không
-     * nhận được gì — giữ lượt đã trừ là lấy không của họ.
+     * `attempt_id` nằm trong unique key nên tính duy nhất được bảo đảm bởi CẤU
+     * TRÚC DỮ LIỆU, không phải bởi việc chỗ gọi nhớ kiểm tra trước. Nộp lại cùng
+     * một bài, hay job chạy lại, đều không trừ thêm.
      */
-    public function refundSpeakingAiUsage(int $part): void
+    public function recordSpeakingAiUsageForAttempt(int $attemptId): void
     {
         if ($this->isAdmin()) {
             return;
         }
 
-        $usage = $this->speakingAiUsages()
-            ->where('speaking_part', $part)
-            ->where('reset_version', $this->speaking_ai_reset_version ?? 0)
-            ->first();
+        $this->speakingAiUsages()->firstOrCreate(
+            [
+                'attempt_id'    => $attemptId,
+                'reset_version' => $this->speaking_ai_reset_version ?? 0,
+            ],
+            ['usage_count' => 1, 'speaking_part' => null]
+        );
+    }
 
-        if ($usage && $usage->usage_count > 0) {
-            $usage->decrement('usage_count');
+    /**
+     * Trả lại lượt của cả bài khi AI hỏng hẳn.
+     *
+     * Lượt bị trừ ngay lúc nộp (trước khi job chạy) để hai bài nộp liên tiếp
+     * không cùng tiêu một lượt. Job chết vĩnh viễn thì học viên không nhận được
+     * gì — giữ lượt đã trừ là lấy không của họ.
+     *
+     * ⚠️ Chỉ hoàn khi **không phần nào** trong bài chấm được. Bài 4 phần mà hỏng
+     * 1 phần thì học viên vẫn nhận được 3 phần kết quả; hoàn nguyên lượt lúc đó
+     * là cho không một lượt. Việc kiểm điều kiện đó nằm ở chỗ gọi (job), vì chỉ
+     * nó biết trạng thái từng phần.
+     */
+    public function refundSpeakingAiUsageForAttempt(int $attemptId): void
+    {
+        if ($this->isAdmin()) {
+            return;
         }
+
+        $this->speakingAiUsages()
+            ->where('attempt_id', $attemptId)
+            ->where('reset_version', $this->speaking_ai_reset_version ?? 0)
+            ->delete();
     }
 }

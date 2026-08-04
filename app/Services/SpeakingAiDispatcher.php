@@ -34,16 +34,21 @@ class SpeakingAiDispatcher
             }
 
             $attempt->load(['attemptAnswers.question']);
-            $remaining = $user->getRemainingSpeakingAiCredits();
+
+            // ── Bước 1: xem phần nào thật sự cần chấm ──────────────────────────
+            // Phải duyệt hết TRƯỚC khi trừ lượt, vì lượt tính theo BÀI: không thể
+            // vừa đi vừa trừ như bản cũ (bản cũ trừ mỗi phần một lượt, nên một bài
+            // 4 phần tiêu 4 lượt — hạn mức 10 thực ra chỉ được 2 bài rưỡi).
+            $canCham = [];
 
             foreach ($attempt->attemptAnswers as $answer) {
-                if (!$answer->question) {
+                if (! $answer->question) {
                     continue;
                 }
 
                 // Không có bản ghi nào thì không gọi AI và cũng KHÔNG trừ lượt.
                 // Trừ lượt cho một phần trống là lấy không của học viên.
-                if (!SpeakingAudio::hasRecording($answer->answer)) {
+                if (! SpeakingAudio::hasRecording($answer->answer)) {
                     continue;
                 }
 
@@ -51,13 +56,37 @@ class SpeakingAiDispatcher
                     continue;
                 }
 
-                if ($remaining <= 0) {
+                $canCham[] = $answer;
+            }
+
+            if (empty($canCham)) {
+                return;
+            }
+
+            // ── Bước 2: kiểm lượt ──────────────────────────────────────────────
+            // Bài đã có dòng lượt rồi thì cho đi tiếp mà không trừ thêm: nộp lại
+            // cùng một bài, hoặc job chạy lại, không phải trả tiền lần hai.
+            $daTraLuot = $user->speakingAiUsages()
+                ->where('attempt_id', $attempt->id)
+                ->where('reset_version', $user->speaking_ai_reset_version ?? 0)
+                ->exists();
+
+            if (! $daTraLuot && $user->getRemainingSpeakingAiCredits() <= 0) {
+                foreach ($canCham as $answer) {
                     $answer->update(['grading_status' => 'limit_reached']);
-                    continue;
                 }
 
-                $part = (int) $answer->question->part;
+                return;
+            }
 
+            // ── Bước 3: TRỪ LƯỢT TRƯỚC, rồi mới đẩy job ────────────────────────
+            // ⚠️ Thứ tự này quan trọng. Nếu đẩy job trước rồi mới trừ, thì với queue
+            // chạy đồng bộ job có thể hỏng và HOÀN lượt ngay lúc đó — xong dòng dưới
+            // mới trừ, thành ra học viên bị tính tiền cho một lần chấm hỏng. Đã dính
+            // thật khi viết test. Trừ trước thì tệ nhất là hoàn lại, không mất của ai.
+            $user->recordSpeakingAiUsageForAttempt($attempt->id);
+
+            foreach ($canCham as $answer) {
                 // Chuẩn hoá trạng thái trước khi đẩy job.
                 //
                 // `GradingService` gán 'graded' cho bài Nói ở mode practice (nghĩa là
@@ -69,13 +98,10 @@ class SpeakingAiDispatcher
                 }
 
                 ProcessSpeakingGrading::dispatch($answer->id, [
-                    'part'     => $part,
+                    'part'     => (int) $answer->question->part,
                     'stem'     => $answer->question->stem,
                     'metadata' => $answer->question->metadata ?? [],
                 ])->afterCommit();
-
-                $user->recordSpeakingAiUsage($part);
-                $remaining--;
             }
         } catch (\Throwable $e) {
             Log::error('SpeakingAiDispatcher: không đẩy được job chấm Nói: ' . $e->getMessage(), [

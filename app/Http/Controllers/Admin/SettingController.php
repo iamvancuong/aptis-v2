@@ -18,8 +18,9 @@ class SettingController extends Controller
         $speakingLimitSetting = Setting::where('key', 'speaking_grading_limit')->first();
         $defaultMaxDevices = Setting::where('key', 'default_max_devices')->first();
         $defaultAiLimit = Setting::where('key', 'default_ai_limit')->first();
+        $speakingAiLimit = Setting::where('key', 'speaking_ai_limit')->first();
         return view('admin.settings.index', compact(
-            'zaloSetting', 'zaloSetting2', 'emailSetting', 'hotlineSetting', 'writingLimitSetting', 'speakingLimitSetting', 'defaultMaxDevices', 'defaultAiLimit'
+            'zaloSetting', 'zaloSetting2', 'emailSetting', 'hotlineSetting', 'writingLimitSetting', 'speakingLimitSetting', 'defaultMaxDevices', 'defaultAiLimit', 'speakingAiLimit'
         ));
     }
 
@@ -34,7 +35,20 @@ class SettingController extends Controller
             'speaking_grading_limit' => 'required|integer|min:1',
             'default_max_devices' => 'required|integer|min:1|max:10',
             'default_ai_limit' => 'required|integer|min:1',
+            'speaking_ai_limit' => 'required|integer|min:1',
         ]);
+
+        // Hạn mức AI chấm Nói để RIÊNG, không dùng chung `default_ai_limit` với
+        // Writing: hai kỹ năng khác chi phí API và khác nhu cầu, gộp một ô thì
+        // chỉnh bên này lại vô tình đổi bên kia mà không ai thấy.
+        // Đơn vị là **BÀI**, không phải phần — 1 bài Nói 4 phần vẫn chỉ tiêu 1 lượt.
+        Setting::updateOrCreate(
+            ['key' => 'speaking_ai_limit'],
+            [
+                'value' => $request->speaking_ai_limit,
+                'label' => 'Số BÀI Nói được AI chấm cho mỗi học viên',
+            ]
+        );
 
         Setting::updateOrCreate(
             ['key' => 'zalo_contact_number'],

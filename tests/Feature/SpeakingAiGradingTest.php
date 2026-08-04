@@ -229,9 +229,9 @@ class SpeakingAiGradingTest extends TestCase
         Http::fake();
 
         $student = $this->student();
-        $student->recordSpeakingAiUsage(1); // lượt đã trừ lúc nộp bài
+        $answer  = $this->submittedAnswer($student);
+        $student->recordSpeakingAiUsageForAttempt($answer->attempt_id); // lượt đã trừ lúc nộp bài
 
-        $answer = $this->submittedAnswer($student);
         Storage::disk('public')->delete('speaking_attempts/a.webm');
 
         $this->runJob($answer);
@@ -251,8 +251,8 @@ class SpeakingAiGradingTest extends TestCase
         Http::fake(['*/audio/transcriptions' => Http::response(['text' => '   '])]);
 
         $student = $this->student();
-        $student->recordSpeakingAiUsage(1);
-        $answer = $this->submittedAnswer($student);
+        $answer  = $this->submittedAnswer($student);
+        $student->recordSpeakingAiUsageForAttempt($answer->attempt_id);
 
         $this->runJob($answer);
 
@@ -356,16 +356,151 @@ class SpeakingAiGradingTest extends TestCase
 
     public function test_het_luot_thi_danh_dau_limit_reached_va_khong_day_job(): void
     {
-        \App\Models\Setting::create(['key' => 'default_ai_limit', 'value' => '1']);
+        // Hạn mức Nói để RIÊNG khỏi `default_ai_limit` của Writing.
+        \App\Models\Setting::create(['key' => 'speaking_ai_limit', 'value' => '1']);
 
         $student = $this->student();
-        $student->recordSpeakingAiUsage(1); // dùng hết 1 lượt
+        $answer  = $this->submittedAnswer($student);
 
-        $answer = $this->submittedAnswer($student);
+        // Bài TRƯỚC đã tiêu hết lượt duy nhất. Phải là bài KHÁC, không phải bài
+        // đang nộp — bài đang nộp mà đã có dòng lượt thì coi như đã trả tiền rồi.
+        // Dựng Attempt thẳng thay vì gọi lại `submittedAnswer`: bảng `quizzes` có
+        // unique (skill, part) nên không tạo được đề Nói part 1 thứ hai.
+        $baiCu = Attempt::create([
+            'user_id'    => $student->id, 'skill' => 'speaking', 'mode' => 'mock',
+            'set_id'     => $answer->attempt->set_id,
+            'started_at' => now()->subDay(), 'finished_at' => now()->subDay(),
+        ]);
+        $student->recordSpeakingAiUsageForAttempt($baiCu->id);
 
         app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
 
         $this->assertSame('limit_reached', $answer->refresh()->grading_status);
+    }
+
+    /* ─────────────── đơn vị đếm: 1 BÀI = 1 LƯỢT, không phải 1 phần ─────────────── */
+
+    public function test_mot_bai_nhieu_phan_chi_tieu_dung_mot_luot(): void
+    {
+        // Đây là thay đổi cốt lõi. Bản đầu trừ lượt cho TỪNG PHẦN, mà đề Nói có 4
+        // phần — nên hạn mức 10 thực ra chỉ được 2 bài rưỡi, không ai đoán ra điều
+        // đó từ con số 10.
+        // Fake queue để job không chạy đồng bộ rồi hoàn lượt — ca này chỉ đo
+        // ĐƠN VỊ TRỪ LƯỢT của dispatcher, không đo kết quả chấm.
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $student = $this->student();
+        $answer  = $this->submittedAnswer($student, [
+            'speaking_attempts/p1.webm',
+            'speaking_attempts/p2.webm',
+            'speaking_attempts/p3.webm',
+            'speaking_attempts/p4.webm',
+        ]);
+
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+
+        $this->assertSame(1, (int) $student->speakingAiUsages()->sum('usage_count'),
+            'Một bài phải chỉ tiêu đúng 1 lượt dù có bao nhiêu phần.');
+    }
+
+    public function test_nop_lai_cung_mot_bai_khong_bi_tru_luot_lan_hai(): void
+    {
+        // Tính duy nhất do UNIQUE (user_id, attempt_id, reset_version) bảo đảm,
+        // không phải do chỗ gọi nhớ kiểm tra trước.
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $student = $this->student();
+        $answer  = $this->submittedAnswer($student);
+
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+
+        $this->assertSame(1, (int) $student->speakingAiUsages()->sum('usage_count'));
+    }
+
+    public function test_han_muc_mac_dinh_la_10_bai_khi_chua_dat_setting(): void
+    {
+        $this->assertSame(10, \App\Models\User::SPEAKING_AI_LIMIT_MAC_DINH);
+        $this->assertSame(10, $this->student()->getRemainingSpeakingAiCredits());
+    }
+
+    public function test_han_muc_noi_khong_an_theo_han_muc_writing(): void
+    {
+        // Hai ô setting phải độc lập: trước đây dùng chung `default_ai_limit` nên
+        // chỉnh lượt Writing là vô tình đổi luôn lượt Nói.
+        \App\Models\Setting::create(['key' => 'default_ai_limit', 'value' => '99']);
+
+        $this->assertSame(10, $this->student()->getRemainingSpeakingAiCredits());
+    }
+
+    public function test_lenh_ap_han_muc_dat_setting_va_cho_du_lieu_cu_het_hieu_luc(): void
+    {
+        $student = $this->student();
+        $answer  = $this->submittedAnswer($student);
+
+        // Dữ liệu KIỂU CŨ: đếm theo phần, một bài 4 phần thành 4 dòng.
+        foreach ([1, 2, 3, 4] as $part) {
+            \App\Models\SpeakingAiUsage::create([
+                'user_id' => $student->id, 'speaking_part' => $part,
+                'usage_count' => 1, 'reset_version' => 0,
+            ]);
+        }
+
+        $this->assertSame(6, $student->getRemainingSpeakingAiCredits(),
+            'Trước khi vá: 1 bài đã ăn mất 4 lượt.');
+
+        $this->artisan('speaking:apply-ai-limit --limit=10')->assertSuccessful();
+
+        $student->refresh();
+        $this->assertSame(10, $student->getRemainingSpeakingAiCredits(),
+            'Dữ liệu đếm cũ phải hết hiệu lực, học viên nhận lại đủ 10 bài.');
+        // Không xoá gì — vẫn tra cứu được.
+        $this->assertSame(4, $student->speakingAiUsages()->count());
+    }
+
+    public function test_hoan_luot_khi_ca_bai_hong_hoan_toan(): void
+    {
+        Http::fake();
+
+        $student = $this->student();
+        $answer  = $this->submittedAnswer($student);
+        $student->recordSpeakingAiUsageForAttempt($answer->attempt_id);
+
+        Storage::disk('public')->delete('speaking_attempts/a.webm');
+        $this->runJob($answer);
+
+        $this->assertSame(0, (int) $student->speakingAiUsages()->sum('usage_count'));
+    }
+
+    public function test_khong_hoan_luot_khi_da_co_phan_cham_duoc(): void
+    {
+        // Lượt tính theo BÀI nên không thể hoàn "một phần của lượt". Bài 4 phần
+        // hỏng 1 phần thì học viên vẫn nhận được 3 phần kết quả — hoàn nguyên lượt
+        // lúc đó là cho không một lượt.
+        Http::fake();
+
+        $student = $this->student();
+        $answer  = $this->submittedAnswer($student, [
+            'speaking_attempts/p1.webm',
+            'speaking_attempts/p2.webm',
+        ]);
+        $student->recordSpeakingAiUsageForAttempt($answer->attempt_id);
+
+        // Một phần khác của cùng bài đã chấm xong ngon lành.
+        $phanKhac = $answer->attempt->attemptAnswers()->where('id', '!=', $answer->id)->first()
+            ?? $answer->attempt->attemptAnswers()->first();
+        $phanKhac->update([
+            'grading_status' => 'ai_graded',
+            'ai_metadata'    => ['score' => 7, 'schema_version' => 2],
+        ]);
+
+        Storage::disk('public')->delete('speaking_attempts/p1.webm');
+        Storage::disk('public')->delete('speaking_attempts/p2.webm');
+        $this->runJob($answer);
+
+        $this->assertSame(1, (int) $student->speakingAiUsages()->sum('usage_count'),
+            'Đã có phần chấm được thì không hoàn lượt.');
     }
 
     public function test_phan_khong_co_ban_ghi_thi_khong_bi_tru_luot(): void
