@@ -26,8 +26,8 @@
 >
 > 🔴 **(T) CHẤM NÓI BẰNG AI — đã code, CHƯA DEPLOY. Đọc §27 trước khi lên.**
 > - **CÓ MIGRATION** (`speaking_ai_usages`) → bắt buộc `php artisan migrate --force`. Không cần `npm run build`.
-> - ⚠️ **Đã bỏ qua cả 3 cổng dừng** của `PLAN_CHAM_SPEAKING_AI.md` theo yêu cầu — chưa ai kiểm host có gọi
->   được `api.openai.com` không. **Sau khi deploy phải tự nộp thử 1 bài Nói** rồi xem kết quả (§27).
+> - ✅ Cổng "host có gọi được `api.openai.com` không" **đã đo 04/08 — qua** (§27).
+>   Vẫn nên **tự nộp thử 1 bài Nói** để xem toàn luồng chạy đúng, và đối chiếu điểm với cô Dung.
 > - Hỏng thì tắt ngay bằng `.env`: `SPEAKING_AI_ENABLED=false` (không cần deploy lại).
 >
 > ⏸️ **PENDING (chỉ làm khi bạn nhắc):**
@@ -737,10 +737,13 @@ Bối cảnh, số liệu và rủi ro: **`PLAN_CHAM_SPEAKING_AI.md`**. Mục n�
 - **Chỉ chấm bài nộp mới.** 2.537 bài tồn giữ nguyên — KHÔNG có command backfill, cố ý.
 - Điểm AI là **nháp**; giáo viên chấm tay luôn ghi đè.
 
-### ⚠️ Đã bỏ qua cả 3 cổng dừng của plan
-Chưa ai kiểm: host có gọi ra `api.openai.com` được không · phiên âm giọng Việt chính xác
-bao nhiêu % · điểm AI lệch điểm cô Dung bao nhiêu. Bù lại bằng thiết kế "hỏng thì hiện ra"
-(dưới) + **công tắc tắt nóng**, nhưng đó không thay được việc đo thật.
+### ⚠️ Đã bỏ qua cả 3 cổng dừng của plan — nay còn 2
+- ✅ **Cổng 1 ĐÃ QUA (04/08/2026):** host gọi ra `api.openai.com` được. `curl` trả **401**
+  — đúng như mong đợi (chưa gửi API key nên bị từ chối, tức là đã tới nơi; chỉ `000` mới là
+  bị chặn). Cùng đợt đo với `www.googleapis.com` (§30): cả `curl` lẫn **PHP** đều thông.
+- 🔴 Còn treo: phiên âm giọng Việt chính xác bao nhiêu % · điểm AI lệch điểm cô Dung bao nhiêu.
+  Bù lại bằng thiết kế "hỏng thì hiện ra" (dưới) + **công tắc tắt nóng**, nhưng đó không
+  thay được việc đo thật.
 
 ### File mới
 `app/Services/SpeakingAiDispatcher.php` (đẩy job + luật credit, dùng chung 2 controller) ·
@@ -838,7 +841,9 @@ Có `SpeakingHistoryDisplayTest` giữ đúng các trạng thái này.
 - **`speaking:cleanup-audio` CHƯA BẬT CRON — cố ý.** Lệnh xoá audio thật, không khôi phục được.
   Dòng schedule đã viết sẵn nhưng **để comment** trong `routes/console.php`.
   Chạy `php artisan speaking:cleanup-audio --dry-run` trước, rồi mới bỏ comment.
-- Vẫn nên chạy `scripts/speaking_ai_probe.php` + đối chiếu 10 bài với cô Dung (cổng GĐ2).
+- ✅ Cổng GĐ1 (host gọi được `api.openai.com`) **đã đo 04/08 — qua**, xem đầu §27.
+- 🔴 Còn lại cổng GĐ2: chạy `scripts/speaking_ai_probe.php` + **đối chiếu 10 bài với cô Dung**.
+  Đây mới là cái đo *chất lượng*; cổng GĐ1 chỉ đo *có gọi được API không*.
 - Khi bật lại quảng cáo chấm Speaking của **giáo viên** (§19): còn thiếu nhãn Có phí/Miễn phí
   cho `/admin/speaking-reviews` (Writing đã làm ở §20).
 
@@ -1092,3 +1097,37 @@ có vi phạm cần reset · **25 trong đó sẽ bị KHOÁ OAN nếu không re
   vẫn phải **gỡ tay**; chỉ GĐ3 mới vá hẳn.
 - **Web chọn thành viên theo từng buổi, Google chỉ biết danh sách của cả chuỗi** (§29) —
   người bị bỏ khỏi một buổi vẫn vào được nếu còn giữ link. Cũng chỉ GĐ3 vá được.
+
+### 🚀 RUNBOOK DEPLOY (gộp tất cả việc đang chờ — chạy một lượt)
+
+⚠️ **Đóng file Excel/PPT đang mở? Không liên quan.** Nhưng **phải chạy đúng thứ tự**:
+migrate trước, rồi mới tới 2 lệnh dữ liệu — chúng đụng cột do migration tạo ra.
+
+**B1. Kiểm trước (chỉ đọc, không đổi gì):**
+```bash
+cd /home/ujxmchhx/repositories/aptis-v2 && php artisan tinker --execute="echo 'last_violation_at: '.(Schema::hasColumn('users','last_violation_at')?'DA CO':'>>> THIEU <<<').PHP_EOL; echo 'users.source     : '.(Schema::hasColumn('users','source')?'DA CO':'>>> THIEU <<<').PHP_EOL; echo 'Da backfill source: '.(User::where('source','!=','manual')->exists()?'ROI':'>>> CHUA <<<').PHP_EOL; echo 'Dang bi KHOA     : '.User::where('role','!=','admin')->where('status','blocked')->count().PHP_EOL;"
+```
+
+**B2. Kéo code + migrate + cache:**
+```bash
+cd /home/ujxmchhx/repositories/aptis-v2 && git fetch origin && git reset --hard origin/main && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache
+```
+> **KHÔNG cần `npm run build`** — đã đối chiếu từng class Tailwind mới với `public/build/assets/app-*.css` (bẫy §25).
+
+**B3. Hai lệnh dữ liệu — chạy `--dry-run` trước, xem số rồi mới bỏ cờ:**
+```bash
+cd /home/ujxmchhx/repositories/aptis-v2 && php artisan users:backfill-source --dry-run && php artisan devices:apply-policy --dry-run
+```
+Số production đã đo 04/08: backfill = **9 / 478 / 224** · thiết bị = **707 / 76 / 25 / 37**.
+Khớp thì chạy lại **bỏ `--dry-run`** ở cả hai.
+
+**B4. Kiểm sau khi deploy:**
+```bash
+cd /home/ujxmchhx/repositories/aptis-v2 && php artisan classes:diagnose
+```
+In ra từng buổi học đang vướng cửa nào (giờ · link · lớp · thành viên).
+Thêm `--user=email@hocvien` để kiểm luôn tư cách của một học viên cụ thể.
+
+> 🔴 **`devices:apply-policy` cố ý KHÔNG mở khoá ai.** Sau khi chạy, xem lại danh sách tài khoản
+> đang `blocked` ở `/admin/users` — ai bị khoá oan theo luật cũ thì bấm **Unblock** (nút này
+> nay reset luôn số vi phạm, không còn khoá lại ngay như trước).
