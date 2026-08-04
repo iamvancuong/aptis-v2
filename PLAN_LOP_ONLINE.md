@@ -433,12 +433,21 @@ Phần vá `SessionLimit` / `max_devices` **đã bỏ theo quyết định §8.1
 
 ### GĐ3 — Tự động hoá bằng Google API (code, ~3–5 ngày)
 
-**🔴 Cổng bắt buộc trước khi viết dòng nào — test outbound HTTPS từ cPanel:**
-```bash
-curl -sS -o /dev/null -w '%{http_code}\n' https://www.googleapis.com/discovery/v1/apis
+**✅ CỔNG ĐÃ QUA (04/08/2026) — outbound HTTPS từ cPanel tới Google hoạt động:**
 ```
-Không ra `200` ⇒ shared host chặn ⇒ **toàn bộ GĐ3 bất khả thi**, dừng lại. Đây đúng loại rủi ro đã bị bỏ
-qua với `api.openai.com` lần trước — 30 giây để khỏi mất 5 ngày.
+curl  → 200 · TLS bắt tay 0.075s · tổng 0.571s
+DNS   → phân giải được (chỉ trả AAAA/IPv6, không có IPv4 — đã kết nối thật nên không sao)
+PHP   → OK  ← dòng quan trọng nhất
+```
+> 📌 **`curl` chạy được KHÔNG có nghĩa PHP chạy được.** Code Laravel gọi ra ngoài bằng PHP, mà shared
+> hosting hay chặn riêng ở tầng đó (`allow_url_fopen`, `disable_functions`). Phải thấy cả hai dòng.
+> Lệnh kiểm lại khi đổi hosting hoặc khi gặp lỗi lạ:
+> ```bash
+> curl -sS -o /dev/null -w '%{http_code}\n' https://www.googleapis.com/discovery/v1/apis
+> php -r 'echo @file_get_contents("https://www.googleapis.com/discovery/v1/apis") ? "PHP: OK\n" : "PHP: HONG\n";'
+> ```
+
+⇒ **GĐ3 khả thi về hạ tầng.** Nhưng vẫn chưa nên code — xem thứ tự ưu tiên ở cuối §6.
 
 **Xác thực: service account + domain-wide delegation.** (Không dùng OAuth refresh token: GĐ3 chạy trong
 cron không có người ngồi trước màn hình, mà refresh token thì hết hạn/bị thu hồi được — DWD thì không.)

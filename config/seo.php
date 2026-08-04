@@ -18,7 +18,7 @@ return [
     'title_suffix' => env('SEO_TITLE_SUFFIX', 'Milaedu'),
 
     // Mô tả mặc định (~150–160 ký tự). Chứa từ khóa tự nhiên.
-    'default_description' => env('SEO_DEFAULT_DESCRIPTION', 'Nền tảng luyện thi Aptis online: đề thi thử sát thật, chấm chữa Writing chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.'),
+    'default_description' => env('SEO_DEFAULT_DESCRIPTION', 'Nền tảng luyện thi Aptis online: đề thi thử sát thật, Chấm chữa writing và speaking chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.'),
 
     // Từ khóa nền (dùng cho meta keywords + gợi ý nội dung). Tên giảng viên nằm ở
     // đây như một cụm từ khóa thật gắn với thương hiệu.

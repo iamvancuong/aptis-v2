@@ -1,7 +1,7 @@
 @extends('layouts.marketing')
 
 @section('title', 'Luyện thi Aptis online có chấm chữa Writing')
-@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng, chấm chữa Writing chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.')
+@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng, Chấm chữa writing và speaking chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.')
 
 @push('head')
     @include('partials.structured-data')

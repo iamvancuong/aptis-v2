@@ -1077,7 +1077,7 @@ có vi phạm cần reset · **25 trong đó sẽ bị KHOÁ OAN nếu không re
 |---|---|
 | **GĐ0 bước 5** — thử 1 Gmail **được mời** + 1 Gmail **không được mời** vào phòng Meet | Đây là thứ **duy nhất** chứng minh "người lạ phải xin duyệt" hoạt động. Test tự động không chạm tới Google được |
 | **GĐ0 bước 8** — dạy thử 1 buổi, mở email điểm danh xem CSV có đủ cột | Cả GĐ2 (đối chiếu chống học chui) dựng trên file này |
-| **`curl` tới `www.googleapis.com` từ cPanel** | 30 giây. Không ra `200` thì **GĐ3 bất khả thi**. Đúng loại rủi ro đã bỏ qua với `api.openai.com` |
+| ~~`curl` tới `www.googleapis.com` từ cPanel~~ | ✅ **ĐÃ ĐO 04/08: qua.** `curl`=200, TLS 0.075s, và **`PHP: OK`** (quan trọng nhất — `curl` chạy được không có nghĩa PHP chạy được). ⇒ GĐ3 khả thi về hạ tầng |
 | **Cổng dừng 1** — dạy 2 buổi thật với lớp đã chia | Test chỉ chứng minh luật đúng trong SQLite, không chứng minh quy trình đúng với người thật |
 | **GĐ2** — đối chiếu điểm danh Meet (chống học chui) | Chưa code. Chờ CSV thật ở bước 8 |
 | **GĐ3** — Calendar API tự sinh phòng + tự gỡ người hết hạn | Chưa code. Chờ kết quả `curl` |
