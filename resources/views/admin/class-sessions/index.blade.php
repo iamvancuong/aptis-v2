@@ -17,9 +17,36 @@
      hạn chế. Không mời ai mà tắt "Truy cập nhanh" thì CẢ LỚP phải xin duyệt tay. --}}
 <x-card class="mb-6">
     <div x-data="{ copied: false, list: @js(implode(', ', $guestEmails)) }">
+        {{-- 🔴 Danh sách này gom TOÀN TRƯỜNG. Từ khi có lớp, dán nó vào sự kiện
+             Calendar của một lớp là mời cả người ngoài lớp đó vào — phá đúng thứ
+             việc chia lớp dựng lên, mà Google không báo lỗi gì. Có lớp thì đẩy
+             admin sang danh sách riêng của từng lớp trước khi họ kịp bấm Copy. --}}
+        @if($lopHoc->isNotEmpty())
+            <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p class="text-sm font-semibold text-amber-900 mb-1">
+                    Đã chia lớp — hãy dùng danh sách mời CỦA TỪNG LỚP
+                </p>
+                <p class="text-xs text-amber-800 mb-2">
+                    Danh sách bên dưới gồm <strong>mọi học viên còn hạn của cả trường</strong>. Dán nó vào
+                    sự kiện Calendar của một lớp là mời luôn cả người không thuộc lớp đó vào thẳng phòng.
+                    Chỉ dùng nó cho <strong>buổi không gắn lớp</strong> (workshop, buổi mở cho tất cả).
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($lopHoc as $l)
+                        <a href="{{ route('admin.class-groups.members', $l) }}"
+                           class="px-3 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors">
+                            Danh sách mời: {{ $l->name }} ({{ $l->members_count }})
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
             <div>
-                <h2 class="text-lg font-semibold text-gray-800">Danh sách mời vào lớp (Google Calendar)</h2>
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Danh sách mời TOÀN TRƯỜNG (chỉ cho buổi không gắn lớp)
+                </h2>
                 <p class="text-sm text-gray-500 mt-1">
                     <strong>{{ count($guestEmails) }}</strong> địa chỉ dùng được.
                     @if($nonGmailCount > 0)
@@ -135,16 +162,19 @@
             </div>
         @endif
 
+        {{-- Hướng dẫn phải mô tả quy trình ĐANG chạy, không phải quy trình lúc
+             viết ra nó. Bản cũ ("làm 1 lần cho mỗi buổi") viết khi chưa có sự
+             kiện lặp và chưa có buổi tự sinh — nay cả hai đều cố định, nên việc
+             lặp lại duy nhất còn lại là cập nhật ô Khách mời. --}}
         <div class="mt-3 flex gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <div class="text-xs text-blue-900">
-                <p class="font-semibold mb-1">Cách dùng — làm 1 lần cho mỗi buổi</p>
-                <ol class="list-decimal ml-4 space-y-0.5">
-                    <li>Tạo sự kiện trên <strong>Google Calendar</strong>, bấm “Thêm Google Meet”.</li>
-                    <li>Bấm <strong>Copy</strong> ở trên → dán vào ô <strong>Khách mời</strong>.</li>
-                    <li>Copy link Meet của sự kiện → dán vào buổi học bên dưới.</li>
-                    <li>Trong phòng: biểu tượng khiên → <strong>TẮT “Truy cập nhanh”</strong>.</li>
-                </ol>
+                <p class="font-semibold mb-1">Cách dùng — lịch đã cố định, không phải dựng lại mỗi tuần</p>
+                <ul class="list-disc ml-4 space-y-0.5">
+                    <li><strong>Sự kiện Calendar lặp lại</strong> + <strong>buổi trên web tự sinh hằng tuần</strong> → hằng tuần không phải làm gì.</li>
+                    <li><strong>Việc lặp lại duy nhất:</strong> mỗi khi thành viên lớp đổi (có người mới, có người hết hạn, nhóm thi sang tuần mới) → copy danh sách mời <strong>của lớp đó</strong> rồi <strong>dán đè</strong> vào ô Khách của sự kiện tương ứng.</li>
+                    <li><strong>Làm 1 lần cho mỗi phòng mới:</strong> tắt “Truy cập nhanh”, bỏ tick “Mời những người khác” và “Xem danh sách khách mời”.</li>
+                </ul>
                 <p class="mt-1.5">Kết quả: người được mời <strong>vào thẳng</strong>, người ngoài dù có link vẫn phải xin duyệt.</p>
             </div>
         </div>

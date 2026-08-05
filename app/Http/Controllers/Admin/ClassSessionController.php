@@ -88,8 +88,14 @@ class ClassSessionController extends Controller
             ->orderByDesc('expires_at')
             ->get(['id', 'name', 'email', 'google_email', 'expires_at']);
 
+        // Từ khi có lớp, danh sách mời TOÀN TRƯỜNG ở trang này thành cái bẫy:
+        // dán nó vào sự kiện Calendar của lớp "trừ nhóm web" là mời luôn cả nhóm
+        // web vào — phá đúng thứ việc chia lớp dựng lên, và không báo lỗi gì.
+        // Có lớp thì phải đẩy admin sang danh sách RIÊNG của từng lớp.
+        $lopHoc = \App\Models\ClassGroup::withCount('members')->orderBy('name')->get(['id', 'name']);
+
         return view('admin.class-sessions.index', compact(
-            'sessions', 'guestEmails', 'nonGmailCount', 'emailHong', 'sapHetHan', 'canGoBo', 'lanDongBo'
+            'sessions', 'guestEmails', 'nonGmailCount', 'emailHong', 'sapHetHan', 'canGoBo', 'lanDongBo', 'lopHoc'
         ));
     }
 
