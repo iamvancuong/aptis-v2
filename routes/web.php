@@ -270,6 +270,12 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::post('class-sessions/da-cap-nhat-loi-moi', [\App\Http\Controllers\Admin\ClassSessionController::class, 'markInviteSynced'])->name('class-sessions.invite-synced');
     Route::resource('class-sessions', \App\Http\Controllers\Admin\ClassSessionController::class)->except('show');
 
+    // Chạy các lệnh KIỂM TRA lớp online ngay trên web (thay cPanel Terminal).
+    // Chỉ lệnh chỉ-đọc, danh sách trắng nằm cứng trong controller — đọc phần
+    // chú thích đầu `ClassToolsController` trước khi thêm lệnh mới vào đó.
+    Route::get('cong-cu-lop', [\App\Http\Controllers\Admin\ClassToolsController::class, 'index'])->name('class-tools.index');
+    Route::post('cong-cu-lop', [\App\Http\Controllers\Admin\ClassToolsController::class, 'run'])->name('class-tools.run');
+
     // Lớp học — nhóm học viên cố định, buổi học gắn vào lớp.
     // Các route con phải khai TRƯỚC resource, nếu không `{classGroup}` nuốt hết.
     Route::get('class-groups/{classGroup}/thanh-vien', [\App\Http\Controllers\Admin\ClassGroupController::class, 'members'])->name('class-groups.members');

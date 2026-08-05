@@ -5,6 +5,13 @@
 
 @section('content')
 
+<div class="mb-6 flex justify-end">
+    <a href="{{ route('admin.class-tools.index') }}"
+       class="px-4 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg transition-colors">
+        🔍 Kiểm tra lớp online
+    </a>
+</div>
+
 {{-- Danh sách mời qua Google Calendar. Đây là cách DUY NHẤT hiện có để người
      ngoài không vào thẳng được: mời đích danh học viên còn hạn, đặt phòng ở mức
      hạn chế. Không mời ai mà tắt "Truy cập nhanh" thì CẢ LỚP phải xin duyệt tay. --}}
