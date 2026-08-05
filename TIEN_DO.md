@@ -1169,3 +1169,82 @@ trừ thêm · mặc định 10 · không ăn theo hạn mức Writing · hoàn 
 đã có phần chấm được · lệnh triển khai). **Tổng 239 pass.**
 
 **Deploy:** cần `migrate --force` + `speaking:apply-ai-limit`. Không cần `npm run build`.
+
+---
+
+## 31. 🎥 PHIÊN 06/08/2026 (Y) — VẬN HÀNH LỚP THẬT: BUỔI LẶP + TRA NGƯỢC GMAIL
+
+> Bối cảnh: giảng viên đã dạy thật với **hơn 400 học viên được mời**, và gặp đúng hai
+> vấn đề `PLAN_LOP_ONLINE.md` §3.3 cảnh báo. Nhánh `feature/lop-hoc-van-hanh`.
+
+### 🔴 Ba phát hiện từ lịch dạy thật
+
+1. **Múi giờ sự kiện Calendar là `Asia/Tokyo`, app chạy `Asia/Ho_Chi_Minh`.**
+   19:30 Tokyo = **17:30 giờ VN**. Giảng viên ngồi ở Nhật nên Calendar mặc định
+   theo múi giờ máy. Học viên VN nhận lời mời ghi sai giờ 2 tiếng.
+   → **Việc của giảng viên** (không phải code): sửa từng sự kiện, đổi múi giờ sang
+   `(GMT+07:00) Việt Nam` rồi đặt 19:30. ⚠️ **Sửa giờ, đừng xoá tạo lại event** —
+   xoá là mất link Meet, 400 người phải nhận link mới.
+   > Đây là họ hàng của bug đã vá ở form buổi học (96afd3e), nhưng ở phía Google
+   > nên không code nào chạm tới được.
+2. **Link Meet sinh từ sự kiện Calendar là ĐÚNG cách** — đã kiểm, không phải
+   nguyên nhân của việc phải duyệt tay.
+3. **Phải duyệt tay ~400 người** = danh sách Khách mời chưa gắn đúng vào từng
+   event, hoặc học viên vào bằng Gmail khác. Có **5 phòng riêng** (T2+T4 Speaking ·
+   T3 Writing · T5 Reading · T6 Speaking nhóm thi · T7 Hướng dẫn key) nên phải
+   mời + tắt "Truy cập nhanh" **5 lần**, mỗi phòng một danh sách khác nhau.
+   Mời chung 400 người vào cả 5 event là mất luôn ý nghĩa "trừ nhóm web".
+
+### ✅ Buổi học lặp hằng tuần
+
+`class_sessions.repeat_weekly` + `repeat_source_id`. Buổi bật cờ = **buổi gốc**;
+`classes:generate-sessions` sinh buổi con cùng thứ/giờ, giữ sẵn **4 tuần** phía trước
+(cron 03:30 hằng ngày). Trước đó mỗi tuần phải gõ lại 5 buổi ≈ **260 buổi/năm**.
+
+**Cố ý KHÔNG thêm bảng "lịch" riêng:** buổi con là `ClassSession` bình thường nên
+quyền vào / nhật ký / email nhắc / khách mời riêng chạy nguyên, không phải sửa chỗ nào.
+
+| Quyết định | Vì sao |
+|---|---|
+| Unique `(repeat_source_id, starts_at)` | Chống trùng bằng **cấu trúc dữ liệu**, không nhờ lệnh nhớ kiểm tra. Buổi tạo tay có `repeat_source_id` NULL mà NULL không tham gia unique ⇒ hành vi cũ không đổi |
+| Buổi con **không** tự lặp tiếp | Nếu không, mỗi buổi sinh ra thành gốc mới → số buổi tăng theo cấp số nhân |
+| Khách mời riêng **không** được sao chép | Ngoại lệ MỘT LẦN (học bù). Copy tự động = cấp quyền vĩnh viễn im lặng. Lệnh in cảnh báo để mời lại tay |
+| Xoá gốc dùng `nullOnDelete` | Buổi con có nhật ký vào lớp thật. Cascade = mất dữ liệu thật vì một thao tác dọn lịch |
+| Chạy **hằng ngày**, không hằng tuần | Cron lỡ một nhịp thì hôm sau bù ngay, thay vì trống một tuần mà không ai biết |
+
+Tick "Lặp hằng tuần" mà bỏ trống giờ bắt đầu → **báo lỗi ngay ở form** (không có giờ
+thì không suy ra được thứ mấy, mà admin tick xong sẽ tưởng đã xong việc).
+
+### ✅ `classes:whois` — tra ngược Gmail → tài khoản Milaedu
+
+```bash
+php artisan classes:whois a@gmail.com b@gmail.com
+php artisan classes:whois --file=diemdanh.csv --session=12
+```
+
+Trong phòng Meet chỉ thấy địa chỉ Gmail, không biết đó là học viên đã trả tiền hay
+người lạ (lỗ hổng danh tính §23). Lệnh này là cầu nối duy nhất giữa hai danh sách.
+
+- Tra theo **cả `email` lẫn `google_email`** — người khai Gmail riêng sẽ bị báo nhầm
+  là "người lạ" nếu chỉ tra một cột, mà họ chính là nhóm cột đó sinh ra để phục vụ.
+- **Tự rút email khỏi văn bản lộn xộn** — dán thẳng danh sách copy từ Meet hay nguyên
+  file CSV điểm danh. Bắt admin dọn tay trước là cách chắc nhất để lệnh không được
+  dùng vào lúc cần nhất: giữa buổi dạy.
+- **Chia 4 rổ, không phải 2.** Rổ *"có tài khoản nhưng không thuộc lớp của buổi này"*
+  đáng chú ý nhất trong thực tế (nhóm web lọt vào buổi trừ nhóm web); gộp họ với
+  người lạ sẽ xử lý oan, gộp với người hợp lệ thì không ai thấy.
+
+> ⚠️ Hai bẫy đã dính khi viết test, ghi lại cho phiên sau: **mã màu ANSI chen vào giữa
+> con số và chữ** làm mọi phép tìm chuỗi khớp hụt khó hiểu (dòng tổng kết nay không tô
+> màu) · **`table()` bị Symfony ngắt dòng** khi terminal hẹp hơn tổng độ rộng, mà
+> Terminal cPanel thì luôn hẹp — email bị cắt làm đôi là hỏng đúng thứ lệnh sinh ra để
+> đọc (nay mỗi người một dòng).
+
+### 🔴 Việc còn lại của mục này
+
+- **Deploy** — có migration (`repeat_weekly`), **cần `migrate --force`**; không cần build.
+- **GĐ2 (đối chiếu CSV điểm danh)** — nay đã có buổi dạy thật nên có CSV thật, cổng
+  "chờ CSV" ở §30 đã mở. Chưa code, chờ file CSV.
+- **Danh sách mời Calendar cho từng phòng trong 5 phòng** + tắt "Truy cập nhanh" từng
+  phòng + **GĐ0 bước 6** (thử 1 Gmail được mời / 1 Gmail không được mời) — vẫn là thứ
+  duy nhất chứng minh "người lạ phải xin duyệt" hoạt động.
