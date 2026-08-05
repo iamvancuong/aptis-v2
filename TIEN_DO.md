@@ -1240,9 +1240,44 @@ người lạ (lỗ hổng danh tính §23). Lệnh này là cầu nối duy nh�
 > Terminal cPanel thì luôn hẹp — email bị cắt làm đôi là hỏng đúng thứ lệnh sinh ra để
 > đọc (nay mỗi người một dòng).
 
+### ✅ Lớp tự gom học viên sắp thi ("Nhóm thi tuần này")
+
+> 🔑 **Phát hiện gỡ nút thắt:** ô **"Ngày thi (Exam Date)"** ở form tạo user ghi thẳng
+> vào **`users.expires_at`** — không có cột ngày thi riêng. Nên câu *"ai thi trong N
+> ngày tới"* trả lời được ngay bằng dữ liệu đang có, không phải thu thập thêm gì.
+
+`class_groups.auto_exam_days` — để trống = lớp thường (chọn tay). Điền số (VD `7`) thì
+`classes:sync-exam-groups` chạy mỗi đêm 03:00 tự cập nhật danh sách.
+
+| Quyết định | Vì sao |
+|---|---|
+| **Chỉ gom `manual` + `import`** | Tài khoản mua qua PayOS có `expires_at` = *ngày mua + 14/30*, **không phải ngày thi**. Gom cả họ là biến người sắp hết hạn gói thành người sắp thi — không ai nhận ra vì cả hai đều là ngày trong tương lai gần |
+| Dùng `sync`, **không** `syncWithoutDetaching` | Lớp này do máy quản. Chỉ thêm mà không gỡ thì người đã thi xong ở lại vĩnh viễn — đúng thứ tính năng này sinh ra để tránh. Đổi lại, form nói thẳng: người thêm tay sẽ bị gỡ ở lần sau |
+| Trần **60 ngày** | Quá đó thì "sắp thi" mất nghĩa và lớp gom gần hết trường, mà admin không nhận ra vì con số vẫn tăng dần |
+
+⚠️ Lệnh **tự in cảnh báo** rằng Google không đồng bộ theo — vẫn phải dán lại danh sách
+mời vào ô Khách mời của sự kiện Calendar. Để admin tự nhớ là sẽ có lần quên.
+
+### ✅ Phân trang + tìm kiếm trong bảng thành viên lớp
+
+Lớp thật đang có **710 người**, đổ hết ra một trang thì gỡ một người nghĩa là cuộn qua
+710 dòng. Phân trang 25/trang (tên trang `tv`, không đụng phân trang khung ứng viên).
+
+> 🔴 Điểm phải giữ đúng: **danh sách mời Calendar vẫn dựng từ TOÀN BỘ thành viên**, không
+> phải trang đang xem. Nút copy mà chỉ lấy 25 địa chỉ là hỏng **im lặng** — admin dán vào
+> Calendar, thấy có email nên tin là xong, và chỉ phát hiện khi 685 học viên phải xin
+> duyệt giữa buổi. Có một ca test riêng canh việc này.
+
+> ⚠️ **Bẫy §25 lại cắn, và cách đối chiếu trước giờ vẫn sai:** Tailwind **escape dấu hai
+> chấm** trong file CSS. Phải tìm `hover\:bg-gray-800`, không phải `hover:bg-gray-800` —
+> tìm sai kiểu thì class nào cũng báo "thiếu" và ta đi build lại vô ích. Lệnh đúng:
+> ```bash
+> grep -F 'hover\:bg-blue-700' public/build/assets/*.css
+> ```
+
 ### 🔴 Việc còn lại của mục này
 
-- **Deploy** — có migration (`repeat_weekly`), **cần `migrate --force`**; không cần build.
+- **Deploy** — có migration (`repeat_weekly`, `auto_exam_days`), **cần `migrate --force`**; không cần build.
 - **GĐ2 (đối chiếu CSV điểm danh)** — nay đã có buổi dạy thật nên có CSV thật, cổng
   "chờ CSV" ở §30 đã mở. Chưa code, chờ file CSV.
 - **Danh sách mời Calendar cho từng phòng trong 5 phòng** + tắt "Truy cập nhanh" từng
