@@ -225,11 +225,16 @@ class ClassSessionController extends Controller
             // lúc lưu. Chặn ngay lúc nhập chỉ ép admin dán link giả cho qua cửa.
             // Để `url` chung (không ép meet.google.com) phòng khi đổi nền tảng.
             'meet_link'      => 'nullable|url|max:500',
-            'starts_at'      => 'nullable|date',
+            // Lặp hằng tuần mà không có giờ bắt đầu thì không suy ra được thứ mấy
+            // để lặp. Chặn ngay ở đây thay vì để lệnh sinh buổi im lặng bỏ qua —
+            // admin tick xong tưởng đã xong việc, tuần sau không có buổi nào.
+            'starts_at'      => 'nullable|date|required_if:repeat_weekly,1',
             'ends_at'        => 'nullable|date' . ($bothTimesGiven ? '|after:starts_at' : ''),
             'is_active'      => 'boolean',
+            'repeat_weekly'  => 'boolean',
         ], [
             'ends_at.after' => 'Giờ kết thúc phải sau giờ bắt đầu.',
+            'starts_at.required_if' => 'Muốn lặp hằng tuần thì phải điền giờ bắt đầu (để biết lặp vào thứ mấy, mấy giờ).',
             'meet_link.url' => 'Link phòng học không hợp lệ. Dán nguyên link Meet (hoặc chỉ mã phòng dạng abc-defg-hij) là được.',
         ]);
 

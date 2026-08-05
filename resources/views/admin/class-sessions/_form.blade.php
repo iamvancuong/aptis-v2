@@ -238,6 +238,29 @@
     </label>
 </div>
 
+<div class="mt-4 flex items-center">
+    <input type="hidden" name="repeat_weekly" value="0">
+    <input type="checkbox" name="repeat_weekly" id="repeat_weekly" value="1"
+           {{ old('repeat_weekly', $session?->repeat_weekly ?? false) ? 'checked' : '' }}
+           class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors cursor-pointer">
+    <label for="repeat_weekly" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">
+        Lặp lại hằng tuần
+    </label>
+</div>
+
+<div class="mt-1 text-xs text-gray-500 space-y-1">
+    <p>Hệ thống tự tạo buổi cho <strong>đúng thứ và giờ này</strong>, luôn giữ sẵn 4 tuần phía trước — khớp với sự kiện lặp lại trên Google Calendar, không phải tạo tay mỗi tuần. <strong>Phải điền giờ bắt đầu</strong> thì mới biết lặp vào thứ mấy.</p>
+    <p>Buổi tự sinh <strong>không</strong> kèm khách mời riêng — đó là ngoại lệ một lần, copy tự động sẽ cấp quyền vĩnh viễn cho người chỉ được mời một buổi.</p>
+    <p><strong>Dừng lặp:</strong> bỏ tick ô này, hoặc tắt buổi gốc. Các buổi đã sinh vẫn giữ nguyên.</p>
+</div>
+
+@if($session?->repeat_source_id)
+    <p class="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        Buổi này do lịch lặp của buổi #{{ $session->repeat_source_id }} sinh ra.
+        Sửa ở đây chỉ đổi <strong>riêng buổi này</strong>; muốn đổi cả lịch thì sửa buổi gốc.
+    </p>
+@endif
+
 {{-- Khách mời riêng cho buổi này. Chỉ có tác dụng khi buổi đã gắn lớp — buổi
      không gắn lớp thì ai còn hạn cũng vào được rồi, giữ danh sách này lại chỉ
      tạo ảo giác là nó đang hạn chế ai đó (controller cũng xoá sạch khi lưu). --}}

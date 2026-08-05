@@ -24,6 +24,12 @@ Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
 // (cột `class_sessions.reminder_sent_at`) nên chạy dày cũng không spam.
 Schedule::command('classes:remind')->everyFiveMinutes()->withoutOverlapping();
 
+// Sinh buổi học của các lịch lặp hằng tuần, luôn giữ sẵn 4 tuần phía trước.
+// Chạy hằng ngày chứ không hằng tuần: cron lỡ một nhịp (server bảo trì, hosting
+// treo) thì hôm sau bù ngay, thay vì để trống một tuần mà không ai biết. Sinh
+// trùng là không thể — cặp (repeat_source_id, starts_at) có ràng buộc unique.
+Schedule::command('classes:generate-sessions')->dailyAt('03:30')->withoutOverlapping();
+
 // Dọn phiên đăng nhập chết từ lâu (mỗi lần học viên xoá cookie là một dòng ở lại
 // vĩnh viễn). An toàn: phép đếm thiết bị đã lọc theo cửa sổ hoạt động nên xoá các
 // dòng này không mở thêm quyền cho ai.
