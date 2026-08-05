@@ -96,11 +96,14 @@ class ScaffoldClasses extends Command
 
             if ($daCo) {
                 $this->line("  = {$ten} (đã có, giữ nguyên — {$daCo->members()->count()} thành viên)");
-                $ket[$ten] = $daCo;
             } elseif ($thu) {
                 $this->line("  + {$ten} (chạy thử)");
 
-                continue;
+                // Model CHƯA LƯU, chỉ để phần buổi bên dưới tra được tên lớp.
+                // Thiếu nó thì chạy thử trên hệ thống chưa có lớp nào sẽ báo
+                // "không tìm thấy lớp" cho MỌI buổi — một kết quả sai, và chạy
+                // thử mà nói sai thì không còn dùng để quyết định gì được nữa.
+                $daCo = new ClassGroup(['name' => $ten]);
             } else {
                 $daCo = ClassGroup::create([
                     'name'           => $ten,
@@ -115,9 +118,9 @@ class ScaffoldClasses extends Command
                 ]);
 
                 $this->line("  <info>+</info> {$ten} → lớp #{$daCo->id}");
-                $ket[$ten] = $daCo;
             }
 
+            $ket[$ten] = $daCo;
             $this->themThanhVien($daCo, $g, $thu);
         }
 

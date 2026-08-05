@@ -127,6 +127,19 @@ class ScaffoldClassesTest extends TestCase
         $this->assertSame(0, ClassSession::count());
     }
 
+    public function test_dry_run_tren_he_thong_chua_co_lop_van_liet_ke_dung_cac_buoi(): void
+    {
+        // Bug đã dính thật: chạy thử không tạo lớp, nên phần buổi tra không thấy
+        // lớp và báo "không tìm thấy lớp" cho CẢ 6 buổi. Chạy thử mà nói sai thì
+        // không còn dùng để quyết định gì được nữa — nguy hiểm hơn là không có.
+        $this->artisan('classes:scaffold', [
+            '--file' => $this->lich($this->lichMau()), '--dry-run' => true,
+        ])
+            ->doesntExpectOutputToContain('không tìm thấy lớp')
+            ->expectsOutputToContain('Speaking — Thứ Hai')
+            ->assertSuccessful();
+    }
+
     public function test_buoi_tro_toi_lop_khong_ton_tai_thi_bo_qua_chu_khong_tao(): void
     {
         // Tạo mà bỏ trống lớp = buổi mở cho MỌI học viên còn hạn, tức là lộ quyền
