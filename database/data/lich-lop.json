@@ -1,0 +1,82 @@
+{
+  "_doc": [
+    "Lịch lớp học — dùng cho: php artisan classes:scaffold --dry-run",
+    "Sửa file này rồi chạy lại là đủ; lệnh KHÔNG tạo trùng, KHÔNG gỡ ai khỏi lớp.",
+    "",
+    "groups[].members_from_sources: nguồn tài khoản được thêm vào lớp.",
+    "   purchase = mua qua web (PayOS) · manual = admin tạo tay · import = dữ liệu cũ",
+    "   Bỏ trống / không khai = KHÔNG tự thêm ai, tự chọn tay ở màn thành viên.",
+    "groups[].auto_exam_days: lớp tự gom người thi trong N ngày tới (bỏ qua nếu null).",
+    "   Lớp bật ô này thì danh sách do MÁY quản — người thêm tay sẽ bị gỡ ở lần sau.",
+    "sessions[].weekday: 1=Thứ Hai, 2=Thứ Ba, ... 6=Thứ Bảy, 7=Chủ Nhật.",
+    "sessions[].meet_link: dán mã phòng hay nguyên link đều được."
+  ],
+
+  "groups": [
+    {
+      "name": "Nhóm chính (trừ nhóm web)",
+      "description": "Học T2/T3/T4/T5. Không gồm tài khoản mua qua web.",
+      "source_filter": "import",
+      "members_from_sources": ["import", "manual"],
+      "auto_exam_days": null
+    },
+    {
+      "name": "Nhóm thi tuần này",
+      "description": "Tự gom học viên có Ngày thi trong 7 ngày tới. Học buổi Thứ Sáu.",
+      "source_filter": null,
+      "members_from_sources": [],
+      "auto_exam_days": 7
+    }
+  ],
+
+  "sessions": [
+    {
+      "title": "Speaking — Thứ Hai",
+      "group": "Nhóm chính (trừ nhóm web)",
+      "weekday": 1,
+      "start": "19:30",
+      "end": "22:30",
+      "meet_link": "qby-gpgt-eei"
+    },
+    {
+      "title": "Writing — Thứ Ba",
+      "group": "Nhóm chính (trừ nhóm web)",
+      "weekday": 2,
+      "start": "19:30",
+      "end": "22:30",
+      "meet_link": "inu-mext-two"
+    },
+    {
+      "title": "Speaking — Thứ Tư",
+      "group": "Nhóm chính (trừ nhóm web)",
+      "weekday": 3,
+      "start": "19:30",
+      "end": "22:30",
+      "meet_link": "qby-gpgt-eei"
+    },
+    {
+      "title": "Reading — Thứ Năm",
+      "group": "Nhóm chính (trừ nhóm web)",
+      "weekday": 4,
+      "start": "19:30",
+      "end": "22:30",
+      "meet_link": "zch-cuko-zqm"
+    },
+    {
+      "title": "Speaking — nhóm thi tuần này (Thứ Sáu)",
+      "group": "Nhóm thi tuần này",
+      "weekday": 5,
+      "start": "19:30",
+      "end": "22:30",
+      "meet_link": "aho-dagy-krf"
+    },
+    {
+      "title": "Hướng dẫn học key — Thứ Bảy",
+      "group": "Nhóm chính (trừ nhóm web)",
+      "weekday": 6,
+      "start": "19:30",
+      "end": "22:00",
+      "meet_link": "bbb-tigq-saf"
+    }
+  ]
+}
