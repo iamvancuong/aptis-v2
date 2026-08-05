@@ -76,6 +76,23 @@ class ClassGroupController extends Controller
     {
         $classGroup->load('members');
 
+        // Bảng thành viên phân trang RIÊNG (tên trang `tv`) để lật trang ở khung
+        // này không kéo theo khung ứng viên bên dưới nhảy trang.
+        //
+        // ⚠️ Danh sách mời Calendar vẫn dựng từ `$classGroup->members` ĐẦY ĐỦ,
+        // không phải từ trang đang xem. Nút copy mà chỉ lấy 25 địa chỉ của một
+        // trang trong khi lớp có 710 người là hỏng IM LẶNG: admin dán vào
+        // Calendar, thấy có email nên tin là xong, và chỉ phát hiện khi 685 học
+        // viên phải xin duyệt giữa buổi dạy.
+        $timTV = trim((string) $request->input('qtv'));
+
+        $thanhVien = $classGroup->members()
+            ->when($timTV !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('name', 'like', "%{$timTV}%")
+                ->orWhere('email', 'like', "%{$timTV}%")))
+            ->paginate(25, ['*'], 'tv')
+            ->withQueryString();
+
         // Mặc định lọc theo ý định của lớp; admin đổi được ngay trên màn.
         $source = $request->input('source', $classGroup->source_filter);
         $tuKhoa = trim((string) $request->input('q'));
@@ -97,7 +114,7 @@ class ClassGroupController extends Controller
         $tongUngVien = $ungVien->total();
 
         return view('admin.class-groups.members', compact(
-            'classGroup', 'ungVien', 'source', 'tuKhoa', 'tongUngVien'
+            'classGroup', 'thanhVien', 'timTV', 'ungVien', 'source', 'tuKhoa', 'tongUngVien'
         ));
     }
 

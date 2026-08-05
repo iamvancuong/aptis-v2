@@ -77,11 +77,40 @@
     @endif
 </x-card>
 
-{{-- ② Thành viên hiện tại --}}
+{{-- ② Thành viên hiện tại.
+     Phân trang + ô tìm vì lớp thật đang có 710 người: không có hai thứ này thì
+     gỡ một người khỏi lớp nghĩa là cuộn qua 710 dòng. Số trong tiêu đề vẫn là
+     TỔNG của cả lớp, không phải số dòng đang hiện — đó là con số admin đối
+     chiếu với danh sách mời Calendar. --}}
 <x-card class="mb-6" title="Thành viên hiện tại ({{ $classGroup->members->count() }})">
     @if($classGroup->members->isEmpty())
         <p class="text-sm text-gray-500 italic py-2">Chưa có ai. Chọn học viên ở khung bên dưới.</p>
     @else
+        <form method="GET" class="mb-3 flex gap-2">
+            @if($source)<input type="hidden" name="source" value="{{ $source }}">@endif
+            @if($tuKhoa)<input type="hidden" name="q" value="{{ $tuKhoa }}">@endif
+            {{-- Class dùng lại y hệt ô lọc ứng viên bên dưới — cố ý. Class Tailwind
+                 mới không có trong `public/build` thì trên production ô này mất
+                 style mà không báo lỗi gì (bẫy §25). Bản đầu dùng nút xám
+                 `hover:bg-gray-800` — đã đối chiếu và nó THIẾU thật.
+
+                 ⚠️ Cách đối chiếu: Tailwind ESCAPE dấu hai chấm trong file CSS, nên
+                 phải tìm `hover\:bg-gray-800`, không phải `hover:bg-gray-800`. Tìm
+                 sai kiểu thì class nào cũng báo "thiếu" và ta sẽ đi build lại vô ích:
+                     grep -F 'hover\:bg-blue-700' public/build/assets/*.css --}}
+            <input type="text" name="qtv" value="{{ $timTV }}"
+                   placeholder="Tìm trong lớp theo tên hoặc email…"
+                   class="flex-1 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shrink-0">Tìm</button>
+            @if($timTV !== '')
+                <a href="{{ route('admin.class-groups.members', $classGroup) }}"
+                   class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Xoá lọc</a>
+            @endif
+        </form>
+
+        @if($thanhVien->isEmpty())
+            <p class="text-sm text-gray-500 italic py-2">Không có thành viên nào khớp “{{ $timTV }}”.</p>
+        @else
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead>
@@ -94,7 +123,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    @foreach($classGroup->members as $m)
+                    @foreach($thanhVien as $m)
                         <tr>
                             <td class="py-2 pr-4 font-medium text-gray-800">{{ $m->name }}</td>
                             <td class="py-2 pr-4 text-gray-600 font-mono text-xs">{{ $m->classInviteEmail() }}</td>
@@ -121,6 +150,9 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="mt-4">{{ $thanhVien->links() }}</div>
+        @endif
     @endif
 </x-card>
 
