@@ -28,6 +28,8 @@ class ClassSession extends Model
         'starts_at',
         'ends_at',
         'is_active',
+        'repeat_weekly',
+        'repeat_source_id',
         'reminder_sent_at',
     ];
 
@@ -38,6 +40,7 @@ class ClassSession extends Model
             'ends_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
             'is_active' => 'boolean',
+            'repeat_weekly' => 'boolean',
         ];
     }
 
@@ -50,6 +53,30 @@ class ClassSession extends Model
     public function classGroup(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(ClassGroup::class);
+    }
+
+    /** Buổi gốc của lịch lặp, nếu buổi này do `classes:generate-sessions` sinh ra. */
+    public function repeatSource(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(self::class, 'repeat_source_id');
+    }
+
+    /** Các buổi đã sinh ra từ buổi này. */
+    public function repeatChildren(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(self::class, 'repeat_source_id');
+    }
+
+    /**
+     * Buổi này có phải gốc của một lịch lặp không.
+     *
+     * Cờ `repeat_weekly` chỉ có nghĩa khi có `starts_at` — không biết buổi bắt
+     * đầu lúc nào thì không suy ra được thứ mấy trong tuần để lặp. Kiểm ở đây
+     * một lần thay vì để lệnh sinh buổi và giao diện mỗi nơi tự nhớ.
+     */
+    public function isRepeatTemplate(): bool
+    {
+        return $this->repeat_weekly && $this->starts_at !== null;
     }
 
     /** Khách được mời THÊM riêng buổi này (học thử, học bù) — ngoài thành viên lớp. */
