@@ -30,6 +30,11 @@ Schedule::command('classes:remind')->everyFiveMinutes()->withoutOverlapping();
 // trùng là không thể — cặp (repeat_source_id, starts_at) có ràng buộc unique.
 Schedule::command('classes:generate-sessions')->dailyAt('03:30')->withoutOverlapping();
 
+// Cập nhật thành viên lớp "tự gom theo ngày thi" (Nhóm thi tuần này). Chạy TRƯỚC
+// giờ dạy trong ngày để danh sách luôn đúng; người vừa qua ngày thi rơi khỏi lớp.
+// ⚠️ Chỉ đồng bộ phía WEB — lời mời Google Calendar vẫn phải dán tay (GĐ3 mới vá).
+Schedule::command('classes:sync-exam-groups')->dailyAt('03:00')->withoutOverlapping();
+
 // Dọn phiên đăng nhập chết từ lâu (mỗi lần học viên xoá cookie là một dòng ở lại
 // vĩnh viễn). An toàn: phép đếm thiết bị đã lọc theo cửa sổ hoạt động nên xoá các
 // dòng này không mở thêm quyền cho ai.

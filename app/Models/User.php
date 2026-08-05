@@ -260,6 +260,27 @@ class User extends Authenticatable
             ->orWhereHas('classSessionInvites', fn ($s) => $s->whereKey($session->getKey())));
     }
 
+    /**
+     * Học viên SẮP THI trong `$soNgay` ngày tới — dùng cho lớp tự gom.
+     *
+     * ⚠️ Ô "Ngày thi (Exam Date)" ở form tạo user ghi thẳng vào `expires_at`, nên
+     * với tài khoản admin nhập tay thì cột đó ĐÚNG là ngày thi. Nhưng với tài
+     * khoản mua qua PayOS, `expires_at` là "ngày mua + 14/30 ngày" — không liên
+     * quan gì tới lịch thi. Gom cả họ vào là biến người sắp hết hạn gói thành
+     * người sắp thi, và không ai nhận ra vì cả hai đều là một ngày trong tương
+     * lai gần. Vì vậy chỉ lấy `manual` và `import`.
+     *
+     * Người đã qua ngày thi rơi ra khỏi scope này ngay hôm sau — đó là cách lớp
+     * tự dọn người đã thi xong mà không cần ai nhớ gỡ.
+     */
+    public function scopeSapThi(\Illuminate\Database\Eloquent\Builder $query, int $soNgay): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->invitableToClass()
+            ->whereIn('source', [self::SOURCE_MANUAL, self::SOURCE_IMPORT])
+            ->whereNotNull('expires_at')
+            ->whereBetween('expires_at', [now()->startOfDay(), now()->addDays($soNgay)->endOfDay()]);
+    }
+
     /** Lọc theo nguồn tài khoản ở màn chọn thành viên. Null/rỗng = không lọc. */
     public function scopeOfSource(\Illuminate\Database\Eloquent\Builder $query, ?string $source): \Illuminate\Database\Eloquent\Builder
     {

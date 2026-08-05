@@ -181,6 +181,9 @@ class ClassGroupController extends Controller
             'name'          => 'required|string|max:255',
             'description'   => 'nullable|string',
             'source_filter' => 'nullable|in:' . implode(',', array_keys(User::SOURCE_LABELS)),
+            // Trần 60 ngày: quá đó thì "sắp thi" mất nghĩa và lớp gom gần hết
+            // trường — mà admin sẽ không nhận ra vì con số vẫn tăng dần.
+            'auto_exam_days' => 'nullable|integer|min:1|max:60',
             // Để `url` chung (không ép meet.google.com) phòng khi đổi nền tảng.
             'meet_link'     => 'nullable|url|max:500',
             'is_active'     => 'boolean',
@@ -191,8 +194,10 @@ class ClassGroupController extends Controller
         // `?? null` bắt buộc: `validate()` KHÔNG trả về key nào vắng mặt trong
         // request. Form đầy đủ thì luôn có, nhưng chỉ cần một ô bị bỏ khỏi form
         // là "Undefined array key" → lỗi 500. Đã dính thật khi test.
-        $data['source_filter'] = ($data['source_filter'] ?? null) ?: null;
-        $data['meet_link']     = ($data['meet_link'] ?? null) ?: null;
+        $data['source_filter']  = ($data['source_filter'] ?? null) ?: null;
+        $data['meet_link']      = ($data['meet_link'] ?? null) ?: null;
+        // Ô trống = lớp thường (thành viên chọn tay), không phải "tự gom 0 ngày".
+        $data['auto_exam_days'] = ($data['auto_exam_days'] ?? null) ?: null;
 
         return $data;
     }

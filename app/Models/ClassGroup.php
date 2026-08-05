@@ -23,6 +23,7 @@ class ClassGroup extends Model
         'name',
         'description',
         'source_filter',
+        'auto_exam_days',
         'meet_link',
         'is_active',
     ];
@@ -31,7 +32,14 @@ class ClassGroup extends Model
     {
         return [
             'is_active' => 'boolean',
+            'auto_exam_days' => 'integer',
         ];
+    }
+
+    /** Lớp có danh sách thành viên do máy quản (gom theo ngày thi sắp tới). */
+    public function isAutoExamGroup(): bool
+    {
+        return $this->auto_exam_days !== null && $this->auto_exam_days > 0;
     }
 
     public function members(): BelongsToMany
