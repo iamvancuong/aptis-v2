@@ -135,6 +135,25 @@ class SessionLimit
 
         $nguong = (int) config('devices.block_after_violations');
 
+        // Ghi lại từng lần vi phạm, không chỉ đếm.
+        //
+        // `violation_count` là một con số: nó nói "3 lần" nhưng không nói lần nào,
+        // từ đâu, bằng máy gì — mà đó mới là thứ phân biệt học viên đổi máy thật
+        // với tài khoản đang được chia cho nhiều người. Nó lại còn bị reset sau
+        // 30 ngày và khi admin bấm Unblock, nên nhìn vào đó không dựng lại được
+        // chuyện đã xảy ra.
+        //
+        // Dùng chung bảng `security_flags` nhưng KHÁC `type`: màn admin tách hai
+        // loại ra, nếu không cảnh báo DevTools (hiếm, đáng chú ý) sẽ chìm trong
+        // vi phạm thiết bị (nhiều hơn hẳn).
+        \App\Models\SecurityFlag::create([
+            'user_id'    => $user->id,
+            'type'       => \App\Models\SecurityFlag::TYPE_DEVICE,
+            'ip_address' => request()->ip(),
+            'user_agent' => (string) request()->userAgent(),
+            'url'        => "Vi phạm {$soViPham}/{$nguong} · trần {$tran} thiết bị",
+        ]);
+
         if ($soViPham >= $nguong) {
             $user->update(['status' => 'blocked']);
             LoginSession::where('user_id', $user->id)->delete();
