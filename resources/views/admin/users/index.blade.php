@@ -78,12 +78,17 @@
                 <label class="block text-xs font-medium text-gray-600 mb-1">Ngày thi</label>
                 <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex gap-2">
                     <x-select name="expiration" x-model="exp">
+                        {{-- Số đếm hiện thẳng trong lựa chọn (cùng kiểu với ô
+                             "Nguồn"): nhìn phát biết ngay có bao nhiêu tài khoản
+                             quá hạn lâu, không phải bấm từng bộ lọc mới biết. --}}
                         <option value="">Tất cả</option>
-                        <option value="expired" {{ request('expiration') === 'expired' ? 'selected' : '' }}>Đã quá hạn</option>
-                        <option value="warning" {{ request('expiration') === 'warning' ? 'selected' : '' }}>Sắp thi (7 ngày)</option>
+                        <option value="expired" {{ request('expiration') === 'expired' ? 'selected' : '' }}>Đã quá hạn ({{ $demHan->expired ?? 0 }})</option>
+                        <option value="expired_30" {{ request('expiration') === 'expired_30' ? 'selected' : '' }}>Quá hạn trên 30 ngày ({{ $demHan->expired_30 ?? 0 }})</option>
+                        <option value="expired_90" {{ request('expiration') === 'expired_90' ? 'selected' : '' }}>Quá hạn trên 90 ngày ({{ $demHan->expired_90 ?? 0 }})</option>
+                        <option value="warning" {{ request('expiration') === 'warning' ? 'selected' : '' }}>Sắp thi (7 ngày) ({{ $demHan->warning ?? 0 }})</option>
                         <option value="custom" {{ request('expiration') === 'custom' ? 'selected' : '' }}>Sắp thi (tuỳ chỉnh)</option>
-                        <option value="active" {{ request('expiration') === 'active' ? 'selected' : '' }}>Chưa thi</option>
-                        <option value="never" {{ request('expiration') === 'never' ? 'selected' : '' }}>Không giới hạn</option>
+                        <option value="active" {{ request('expiration') === 'active' ? 'selected' : '' }}>Chưa thi ({{ $demHan->active ?? 0 }})</option>
+                        <option value="never" {{ request('expiration') === 'never' ? 'selected' : '' }}>Không giới hạn ({{ $demHan->never ?? 0 }})</option>
                     </x-select>
                     <input
                         x-show="exp === 'custom'"

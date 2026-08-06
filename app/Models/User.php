@@ -333,6 +333,13 @@ class User extends Authenticatable
         if (! empty($f['expiration'])) {
             match ($f['expiration']) {
                 'expired' => $query->where('expires_at', '<', now()),
+                // Quá hạn LÂU — nhóm gần như chắc chắn sẽ không quay lại. Tách
+                // riêng vì "đã quá hạn" gộp cả người vừa hết hạn hôm qua, mà
+                // người đó thường gia hạn ngay sau khi thi.
+                // `expires_at` NULL không lọt vào: NULL < x cho ra NULL, không
+                // phải true — đúng ý, người không giới hạn hạn thì không "quá hạn".
+                'expired_30' => $query->where('expires_at', '<', now()->subDays(30)),
+                'expired_90' => $query->where('expires_at', '<', now()->subDays(90)),
                 'warning' => $query->whereBetween('expires_at', [now(), now()->addDays(7)]),
                 'active'  => $query->where('expires_at', '>', now()->addDays(7)),
                 'never'   => $query->whereNull('expires_at'),

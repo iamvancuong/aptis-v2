@@ -41,7 +41,29 @@ class UserController extends Controller
             ->groupBy('source')
             ->pluck('tong', 'source');
 
-        return view('admin.users.index', compact('users', 'demNguon'));
+        // Đếm theo tình trạng hạn, hiện thẳng vào ô lọc "Hạn" — cùng kiểu với
+        // `$demNguon`. Mục đích là nhìn phát biết ngay có bao nhiêu tài khoản quá
+        // hạn lâu, không phải bấm từng bộ lọc rồi đọc số ở chân bảng.
+        //
+        // Gộp một truy vấn thay vì 6 lần `count()`. `expires_at` NULL không lọt
+        // vào nhánh nào của "quá hạn" vì `NULL < x` cho ra NULL chứ không phải
+        // true — khớp đúng với `scopeFilter`, hai chỗ không được lệch nhau.
+        $demHan = User::where('role', '!=', 'admin')
+            ->selectRaw(
+                'SUM(CASE WHEN expires_at < ? THEN 1 ELSE 0 END) as expired,'
+                . ' SUM(CASE WHEN expires_at < ? THEN 1 ELSE 0 END) as expired_30,'
+                . ' SUM(CASE WHEN expires_at < ? THEN 1 ELSE 0 END) as expired_90,'
+                . ' SUM(CASE WHEN expires_at >= ? AND expires_at <= ? THEN 1 ELSE 0 END) as warning,'
+                . ' SUM(CASE WHEN expires_at > ? THEN 1 ELSE 0 END) as active,'
+                . ' SUM(CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END) as never',
+                [
+                    now(), now()->subDays(30), now()->subDays(90),
+                    now(), now()->addDays(7), now()->addDays(7),
+                ]
+            )
+            ->first();
+
+        return view('admin.users.index', compact('users', 'demNguon', 'demHan'));
     }
 
     public function show(User $user)
