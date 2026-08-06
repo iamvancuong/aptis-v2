@@ -156,6 +156,23 @@
     @endif
 </x-card>
 
+{{-- Lớp tự gom: danh sách do MÁY quản. Không nói ra thì admin ngồi chọn tay cả
+     buổi rồi sáng hôm sau lệnh đồng bộ gỡ sạch — công cốc mà không hiểu vì sao. --}}
+@if($classGroup->isAutoExamGroup())
+    <div class="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <p class="text-sm font-semibold text-amber-900 mb-1">
+            Lớp này đang TỰ GOM theo ngày thi ({{ $classGroup->auto_exam_days }} ngày tới)
+        </p>
+        <p class="text-xs text-amber-800">
+            Danh sách thành viên do lệnh <code>classes:sync-exam-groups</code> quản, chạy mỗi đêm 03:00.
+            <strong>Người bạn thêm tay ở đây sẽ bị gỡ ở lần cập nhật sau</strong>, và người đã qua ngày thi
+            tự rời lớp. Muốn tự chọn thành viên thì
+            <a href="{{ route('admin.class-groups.edit', $classGroup) }}" class="underline font-medium">sửa lớp</a>
+            và xoá trống ô “Tự gom học viên sắp thi”.
+        </p>
+    </div>
+@endif
+
 {{-- ③ Thêm thành viên: lọc rồi tick, hoặc thêm cả bộ lọc một phát --}}
 <x-card title="Thêm học viên vào lớp">
     <form method="GET" action="{{ route('admin.class-groups.members', $classGroup) }}"
@@ -166,6 +183,24 @@
                 @foreach(\App\Models\User::SOURCE_LABELS as $key => $label)
                     <option value="{{ $key }}" {{ $source === $key ? 'selected' : '' }}>{{ $label }}</option>
                 @endforeach
+            </x-select>
+        </div>
+        {{-- "Sắp thi trong N ngày" — đọc `expires_at`, vì ô "Ngày thi (Exam Date)"
+             ở form tạo user ghi vào chính cột đó. Đây là bộ lọc để dựng lớp kiểu
+             "Nhóm thi tuần này" bằng tay trong vài cú bấm.
+
+             📌 `sm:w-64` KHÔNG có trong `public/build` (ô "Nguồn" bên cạnh cũng
+             dùng đúng class này và cũng thiếu). Giữ nguyên cho hai ô như nhau —
+             thực tế bề rộng do flex chia. Muốn nó có tác dụng thật thì phải chạy
+             `npm run build` và upload lại `public/build`, không phải việc của
+             riêng chỗ này. --}}
+        <div class="sm:w-64">
+            <x-select name="sap_thi">
+                <option value="">Mọi ngày thi</option>
+                <option value="3" {{ (string) $sapThi === '3' ? 'selected' : '' }}>Thi trong 3 ngày tới</option>
+                <option value="7" {{ (string) $sapThi === '7' ? 'selected' : '' }}>Thi trong 7 ngày tới</option>
+                <option value="14" {{ (string) $sapThi === '14' ? 'selected' : '' }}>Thi trong 14 ngày tới</option>
+                <option value="30" {{ (string) $sapThi === '30' ? 'selected' : '' }}>Thi trong 30 ngày tới</option>
             </x-select>
         </div>
         <input type="text" name="q" value="{{ $tuKhoa }}" placeholder="Tìm theo tên hoặc email…"
@@ -182,8 +217,11 @@
               class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center justify-between gap-3"
               onsubmit="return confirm('Thêm tất cả {{ $tongUngVien }} học viên khớp bộ lọc vào lớp?')">
             @csrf
+            {{-- ⚠️ Mọi bộ lọc phải được mang theo đây. Thiếu một ô là nút này
+                 thêm nhiều người hơn màn hình đang hiện — không báo lỗi gì. --}}
             <input type="hidden" name="source" value="{{ $source }}">
             <input type="hidden" name="q" value="{{ $tuKhoa }}">
+            <input type="hidden" name="sap_thi" value="{{ $sapThi ?: '' }}">
             <p class="text-xs text-amber-800">
                 Bộ lọc hiện tại khớp <strong>{{ $tongUngVien }}</strong> học viên chưa vào lớp.
             </p>

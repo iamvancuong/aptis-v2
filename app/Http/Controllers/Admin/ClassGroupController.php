@@ -96,14 +96,9 @@ class ClassGroupController extends Controller
         // Mặc định lọc theo ý định của lớp; admin đổi được ngay trên màn.
         $source = $request->input('source', $classGroup->source_filter);
         $tuKhoa = trim((string) $request->input('q'));
+        $sapThi = (int) $request->input('sap_thi', 0);
 
-        $ungVien = User::query()
-            ->where('role', '!=', 'admin')
-            ->ofSource($source ?: null)
-            ->whereNotIn('id', $classGroup->members->pluck('id'))
-            ->when($tuKhoa !== '', fn ($q) => $q->where(fn ($w) => $w
-                ->where('name', 'like', "%{$tuKhoa}%")
-                ->orWhere('email', 'like', "%{$tuKhoa}%")))
+        $ungVien = $this->locUngVien($request, $classGroup)
             ->orderBy('name')
             ->paginate(25)
             ->withQueryString();
@@ -114,7 +109,7 @@ class ClassGroupController extends Controller
         $tongUngVien = $ungVien->total();
 
         return view('admin.class-groups.members', compact(
-            'classGroup', 'thanhVien', 'timTV', 'ungVien', 'source', 'tuKhoa', 'tongUngVien'
+            'classGroup', 'thanhVien', 'timTV', 'ungVien', 'source', 'tuKhoa', 'sapThi', 'tongUngVien'
         ));
     }
 
@@ -145,18 +140,41 @@ class ClassGroupController extends Controller
      * Chủ ý nhận lại `source`/`q` từ form chứ không đọc từ session: nút phải làm
      * đúng cái bộ lọc admin đang NHÌN THẤY, không phải bộ lọc lần trước.
      */
-    public function addAllMatching(Request $request, ClassGroup $classGroup)
+    /**
+     * NGUỒN SỰ THẬT DUY NHẤT cho "ứng viên khớp bộ lọc hiện tại".
+     *
+     * ⚠️ Màn hiển thị và nút "thêm tất cả kết quả lọc" PHẢI đọc cùng một truy vấn.
+     * Trước đây hai chỗ chép logic của nhau và đã lệch thật: `addAllMatching`
+     * không lấy `source` mặc định của lớp, nên với lớp có `source_filter`, màn
+     * hiển thị lọc còn nút "thêm tất cả" thì thêm CẢ TRƯỜNG. Thêm một bộ lọc mới
+     * mà quên một chỗ là lỗi hoàn toàn im lặng — admin bấm, thấy báo thành công,
+     * và chỉ phát hiện khi có người lạ vào lớp.
+     *
+     * Cũng loại sẵn người đã trong lớp, để con số báo về là "số người MỚI thêm".
+     */
+    private function locUngVien(Request $request, ClassGroup $classGroup): \Illuminate\Database\Eloquent\Builder
     {
-        $source = $request->input('source');
+        $source = $request->input('source', $classGroup->source_filter);
         $tuKhoa = trim((string) $request->input('q'));
+        $sapThi = (int) $request->input('sap_thi', 0);
 
-        $ids = User::query()
+        return User::query()
             ->where('role', '!=', 'admin')
             ->ofSource($source ?: null)
+            ->whereNotIn('id', $classGroup->members()->pluck('users.id'))
             ->when($tuKhoa !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('name', 'like', "%{$tuKhoa}%")
                 ->orWhere('email', 'like', "%{$tuKhoa}%")))
-            ->pluck('id');
+            // "Sắp thi trong N ngày" — đọc `expires_at`, vì ô "Ngày thi (Exam
+            // Date)" ở form tạo user ghi vào chính cột đó.
+            ->when($sapThi > 0, fn ($q) => $q
+                ->whereNotNull('expires_at')
+                ->whereBetween('expires_at', [now()->startOfDay(), now()->addDays($sapThi)->endOfDay()]));
+    }
+
+    public function addAllMatching(Request $request, ClassGroup $classGroup)
+    {
+        $ids = $this->locUngVien($request, $classGroup)->pluck('id');
 
         $classGroup->members()->syncWithoutDetaching(
             $ids->mapWithKeys(fn ($id) => [$id => ['added_at' => now()]])->all()
