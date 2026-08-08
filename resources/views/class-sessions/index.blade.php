@@ -8,6 +8,7 @@
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">Lớp học online</h1>
     <p class="mt-2 text-gray-600">Nút “Vào lớp” bật trước giờ học {{ \App\Models\ClassSession::JOIN_EARLY_MINUTES }} phút.</p>
+    <p class="mt-1 text-gray-600">Bạn sắp xếp vào lớp đúng giờ và tham gia học đầy đủ để sớm đạt kết quả cao nhé.</p>
 </div>
 
 {{-- Địa chỉ mời vào lớp. Mặc định là email tài khoản (96% học viên đã là Gmail),

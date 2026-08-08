@@ -98,8 +98,11 @@
         {{-- Yêu cầu chấm: CHỈ Writing.
              Bài Nói giờ được giáo viên chấm hết, miễn phí và tự động vào hàng chờ
              (cờ `is_grading_requested` bật ngay lúc nộp trong MockTestController),
-             nên không còn gì để học viên phải bấm. --}}
-        @if($mockTest->skill === 'writing' && $attempts->first())
+             nên không còn gì để học viên phải bấm.
+             ⏸️ TẠM ẨN với học viên: chức năng "Thanh toán 99k & gửi chấm" đang tắt,
+             chỉ Admin (gửi chấm miễn phí) mới thấy khối này. Bật lại cho học viên =
+             bỏ điều kiện `auth()->user()->isAdmin()` ở dòng dưới. --}}
+        @if($mockTest->skill === 'writing' && $attempts->first() && auth()->user()->isAdmin())
             @php $gradingPrice = (int) config('pricing.grading_price'); @endphp
             <div class="mt-8 pt-8 border-t border-gray-100 bg-indigo-50/30 -mx-8 -mb-8 px-8 pb-8 rounded-b-2xl">
                 <div class="flex flex-col md:flex-row items-center justify-between gap-6">
