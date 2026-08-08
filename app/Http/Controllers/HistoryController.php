@@ -174,6 +174,11 @@ class HistoryController extends Controller
             abort(403);
         }
 
+        // ⏸️ Tính năng "gửi giáo viên chấm bài" đang TẮT (nút đã ẩn hoàn toàn ở
+        // giao diện). Chặn luôn ở backend để không ai gọi thẳng route này tạo đơn
+        // chấm phí. Bật lại = xóa dòng return dưới đây.
+        return back()->with('info', 'Tính năng gửi giáo viên chấm bài đang tạm ngừng.');
+
         if (!in_array($attempt->skill, ['writing', 'speaking']) || !in_array($attempt->mode, ['mock', 'mock_test'])) {
             return back()->with('error', 'Chỉ có thể yêu cầu chấm điểm cho bài thi Mock Test Writing hoặc Speaking.');
         }
