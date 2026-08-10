@@ -1,6 +1,7 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('readingPart3', (initialData = null) => ({
         options: ['', '', '', ''], // Standard 4 options (A, B, C, D)
+        names: ['A', 'B', 'C', 'D'], // Tên hiển thị của từng người đọc (mặc định A/B/C/D)
         questions: Array.from({ length: 7 }, () => ({ text: '', correctIndex: null })), // Default 7 questions
 
         init() {
@@ -19,6 +20,13 @@ document.addEventListener('alpine:init', () => {
                     ];
                 } else {
                     console.warn('Options missing or not array in initialData');
+                }
+
+                // Safe access to reader names (fall back to A/B/C/D per slot)
+                if (initialData.names && Array.isArray(initialData.names)) {
+                    this.names = ['A', 'B', 'C', 'D'].map(
+                        (def, i) => (initialData.names[i] ?? '').toString().trim() || def
+                    );
                 }
 
                 // Safe access to questions
@@ -58,6 +66,12 @@ document.addEventListener('alpine:init', () => {
 
         getChar(index) {
             return String.fromCharCode(65 + index); // 0 -> A, 1 -> B ...
+        },
+
+        // Tên hiển thị của người đọc: dùng tên riêng nếu có, không thì rơi về chữ cái.
+        getName(index) {
+            const name = (this.names[index] ?? '').toString().trim();
+            return name || this.getChar(index);
         }
     }));
 });

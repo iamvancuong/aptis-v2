@@ -339,7 +339,9 @@
                                         @php
                                             $questions = $q->metadata['questions'] ?? [];
                                             $correctAns = $q->metadata['correct_answers'] ?? [];
+                                            $names3 = $q->metadata['names'] ?? [];
                                             $userAnswers = is_array($userAns) ? $userAns : [];
+                                            $personLabel3 = fn ($i) => trim((string)($names3[$i] ?? '')) !== '' ? $names3[$i] : 'Person ' . chr(65 + (int)$i);
                                         @endphp
                                         @foreach($questions as $qIdx => $qText)
                                             <div class="p-3 rounded-lg border {{ ($userAnswers[$qIdx] ?? null) == ($correctAns[$qIdx] ?? null) ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100' }}">
@@ -347,11 +349,11 @@
                                                 <div class="flex items-center gap-2 text-[11px]">
                                                     <span class="text-gray-500">Bạn chọn:</span>
                                                     <span class="font-bold {{ ($userAnswers[$qIdx] ?? null) == ($correctAns[$qIdx] ?? null) ? 'text-green-600' : 'text-red-600' }}">
-                                                        Person {{ (isset($userAnswers[$qIdx]) && $userAnswers[$qIdx] !== '') ? chr(65 + (int)$userAnswers[$qIdx]) : '—' }}
+                                                        {{ (isset($userAnswers[$qIdx]) && $userAnswers[$qIdx] !== '') ? $personLabel3((int)$userAnswers[$qIdx]) : '—' }}
                                                     </span>
                                                     @if(($userAnswers[$qIdx] ?? null) != ($correctAns[$qIdx] ?? null))
                                                         <span class="text-gray-400">|</span>
-                                                        <span class="text-green-600 font-bold">Đúng: Person {{ isset($correctAns[$qIdx]) ? chr(65 + (int)$correctAns[$qIdx]) : 'N/A' }}</span>
+                                                        <span class="text-green-600 font-bold">Đúng: {{ isset($correctAns[$qIdx]) ? $personLabel3((int)$correctAns[$qIdx]) : 'N/A' }}</span>
                                                     @endif
                                                 </div>
                                             </div>
