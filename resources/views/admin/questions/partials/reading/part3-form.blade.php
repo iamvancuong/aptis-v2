@@ -14,19 +14,30 @@
     <!-- Opinions / Options Section -->
     <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
         <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase">Section 1: Opinions / Texts</h3>
-        <p class="text-xs text-blue-600 mb-4">Enter the 4 short texts or opinions (A, B, C, D) that users will match questions to.</p>
-        
+        <p class="text-xs text-blue-600 mb-4">Enter the 4 short texts or opinions that users will match questions to. Each has a <strong>reader name</strong> (default A, B, C, D) — change it to a real name (e.g. "John") to make the passage more realistic. It shows on the texts and in the answer dropdown.</p>
+
         <div class="space-y-3">
             <template x-for="(option, index) in options" :key="index">
                 <div class="flex items-start gap-3">
                     <span class="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm" x-text="getChar(index)"></span>
-                    <div class="flex-1">
-                        <textarea 
+                    <div class="flex-1 space-y-2">
+                        {{-- Reader name (editable, default A/B/C/D) --}}
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-medium text-gray-500 whitespace-nowrap">Reader name:</label>
+                            <input
+                                type="text"
+                                :name="`metadata[names][${index}]`"
+                                x-model="names[index]"
+                                class="w-40 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                :placeholder="getChar(index)"
+                            >
+                        </div>
+                        <textarea
                             :name="`metadata[options][${index}]`"
                             x-model="options[index]"
                             rows="7"
                             class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            :placeholder="`Enter text for Option ${getChar(index)}...`"
+                            :placeholder="`Enter text for ${getName(index)}...`"
                             required
                         ></textarea>
                     </div>
@@ -75,7 +86,7 @@
                                             class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
                                             required
                                         >
-                                        <span class="ml-1 text-sm text-gray-700 font-medium" x-text="getChar(optIndex)"></span>
+                                        <span class="ml-1 text-sm text-gray-700 font-medium" x-text="getName(optIndex)"></span>
                                     </label>
                                 </template>
                             </div>

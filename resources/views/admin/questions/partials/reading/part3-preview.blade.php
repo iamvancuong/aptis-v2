@@ -6,7 +6,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <template x-for="(option, index) in options" :key="index">
                 <div class="p-3 bg-white border border-gray-200 rounded shadow-sm">
-                    <div class="text-xs font-bold text-gray-400 mb-1" x-text="'Option ' + getChar(index)"></div>
+                    <div class="text-xs font-bold text-gray-400 mb-1" x-text="getName(index)"></div>
                     <div class="text-sm text-gray-800 italic" x-text="option || '[Empty Option]'"></div>
                 </div>
             </template>
@@ -23,7 +23,7 @@
                     <!-- Correct Answer Badge -->
                     <div x-show="question.correctIndex !== null" class="flex-shrink-0">
                          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                            Answer: <span x-text="getChar(question.correctIndex)"></span>
+                            Answer: <span x-text="getName(question.correctIndex)"></span>
                         </span>
                     </div>
                 </div>
