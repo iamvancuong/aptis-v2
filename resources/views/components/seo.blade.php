@@ -9,6 +9,18 @@
 ])
 
 @php
+    // Chuẩn hoá text đầu vào về dạng THUẦN (chưa escape).
+    // Lý do: `@section('title', '... Writing & Speaking')` được Laravel escape sẵn
+    // bằng e() khi lưu section, nên giá trị lấy qua yieldContent() đã là
+    // "Writing &amp; Speaking". Nếu đưa thẳng vào {{ }} (escape lần 2) sẽ thành
+    // "Writing &amp;amp; Speaking" → Google/Facebook/Zalo hiển thị literal "&amp;".
+    // Decode 1 lần ở đây để mọi giá trị đều là text thuần, rồi {{ }} escape đúng 1 lần.
+    $plain = fn ($v) => is_string($v) ? html_entity_decode($v, ENT_QUOTES | ENT_HTML5, 'UTF-8') : $v;
+
+    $title       = $plain($title);
+    $description = $plain($description);
+    $keywords    = $plain($keywords);
+
     $siteName   = config('seo.site_name');
     $suffix     = config('seo.title_suffix');
     // Ghép hậu tố "· Milaedu", nhưng không nhân đôi nếu tiêu đề đã chứa tên site.
