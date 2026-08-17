@@ -23,6 +23,15 @@ class SendClassReminders extends Command
 
     public function handle(): int
     {
+        // Tính năng đang hoãn. Không chặn ở đây thì cron vẫn bắn email nhắc giờ
+        // kèm nút "Vào lớp" trỏ tới URL đang trả 404 — học viên nhận mail về một
+        // tính năng họ không nhìn thấy ở đâu cả.
+        if (! config('aptis.classes_enabled')) {
+            $this->info('Lớp học online đang tắt (aptis.classes_enabled) — bỏ qua.');
+
+            return self::SUCCESS;
+        }
+
         $truoc = (int) $this->option('minutes');
 
         $sessions = ClassSession::with('classGroup')       // `forClassSession` đọc lớp

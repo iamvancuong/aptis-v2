@@ -34,6 +34,10 @@
         <!-- Cô lập test khỏi khóa OpenAI thật: thiếu dòng này thì máy nào có
              OPENAI_API_KEY trong .env sẽ gọi API thật và bị tính tiền khi chạy test. -->
         <env name="OPENAI_API_KEY" value=""/>
+        <!-- Lớp học online đang HOÃN với học viên thật (mặc định tắt), nhưng code
+             vẫn phải chạy đúng cho ngày bật lại → test chạy với cờ BẬT.
+             Trạng thái tắt được kiểm riêng ở ClassesFeatureFlagTest. -->
+        <env name="CLASSES_ENABLED" value="true"/>
         <!-- Cô lập test khỏi khóa PayOS thật trong .env -->
         <env name="PAYOS_CLIENT_ID" value=""/>
         <env name="PAYOS_API_KEY" value=""/>
