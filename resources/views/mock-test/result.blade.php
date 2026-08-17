@@ -329,7 +329,9 @@
                                                 @php
                                                     $questions = $q->metadata['questions'] ?? [];
                                                     $correctAns3 = $q->metadata['correct_answers'] ?? [];
+                                                    $names3 = $q->metadata['names'] ?? [];
                                                     $userAnswers = is_array($userAns) ? $userAns : [];
+                                                    $personLabel3 = fn ($i) => trim((string)($names3[$i] ?? '')) !== '' ? $names3[$i] : 'Person ' . chr(65 + (int)$i);
                                                 @endphp
                                                 <div class="space-y-2">
                                                     @foreach($questions as $qIdx => $qText)
@@ -337,8 +339,8 @@
                                                             $ua = $userAnswers[$qIdx] ?? null;
                                                             $ca = $correctAns3[$qIdx] ?? null;
                                                             $ok = ($ua !== null && $ua !== '') && $ua == $ca;
-                                                            $uLabel = (isset($ua) && $ua !== '') ? 'Person ' . chr(65 + (int)$ua) : '—';
-                                                            $cLabel = isset($ca) ? 'Person ' . chr(65 + (int)$ca) : 'N/A';
+                                                            $uLabel = (isset($ua) && $ua !== '') ? $personLabel3((int)$ua) : '—';
+                                                            $cLabel = isset($ca) ? $personLabel3((int)$ca) : 'N/A';
                                                         @endphp
                                                         <div class="flex items-start gap-3 p-3 rounded-xl border text-sm {{ $ok ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100' }}">
                                                             <span class="text-xs font-bold {{ $ok ? 'text-green-600' : 'text-red-500' }} w-4 shrink-0 mt-0.5">{{ $qIdx + 1 }}</span>
