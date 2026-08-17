@@ -1283,3 +1283,48 @@ Lớp thật đang có **710 người**, đổ hết ra một trang thì gỡ m�
 - **Danh sách mời Calendar cho từng phòng trong 5 phòng** + tắt "Truy cập nhanh" từng
   phòng + **GĐ0 bước 6** (thử 1 Gmail được mời / 1 Gmail không được mời) — vẫn là thứ
   duy nhất chứng minh "người lạ phải xin duyệt" hoạt động.
+
+---
+
+## 32. ⏸️ PHIÊN 17/08/2026 (Z) — TẠM ẨN LỚP HỌC ONLINE KHỎI GIAO DIỆN HỌC VIÊN
+
+**Yêu cầu:** hoãn tính năng lớp học online, ẩn khỏi giao diện — **không xoá code**.
+
+**Cách làm:** một công tắc `aptis.classes_enabled` (env `CLASSES_ENABLED`, **mặc định `false`**).
+Mặc định tắt là cố ý: quên khai `.env` thì tính năng vẫn ẩn, an toàn hơn là lộ ra.
+
+| Lối vào của học viên | Chặn ở đâu |
+|---|---|
+| Menu "Lớp học" trên thanh điều hướng | `layouts/app.blade.php` — bọc `@if(config('aptis.classes_enabled'))` |
+| Thẻ "Lớp đang diễn ra / sắp tới" ở dashboard | `DashboardController` — `$nextClass = null`, khỏi tốn query |
+| Gõ thẳng `/lop-hoc`, `/lop-hoc/{id}/join` (bookmark cũ) | `ClassSessionController::__construct()` — `abort_unless(..., 404)` |
+| Email nhắc giờ do cron bắn mỗi 5 phút | `SendClassReminders::handle()` — thoát sớm |
+
+**Ẩn menu thôi là chưa đủ** — đó là lý do có 4 dòng chứ không phải 1: học viên cũ đã bookmark
+`/lop-hoc`, và các email nhắc giờ **đã gửi trước khi hoãn** vẫn nằm trong hộp thư với link còn sống.
+Chặn ngay ở `ClassSessionController` khoá được cả `join` — chỗ **duy nhất** trả link Meet ra ngoài.
+Trả **404 chứ không phải 403**: người ngoài không cần biết có tính năng này.
+
+**Phía ADMIN giữ nguyên** (`/admin/class-sessions`, `/admin/class-groups`) để chuẩn bị buổi học
+trước ngày mở lại. Hai cron `classes:generate-sessions` và `classes:sync-exam-groups` **vẫn chạy**:
+chúng chỉ dựng dữ liệu, không chạm tới học viên, nên bật lại là danh sách đã sẵn sàng.
+
+**Test:** các test lớp học cũ chạy với cờ **BẬT** (`CLASSES_ENABLED=true` trong `phpunit.xml`) vì
+code phải còn đúng cho ngày mở lại. Trạng thái TẮT có file riêng `ClassesFeatureFlagTest` — 6 ca,
+mỗi lối vào một ca, cộng một ca bật lại để chứng minh công tắc là thứ duy nhất chặn.
+
+### Bật lại (khi cần)
+```bash
+# .env  →  CLASSES_ENABLED=true
+php artisan config:cache
+```
+⚠️ Production **đã cache config** — sửa `.env` không thôi sẽ KHÔNG ăn, phải chạy lại `config:cache`.
+
+### Deploy
+Không có migration, không đổi Tailwind/JS → **không cần `migrate` hay `npm run build`**.
+Chỉ `git reset --hard origin/main` rồi `optimize:clear && config:cache && route:cache && view:cache`.
+
+### 🔴 Việc còn lại (KHÔNG thuộc phiên này, phát hiện khi chạy test)
+`GradingPaymentTest` **fail 4/5 ca** — đã fail sẵn TRƯỚC thay đổi này (kiểm chứng bằng `git stash`).
+Là tồn dư của commit `f33a978` "Tắt hoàn toàn chức năng gửi giáo viên chấm bài": chức năng đã tắt
+nhưng test cũ vẫn kỳ vọng luồng cũ. Cần sửa hoặc bỏ test cho khớp thực tế.

@@ -131,9 +131,14 @@ class DashboardController extends Controller
         // Buổi học online gần nhất còn hiệu lực (đang diễn ra hoặc sắp tới).
         // Phải lọc theo lớp — nếu không, học viên thấy thẻ "lớp sắp tới" của lớp
         // không phải của mình, bấm vào thì bị cổng join chặn: khó hiểu và khó chịu.
-        $nextClass = \App\Models\ClassSession::visibleToStudents()
-            ->allowedFor(auth()->user())
-            ->first();
+        //
+        // Tính năng đang hoãn → trả null luôn, khỏi tốn query. Blade đã bọc
+        // `@if($nextClass ?? null)` nên thẻ tự biến mất.
+        $nextClass = config('aptis.classes_enabled')
+            ? \App\Models\ClassSession::visibleToStudents()
+                ->allowedFor(auth()->user())
+                ->first()
+            : null;
 
         return view('dashboard', compact(
             'nextClass',

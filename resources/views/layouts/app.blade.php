@@ -34,12 +34,15 @@
                         <span class="whitespace-nowrap">Hướng dẫn</span>
                     </a>
 
+                    {{-- Lớp học online — ẩn khi `aptis.classes_enabled` tắt (tính năng đang hoãn). --}}
+                    @if(config('aptis.classes_enabled'))
                     <a href="{{ route('classes.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('classes.*') ? 'text-blue-600' : '' }}">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
                         <span class="whitespace-nowrap">Lớp học</span>
                     </a>
+                    @endif
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-4">
                     @if(auth()->user()->isAdmin())

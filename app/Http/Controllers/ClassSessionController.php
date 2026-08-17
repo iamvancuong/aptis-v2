@@ -14,6 +14,20 @@ use Illuminate\Http\Request;
  */
 class ClassSessionController extends Controller
 {
+    /**
+     * Tính năng đang hoãn → mọi URL `/lop-hoc*` trả 404.
+     *
+     * Ẩn menu thôi là chưa đủ: học viên cũ đã bookmark `/lop-hoc`, và email nhắc
+     * giờ đã gửi trước đây vẫn còn link trong hộp thư. Chặn ở tầng controller thì
+     * mọi đường vào đều tắt cùng lúc, kể cả `join` — chỗ duy nhất trả link Meet.
+     *
+     * 404 (không phải 403) là cố ý: người ngoài không cần biết có tính năng này.
+     */
+    public function __construct()
+    {
+        abort_unless(config('aptis.classes_enabled'), 404);
+    }
+
     public function index()
     {
         $sessions = ClassSession::visibleToStudents()
