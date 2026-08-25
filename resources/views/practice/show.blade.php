@@ -367,16 +367,44 @@
                 return this.answers.hasOwnProperty(qId);
             },
 
+            /**
+             * Ô chưa được điền/chọn.
+             *
+             * Gom lại một chỗ vì mỗi part biểu diễn "chưa trả lời" một kiểu:
+             * dropdown để `''`, radio để `null`, còn ô chưa từng chạm tới thì
+             * `undefined`. Ba giá trị đó cùng một nghĩa.
+             */
+            isBlank(value) {
+                return value === undefined || value === null || value === '';
+            },
+
+            /**
+             * Kiểu tô cho một ô SAU KHI học viên đã bấm Kiểm tra.
+             *
+             * Ô bỏ trống cố ý KHÔNG tô đỏ. Đỏ mang nghĩa "bạn chọn sai", mà khi
+             * học viên bấm Kiểm tra để xem đáp án thì họ có chọn gì đâu — tô đỏ
+             * vừa sai thông điệp, vừa làm cả bảng đỏ rực không còn đọc ra chỗ
+             * nào thật sự sai. Ô trống về xám gạch đứt; đáp án đúng vẫn hiện
+             * đầy đủ bên cạnh như thường.
+             */
+            cellStyle(userAns, correctAns) {
+                if (this.isBlank(userAns)) {
+                    return 'background-color: #f8fafc !important; border-color: #cbd5e1 !important; color: #64748b !important; border-width: 2px !important; border-style: dashed !important;';
+                }
+
+                if (userAns == correctAns) {
+                    return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;';
+                }
+
+                return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
+            },
+
             // --- Part 1: Gap Fill ---
             submitPart1() {
                 const qId = this.currentQuestion.id;
-                const userAns = this.part1Answers[qId];
-                const totalQuestions = this.currentQuestion.metadata.paragraphs.length;
-                
-                if (Object.keys(userAns).length < totalQuestions) {
-                    alert("Please select an option for all questions.");
-                    return;
-                }
+                // `|| {}` vì ô nào chưa chạm tới thì chưa có khoá nào — bấm Kiểm
+                // tra mà chưa chọn gì thì `part1Answers[qId]` còn undefined.
+                const userAns = this.part1Answers[qId] || {};
 
                 const correctAns = this.currentQuestion.metadata.correct_answers;
 
@@ -394,15 +422,10 @@
                 const qId = this.currentQuestion.id;
                 if (!this.hasAnswered(qId)) return '';
 
-                const userAns = this.part1Answers[qId][pIndex];
+                const userAns = (this.part1Answers[qId] || {})[pIndex];
                 const correctAns = this.currentQuestion.metadata.correct_answers[pIndex];
 
-                if (userAns == correctAns) {
-
-                    return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;'; 
-                } else {
-                    return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
-                }
+                return this.cellStyle(userAns, correctAns);
             },
 
             // --- Part 2: Ordering (Pool-to-Slot) ---
@@ -512,24 +535,18 @@
                 const userAns = this.part3Answers[qIdx];
                 const correctAns = this.currentQuestion.metadata.correct_answers[qIdx];
 
-                if (userAns == correctAns) {
-                    return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;';
-                } else {
-                    return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
-                }
+                return this.cellStyle(userAns, correctAns);
             },
 
             getPart3ContainerClass(qIdx) {
                 if (!this.feedback[this.currentQuestion.id]) return 'border-gray-200';
+                const userAns = this.part3Answers[qIdx];
+                if (this.isBlank(userAns)) return 'border-gray-300 bg-gray-50';
                 const correctIdx = this.currentQuestion.metadata.correct_answers[qIdx];
-                return this.part3Answers[qIdx] == correctIdx ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
+                return userAns == correctIdx ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50';
             },
 
             submitPart3() {
-                if (this.part3Answers.some(a => a === '' || a === null)) {
-                    alert('Please answer all questions before checking.');
-                    return;
-                }
                 const qId = this.currentQuestion.id;
                 // correct_answers can arrive as an array [0,2,3] or a keyed object
                 // {"0":0,...} (e.g. after admin edits/imports). Compare per index by
@@ -545,10 +562,6 @@
 
             // --- Part 4: Headings ---
             submitPart4() {
-                if (this.part4Answers.some(a => a === '' || a === null)) {
-                    alert('Please select a heading for all paragraphs.');
-                    return;
-                }
                 const qId = this.currentQuestion.id;
                 // Same robustness as Part 3: object-or-array correct_answers,
                 // type-normalised compare, denominator = number of answered items.
@@ -566,16 +579,11 @@
                 const userAns = this.part4Answers[pIdx];
                 const correctAns = this.currentQuestion.metadata.correct_answers[pIdx];
 
-                if (userAns == correctAns) {
-                    return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;';
-                } else {
-                    return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
-                }
+                return this.cellStyle(userAns, correctAns);
             },
 
             // --- Listening Part 1: Short Audio MCQ ---
             submitListeningPart1() {
-                if (this.listeningPart1Answer === null) { alert('Please select an answer.'); return; }
                 const qId = this.currentQuestion.id;
                 const isCorrect = this.listeningPart1Answer === parseInt(this.currentQuestion.metadata.correct_answer);
                 this.answers = { ...this.answers, [qId]: this.listeningPart1Answer };
@@ -596,7 +604,6 @@
 
             // --- Listening Part 2: Conversation (Speaker Matching) ---
             submitListeningPart2() {
-                if (this.listeningPart2Answers.some(a => a === '' || a === null)) { alert('Please select an opinion for all speakers.'); return; }
                 const qId = this.currentQuestion.id;
                 const correctAnswers = this.currentQuestion.metadata.correct_answers;
                 const correctCount = this.listeningPart2Answers.filter((ans, idx) => ans == correctAnswers[idx]).length;
@@ -609,11 +616,7 @@
                 if (!this.hasAnswered(qId)) return '';
                 const userAns = this.listeningPart2Answers[sIdx];
                 const correctAns = this.currentQuestion.metadata.correct_answers[sIdx];
-                if (userAns == correctAns) {
-                    return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;';
-                } else {
-                    return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
-                }
+                return this.cellStyle(userAns, correctAns);
             },
 
             playAllSpeakers() {
@@ -649,7 +652,6 @@
 
             // --- Listening Part 3: Monologue (Shared Dropdown) ---
             submitListeningPart3() {
-                if (this.listeningPart3Answers.some(a => a === '' || a === null)) { alert('Please answer all statements.'); return; }
                 const qId = this.currentQuestion.id;
                 const correctAnswers = this.currentQuestion.metadata.correct_answers;
                 const correctCount = this.listeningPart3Answers.filter((ans, idx) => ans == correctAnswers[idx]).length;
@@ -662,16 +664,11 @@
                 if (!this.hasAnswered(qId)) return '';
                 const userAns = this.listeningPart3Answers[sIdx];
                 const correctAns = this.currentQuestion.metadata.correct_answers[sIdx];
-                if (userAns == correctAns) {
-                    return 'background-color: #dcfce7 !important; border-color: #16a34a !important; color: #166534 !important; border-width: 2px !important;';
-                } else {
-                    return 'background-color: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b !important; border-width: 2px !important;';
-                }
+                return this.cellStyle(userAns, correctAns);
             },
 
             // --- Listening Part 4: Complex Audio (2 MCQ) ---
             submitListeningPart4() {
-                if (this.listeningPart4Answers.some(a => a === null)) { alert('Please answer all questions.'); return; }
                 const qId = this.currentQuestion.id;
                 const correctAnswers = this.currentQuestion.metadata.correct_answers;
                 const correctCount = this.listeningPart4Answers.filter((ans, idx) => ans == correctAnswers[idx]).length;
@@ -724,7 +721,6 @@
             submitGrammarPart1() {
                 const qId = this.currentQuestion.id;
                 const userAns = this.grammarAnswers[qId];
-                if (!userAns) { alert('Vui lòng chọn một đáp án.'); return; }
                 const isCorrect = userAns == this.currentQuestion.metadata.correct_option;
                 this.answers = { ...this.answers, [qId]: userAns };
                 this.feedback = { ...this.feedback, [qId]: { correct: isCorrect } };
@@ -741,11 +737,6 @@
                 const userAns = this.vocabAnswers[qId] || {};
                 const correctAns = this.currentQuestion.metadata.correct_answers || {};
                 const totalPairs = Object.keys(correctAns).length;
-                
-                if (Object.keys(userAns).length < totalPairs || Object.values(userAns).some(v => v === '')) {
-                    alert('Vui lòng chọn từ cho tất cả các ô trống.');
-                    return;
-                }
                 
                 // Flexible duplicate answer check (to match backend grading rules if any, though frontend just warns or auto-evaluates)
                 const isCorrect = Object.entries(correctAns).every(([pid, word]) => userAns[pid] === word);

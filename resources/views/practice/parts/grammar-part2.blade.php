@@ -20,13 +20,18 @@
                 <div class="flex items-center gap-3 rounded-xl border px-4 py-3 transition-all"
                      :class="{
                         'border-gray-200 bg-white': !hasAnswered(currentQuestion.id),
+                        {{-- Bỏ trống: xám, KHÔNG đỏ. Học viên bấm Kiểm tra để xem
+                             đáp án thì họ chưa chọn gì — báo "sai" là sai sự thật. --}}
+                        'border-gray-300 bg-gray-50 border-dashed':
+                            hasAnswered(currentQuestion.id) &&
+                            isBlank((vocabAnswers[currentQuestion.id] || {})[pair.id]),
                         'border-green-300 bg-green-50':
                             hasAnswered(currentQuestion.id) &&
-                            vocabAnswers[currentQuestion.id] &&
+                            !isBlank((vocabAnswers[currentQuestion.id] || {})[pair.id]) &&
                             vocabAnswers[currentQuestion.id][pair.id] == currentQuestion.metadata.correct_answers[pair.id],
                         'border-red-200 bg-red-50':
                             hasAnswered(currentQuestion.id) &&
-                            vocabAnswers[currentQuestion.id] &&
+                            !isBlank((vocabAnswers[currentQuestion.id] || {})[pair.id]) &&
                             vocabAnswers[currentQuestion.id][pair.id] != currentQuestion.metadata.correct_answers[pair.id],
                      }">
                     {{-- Number --}}
@@ -71,15 +76,19 @@
                             <div class="flex items-center gap-2 shrink-0">
                                 <span class="font-semibold text-sm"
                                       :class="{
+                                        'text-gray-400':
+                                            isBlank((vocabAnswers[currentQuestion.id] || {})[pair.id]),
                                         'text-green-600':
-                                            vocabAnswers[currentQuestion.id] &&
+                                            !isBlank((vocabAnswers[currentQuestion.id] || {})[pair.id]) &&
                                             vocabAnswers[currentQuestion.id][pair.id] == currentQuestion.metadata.correct_answers[pair.id],
                                         'text-red-500':
-                                            !vocabAnswers[currentQuestion.id] ||
+                                            !isBlank((vocabAnswers[currentQuestion.id] || {})[pair.id]) &&
                                             vocabAnswers[currentQuestion.id][pair.id] != currentQuestion.metadata.correct_answers[pair.id],
                                       }"
-                                      x-text="vocabAnswers[currentQuestion.id] ? (vocabAnswers[currentQuestion.id][pair.id] || '—') : '—'"></span>
-                                <template x-if="vocabAnswers[currentQuestion.id] && vocabAnswers[currentQuestion.id][pair.id] != currentQuestion.metadata.correct_answers[pair.id]">
+                                      x-text="(vocabAnswers[currentQuestion.id] || {})[pair.id] || '—'"></span>
+                                {{-- Hiện đáp án đúng cho cả ô bỏ trống — đó chính là
+                                     lý do học viên bấm Kiểm tra khi chưa làm. --}}
+                                <template x-if="(vocabAnswers[currentQuestion.id] || {})[pair.id] != currentQuestion.metadata.correct_answers[pair.id]">
                                     <span class="text-xs text-green-600 font-medium whitespace-nowrap">
                                         → <span x-text="currentQuestion.metadata.correct_answers[pair.id]"></span>
                                     </span>
