@@ -29,6 +29,24 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Số worker chạy song song cho hàng đợi bài Nói
+    |--------------------------------------------------------------------------
+    |
+    | Job chấm Nói phần lớn là CHỜ MẠNG (gọi OpenAI phiên âm rồi chấm) chứ không
+    | ăn CPU, nên chạy song song gần như miễn phí kể cả trên shared hosting 2
+    | core. Một worker rút được ~3 job/phút; ngần này worker thì nhân lên bấy
+    | nhiêu lần.
+    |
+    | Tăng khi hàng đợi vẫn tồn dù không job nào lỗi (đó là dấu hiệu thiếu công
+    | suất, không phải bug). Hạ xuống nếu hosting kêu vượt số tiến trình.
+    | Đổi ở `.env` rồi `php artisan config:cache` — không phải sửa code.
+    |
+    */
+
+    'speaking_workers' => (int) env('QUEUE_SPEAKING_WORKERS', 3),
+
     'connections' => [
 
         'sync' => [

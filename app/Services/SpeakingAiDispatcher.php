@@ -97,11 +97,18 @@ class SpeakingAiDispatcher
                     $answer->update(['grading_status' => 'pending']);
                 }
 
+                // Hàng đợi RIÊNG cho bài Nói.
+                //
+                // Một job Nói mất 10–20 giây (phiên âm rồi mới chấm), job Writing
+                // chỉ vài giây. Để chung một hàng thì một đợt nộp bài Nói đẩy mọi
+                // job Writing ra sau hàng trăm job chậm — học viên Writing chờ
+                // hàng giờ cho một việc lẽ ra xong trong một phút. Tách ra để
+                // hàng nhanh không bao giờ bị hàng chậm chặn.
                 ProcessSpeakingGrading::dispatch($answer->id, [
                     'part'     => (int) $answer->question->part,
                     'stem'     => $answer->question->stem,
                     'metadata' => $answer->question->metadata ?? [],
-                ])->afterCommit();
+                ])->onQueue('speaking')->afterCommit();
             }
         } catch (\Throwable $e) {
             Log::error('SpeakingAiDispatcher: không đẩy được job chấm Nói: ' . $e->getMessage(), [
