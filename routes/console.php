@@ -16,9 +16,38 @@ Schedule::command('payos:reconcile')->everyTwoMinutes()->withoutOverlapping();
 // jobs → bài không bao giờ được chấm. Trên cPanel chỉ có 1 cron `schedule:run`, nên
 // mỗi phút rút sạch hàng đợi rồi thoát (--stop-when-empty), giới hạn thời gian chạy
 // để không đè lượt sau (--max-time), và không chạy chồng (withoutOverlapping).
-Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
+//
+// ⚠️ BÀI HỌC 27/08/2026 — MỘT WORKER TUẦN TỰ LÀ KHÔNG ĐỦ.
+// Hôm đó tồn 335 job (≈84 bài Nói) mà KHÔNG có job nào lỗi: worker vẫn chạy
+// đúng, chỉ là không kịp. Một job Nói mất 10–20 giây, một worker rút được ~3
+// job/phút, nên một đợt nộp bài là học viên chờ gần 2 tiếng mới thấy điểm.
+// Hàng đợi tồn mà 0 job thất bại = vấn đề CÔNG SUẤT, không phải bug.
+//
+// Hai thay đổi chữa gốc:
+//   ① Tách hàng `speaking` khỏi `default` — job Writing (vài giây) không còn
+//      xếp sau hàng trăm job Nói (xem SpeakingAiDispatcher).
+//   ② Chạy nhiều worker Nói song song. Job Nói phần lớn là CHỜ MẠNG (gọi
+//      OpenAI) chứ không ăn CPU, nên song song gần như miễn phí với shared
+//      hosting 2 core — khác hẳn việc chạy song song một việc nặng CPU.
+
+// Hàng mặc định: Writing + việc lặt vặt. Nhanh, giữ riêng một worker để không
+// bao giờ bị kẹt sau bài Nói.
+Schedule::command('queue:work --queue=default --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
     ->withoutOverlapping();
+
+// Worker cho bài Nói. `--queue=speaking,default` (theo thứ tự ưu tiên): ưu tiên
+// hàng Nói, hết việc thì phụ rút hàng mặc định — nhờ vậy đống job Nói CŨ còn
+// nằm ở hàng `default` (đẩy trước khi có thay đổi này) vẫn được dọn, không cần
+// đụng tay vào bảng `jobs`.
+//
+// `--name` phải KHÁC nhau: `withoutOverlapping()` khoá theo chuỗi lệnh, hai lệnh
+// giống hệt nhau sẽ dùng chung một khoá và con thứ hai không bao giờ chạy.
+foreach (range(1, (int) config('queue.speaking_workers')) as $i) {
+    Schedule::command(
+        "queue:work --queue=speaking,default --stop-when-empty --max-time=50 --tries=3 --name=speaking{$i}"
+    )->everyMinute()->withoutOverlapping();
+}
 
 // Nhắc học viên trước giờ lớp online 60 phút. Mỗi buổi chỉ gửi một lần
 // (cột `class_sessions.reminder_sent_at`) nên chạy dày cũng không spam.

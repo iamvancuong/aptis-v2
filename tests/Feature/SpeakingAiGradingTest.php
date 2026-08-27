@@ -403,6 +403,23 @@ class SpeakingAiGradingTest extends TestCase
             'Một bài phải chỉ tiêu đúng 1 lượt dù có bao nhiêu phần.');
     }
 
+    public function test_job_cham_noi_di_vao_hang_doi_rieng(): void
+    {
+        // Bài học 27/08/2026: tồn 335 job mà 0 job lỗi — worker chạy đúng, chỉ
+        // không kịp. Job Nói mất 10–20 giây, job Writing vài giây; để chung một
+        // hàng thì một đợt nộp bài Nói đẩy mọi bài Writing ra sau hàng trăm job
+        // chậm. Hàng riêng là thứ ngăn chuyện đó tái diễn, nên phải có ca canh:
+        // đổi nhầm về `default` sẽ không lộ ra ở bất kỳ ca nào khác.
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $student = $this->student();
+        $answer  = $this->submittedAnswer($student, ['speaking_attempts/p1.webm']);
+
+        app(SpeakingAiDispatcher::class)->dispatchFor($answer->attempt, $student);
+
+        \Illuminate\Support\Facades\Queue::assertPushedOn('speaking', ProcessSpeakingGrading::class);
+    }
+
     public function test_nop_lai_cung_mot_bai_khong_bi_tru_luot_lan_hai(): void
     {
         // Tính duy nhất do UNIQUE (user_id, attempt_id, reset_version) bảo đảm,
