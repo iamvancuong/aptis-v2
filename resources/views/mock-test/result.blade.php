@@ -16,12 +16,29 @@
         $hasAiScore = $answersByPart->contains(fn ($a) => $a->grading_status === 'ai_graded');
         $hasTeacherScore = $answersByPart->contains(fn ($a) => in_array($a->grading_status, ['graded', 'manually_graded'], true));
 
-        // Còn phần nào có bản ghi mà chưa ra kết quả → máy vẫn đang chạy.
-        $aiRunning = $mockTest->skill === 'speaking'
-            && config('services.openai.speaking_ai_enabled', true)
-            && $answersByPart->contains(fn ($a) => \App\Support\SpeakingAudio::hasRecording($a->answer)
+        // Còn phần nào ĐÃ CÓ BÀI LÀM mà chưa ra kết quả → chưa chấm xong.
+        //
+        // Trước đây cờ này chỉ tính cho Speaking, nên mock Writing chưa chấm xong
+        // hiện vòng tròn 0% đỏ kèm "Cần ôn tập thêm" mà không một dòng nào nói là
+        // đang chờ. Nay áp cho cả hai kỹ năng tự luận.
+        //
+        // "Đã có bài làm" mỗi kỹ năng một kiểu: Nói là có file ghi âm, Viết là có
+        // chữ trong ô trả lời. Phần bỏ trống thì KHÔNG tính — không có gì để chấm
+        // thì không phải đang chờ.
+        $conChoCham = $isEssaySkill && $answersByPart->contains(function ($a) use ($mockTest) {
+            $daLamPhanNay = $mockTest->skill === 'speaking'
+                ? \App\Support\SpeakingAudio::hasRecording($a->answer)
+                : filled($a->answer);
+
+            return $daLamPhanNay
                 && empty($a->ai_metadata)
-                && !in_array($a->grading_status, ['graded', 'manually_graded', 'ai_failed', 'limit_reached'], true));
+                && !in_array($a->grading_status, ['graded', 'manually_graded', 'ai_failed', 'limit_reached'], true);
+        });
+
+        // Trong lúc chờ, ai là người chấm? Writing luôn do AI; Speaking còn tuỳ
+        // công tắc SPEAKING_AI_ENABLED (tắt thì quay về giáo viên chấm tay).
+        $aiRunning = $conChoCham
+            && ($mockTest->skill === 'writing' || config('services.openai.speaking_ai_enabled', true));
     @endphp
 
     {{-- Header --}}
@@ -39,23 +56,42 @@
     {{-- Overall Score Card --}}
     <div class="bg-white rounded-2xl shadow-lg p-8">
         <div class="text-center">
-            @php
-                $score = $isEssaySkill && ($resultAttempt->score ?? 0) > 0
-                    ? $resultAttempt->score
-                    : ($mockTest->score ?? 0);
-                $scoreColor = $score >= 80 ? 'text-green-600' : ($score >= 50 ? 'text-amber-600' : 'text-red-600');
-                $scoreBg = $score >= 80 ? 'from-green-50 to-emerald-50' : ($score >= 50 ? 'from-amber-50 to-yellow-50' : 'from-red-50 to-orange-50');
-            @endphp
-            <div class="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br {{ $scoreBg }} mb-4 ring-4 ring-white shadow-md">
-                <span class="text-4xl font-black {{ $scoreColor }}">{{ number_format($score, 0) }}%</span>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-1">
-                @if($score >= 80) Xuất sắc! 🎉
-                @elseif($score >= 60) Tốt! 👍
-                @elseif($score >= 40) Cần cải thiện 📚
-                @else Cần ôn tập thêm 💪
-                @endif
-            </h2>
+            @if($conChoCham)
+                {{-- CHƯA CHẤM XONG → KHÔNG VẼ CON SỐ NÀO.
+
+                     Bản cũ vẫn vẽ vòng tròn "0%" đỏ kèm tiêu đề "Cần ôn tập thêm"
+                     trong lúc job còn nằm trong hàng đợi, vì với bài tự luận thì
+                     `mockTest->score` là 0 cho tới khi chấm xong. Dòng "đang chấm"
+                     có nằm ngay dưới, nhưng không ai đọc chữ nhỏ khi phía trên là
+                     một con số 0 to đùng màu đỏ — học viên hiểu ngay là mình được
+                     0 điểm. Chính chủ dự án cũng đọc nhầm như vậy.
+
+                     Chưa có điểm thì hiển thị trạng thái, không hiển thị điểm. --}}
+                <div class="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-slate-50 to-gray-100 mb-4 ring-4 ring-white shadow-md">
+                    <svg class="w-14 h-14 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">Đang chấm bài</h2>
+            @else
+                @php
+                    $score = $isEssaySkill && ($resultAttempt->score ?? 0) > 0
+                        ? $resultAttempt->score
+                        : ($mockTest->score ?? 0);
+                    $scoreColor = $score >= 80 ? 'text-green-600' : ($score >= 50 ? 'text-amber-600' : 'text-red-600');
+                    $scoreBg = $score >= 80 ? 'from-green-50 to-emerald-50' : ($score >= 50 ? 'from-amber-50 to-yellow-50' : 'from-red-50 to-orange-50');
+                @endphp
+                <div class="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br {{ $scoreBg }} mb-4 ring-4 ring-white shadow-md">
+                    <span class="text-4xl font-black {{ $scoreColor }}">{{ number_format($score, 0) }}%</span>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-1">
+                    @if($score >= 80) Xuất sắc! 🎉
+                    @elseif($score >= 60) Tốt! 👍
+                    @elseif($score >= 40) Cần cải thiện 📚
+                    @else Cần ôn tập thêm 💪
+                    @endif
+                </h2>
+            @endif
             @if($mockTest->skill !== 'writing' && $mockTest->skill !== 'speaking')
                 @php
                     $attempt = $attempts->first();
@@ -79,6 +115,24 @@
                         <div class="text-xs font-semibold text-gray-500 mt-0.5">⬜ Bỏ</div>
                     </div>
                 </div>
+            {{-- Trạng thái "đang chấm" phải xét TRƯỚC các nhánh có điểm: bài 4 phần
+                 có thể xong 2 phần, còn 2 phần trong hàng đợi. Bản cũ xét
+                 `$hasAiScore` trước nên ca đó hiện "Điểm nháp do AI chấm" như thể
+                 đã xong, trong khi một nửa bài chưa được chấm. --}}
+            @elseif($conChoCham)
+                <p class="text-amber-700 mt-2 text-sm font-semibold">
+                    {{ $aiRunning ? 'AI đang chấm bài của bạn' : 'Bài của bạn đang chờ được chấm' }}
+                </p>
+                @if($hasAiScore || $hasTeacherScore)
+                    <p class="text-gray-500 text-sm mt-1">Một số phần đã có điểm, những phần còn lại đang được chấm.</p>
+                @endif
+                {{-- KHÔNG hứa "1–3 phút". Lúc cao điểm hàng đợi có thể tồn hàng
+                     trăm job và học viên phải chờ hàng giờ — hứa sai thì họ tải lại
+                     trang liên tục rồi nhắn giảng viên hỏi vì sao chưa có điểm. --}}
+                <p class="text-gray-500 text-sm mt-1">
+                    Thời gian chờ tuỳ lượng bài đang xếp hàng. Bạn cứ đóng trang và quay lại sau —
+                    điểm sẽ tự hiện khi chấm xong, không cần làm lại bài.
+                </p>
             @elseif($hasTeacherScore)
                 <p class="text-green-700 mt-2 text-sm font-semibold">Giảng viên đã chấm</p>
             @elseif($hasAiScore)
@@ -87,9 +141,6 @@
                     Máy đánh giá nội dung, từ vựng, ngữ pháp, mạch lạc —
                     <strong>không chấm phát âm và độ trôi chảy</strong>. Đây chưa phải điểm chính thức.
                 </p>
-            @elseif($aiRunning)
-                <p class="text-amber-700 mt-2 text-sm font-semibold">AI đang chấm bài của bạn</p>
-                <p class="text-gray-500 text-sm mt-1">Thường mất 1–3 phút. Hãy tải lại trang sau ít phút.</p>
             @else
                 <p class="text-amber-600 mt-2 text-sm">Bài thi đang chờ chấm điểm</p>
             @endif
@@ -182,7 +233,11 @@
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Hết lượt AI</span>
                             @elseif($mockTest->skill === 'speaking' && !\App\Support\SpeakingAudio::hasRecording($partAnswer->answer ?? null))
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Không ghi âm</span>
-                            @elseif($mockTest->skill === 'speaking' && config('services.openai.speaking_ai_enabled', true))
+                            @elseif($mockTest->skill === 'writing' && blank($partAnswer->answer ?? null))
+                                {{-- Bỏ trống thì không có gì để chấm — nói thẳng, đừng để
+                                     "AI đang chấm…" quay mãi cho một phần rỗng. --}}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">Chưa làm</span>
+                            @elseif($mockTest->skill === 'writing' || config('services.openai.speaking_ai_enabled', true))
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">AI đang chấm…</span>
                             @else
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">Chờ chấm</span>
