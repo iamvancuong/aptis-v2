@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AttemptAnswer;
 use App\Services\AiService;
+use App\Support\AttemptScore;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -71,10 +72,25 @@ class ProcessWritingGrading implements ShouldQueue
                 $aiMetadata = $this->enforcePartLimits($aiMetadata, $this->questionData['part']);
             }
 
+            // Điểm phải được GHI, không chỉ nằm trong `ai_metadata`.
+            //
+            // Bản cũ chỉ lưu `grading_status` + `ai_metadata`, bỏ trống cột
+            // `score`. Bài Viết vì thế được AI chấm xong xuôi, nhận xét hiện đủ,
+            // mà mọi con số trên trang kết quả vẫn là 0 — cả điểm từng phần
+            // ("0.0/10") lẫn vòng tròn điểm tổng ("0%"). Học viên đọc thành "làm
+            // rồi mà không được điểm gì". Bên Nói vốn đã ghi đúng; đây là chỗ
+            // hai kỹ năng lệch nhau.
+            //
+            // Điểm phần tính TỪ 4 TIÊU CHÍ, không lấy `overall_score` của AI —
+            // xem lý do trong docblock của AttemptScore (con số đó không được
+            // kiểm chứng và đã sai sẵn trong bản mock).
             $attemptAnswer->update([
                 'grading_status' => 'ai_graded',
+                'score'          => AttemptScore::writingScoreOutOfTen($aiMetadata['feedback'] ?? []),
                 'ai_metadata'    => $aiMetadata,
             ]);
+
+            AttemptScore::refresh($attemptAnswer->attempt_id);
 
             Log::info("ProcessWritingGrading: AttemptAnswer #{$this->attemptAnswerId} graded successfully.");
         } catch (\Exception $e) {
