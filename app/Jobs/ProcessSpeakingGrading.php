@@ -78,7 +78,7 @@ class ProcessSpeakingGrading implements ShouldQueue
                 ],
             ]);
 
-            $this->refreshAttemptScore($answer->attempt_id);
+            \App\Support\AttemptScore::refresh($answer->attempt_id);
 
             Log::info("ProcessSpeakingGrading: #{$answer->id} đã chấm ({$feedback['overall_score_10']}/10).");
         } catch (AiGradingException $e) {
@@ -218,42 +218,6 @@ class ProcessSpeakingGrading implements ShouldQueue
             $user->refundSpeakingAiUsageForAttempt($attempt->id);
         } catch (\Throwable $e) {
             Log::error("ProcessSpeakingGrading: hoàn lượt thất bại cho #{$answer->id}: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Tính lại % tổng của bài từ các phần đã có điểm.
-     *
-     * Mỗi phần là một job chạy song song, nên phải khoá dòng attempt: hai job
-     * cùng đọc-rồi-ghi sẽ ghi đè nhau và tổng điểm ra sai.
-     */
-    protected function refreshAttemptScore(int $attemptId): void
-    {
-        try {
-            DB::transaction(function () use ($attemptId) {
-                $attempt = Attempt::lockForUpdate()->find($attemptId);
-                if (!$attempt) {
-                    return;
-                }
-
-                $scored = AttemptAnswer::where('attempt_id', $attemptId)
-                    ->whereIn('grading_status', ['ai_graded', 'graded', 'manually_graded'])
-                    ->pluck('score')
-                    ->filter(fn ($s) => $s !== null);
-
-                if ($scored->isEmpty()) {
-                    return;
-                }
-
-                // Thang phần là 0–10, điểm bài lưu theo %.
-                $attempt->update([
-                    'score' => round($scored->avg() * 10, 2),
-                ]);
-            });
-        } catch (\Throwable $e) {
-            // Điểm từng phần mới là thứ học viên đọc; tổng sai không đáng để
-            // huỷ cả job và chấm lại từ đầu.
-            Log::error("ProcessSpeakingGrading: không cập nhật được điểm tổng attempt #{$attemptId}: " . $e->getMessage());
         }
     }
 
