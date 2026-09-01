@@ -37,9 +37,14 @@ return [
 
     // Chia doanh thu ĐĂNG KÝ (không tính doanh thu chấm bài).
     // Doanh thu chấm bài để riêng, dành cho Cô Dung (xem màn Doanh số).
+    //
+    // Đổi 01/09/2026: bỏ phần 30% của Cường, gộp vào Cô Dung thành 70%.
+    // Phần "còn lại" giữ nguyên 30%.
+    //
+    // ⚠️ Hai số này phải cộng lại đúng 100 — không có ràng buộc nào ở code kiểm
+    // hộ, và sai thì bảng vẫn hiện bình thường với tổng chia không khớp doanh thu.
     'revenue_split' => [
-        'co_dung' => 40,
-        'cuong'   => 30,
+        'co_dung' => 70,
         'con_lai' => 30,
     ],
 ];

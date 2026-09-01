@@ -87,7 +87,6 @@ class RevenueController extends Controller
         $split = config('pricing.revenue_split');
 
         $coDungFromReg = (int) round($registration * $split['co_dung'] / 100);
-        $cuong         = (int) round($registration * $split['cuong'] / 100);
         $conLai        = (int) round($registration * $split['con_lai'] / 100);
 
         $summary = [
@@ -95,10 +94,9 @@ class RevenueController extends Controller
             'registration'    => $registration,
             'grading'         => $grading,
             'split'           => $split,
-            // Cô Dung = 40% đăng ký + 100% chấm bài.
+            // Cô Dung = 70% đăng ký + 100% chấm bài.
             'co_dung_total'   => $coDungFromReg + $grading,
             'co_dung_reg'     => $coDungFromReg,
-            'cuong'           => $cuong,
             'con_lai'         => $conLai,
         ];
 

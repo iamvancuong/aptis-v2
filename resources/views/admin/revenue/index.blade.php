@@ -73,7 +73,7 @@
         <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
             <div class="text-xs uppercase tracking-wider text-gray-400">Doanh thu đăng ký</div>
             <div class="text-2xl font-extrabold text-gray-900 mt-1">{{ $fmt($summary['registration']) }}</div>
-            <div class="text-xs text-gray-400 mt-1">Chia {{ $summary['split']['co_dung'] }}/{{ $summary['split']['cuong'] }}/{{ $summary['split']['con_lai'] }}</div>
+            <div class="text-xs text-gray-400 mt-1">Chia {{ $summary['split']['co_dung'] }}/{{ $summary['split']['con_lai'] }}</div>
         </div>
         <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
             <div class="text-xs uppercase tracking-wider text-gray-400">Doanh thu chấm bài</div>
@@ -92,13 +92,6 @@
                     <div class="text-xs text-gray-400">{{ $summary['split']['co_dung'] }}% đăng ký ({{ $fmt($summary['co_dung_reg']) }}) + 100% chấm bài ({{ $fmt($summary['grading']) }})</div>
                 </div>
                 <div class="text-xl font-black text-emerald-600">{{ $fmt($summary['co_dung_total']) }}</div>
-            </div>
-            <div class="flex items-center justify-between px-5 py-4">
-                <div>
-                    <div class="font-bold text-gray-900">Cường</div>
-                    <div class="text-xs text-gray-400">{{ $summary['split']['cuong'] }}% doanh thu đăng ký</div>
-                </div>
-                <div class="text-xl font-black text-gray-800">{{ $fmt($summary['cuong']) }}</div>
             </div>
             <div class="flex items-center justify-between px-5 py-4">
                 <div>

@@ -33,9 +33,10 @@ class RevenueDashboardTest extends TestCase
         ]);
     }
 
-    public function test_splits_registration_40_30_30_and_grading_all_to_co_dung(): void
+    public function test_chia_dang_ky_70_30_va_cham_bai_100_cho_co_dung(): void
     {
-        // Đăng ký: 1.000.000 → Cô Dung 400k, Cường 300k, Còn lại 300k.
+        // Đổi 01/09/2026: bỏ phần 30% của Cường, Cô Dung lên 70%.
+        // Đăng ký 1.000.000 → Cô Dung 700k, Còn lại 300k.
         $this->paidOrder(Order::TYPE_REGISTRATION, 1000000);
         // Chấm bài: 100k + 100k = 200k → 100% Cô Dung.
         $this->paidOrder(Order::TYPE_GRADING, 100000);
@@ -45,8 +46,21 @@ class RevenueDashboardTest extends TestCase
             ->get(route('admin.revenue.index'))
             ->assertOk()
             ->assertSee('1.200.000')   // tổng
-            ->assertSee('600.000')     // Cô Dung = 400k + 200k
-            ->assertSee('300.000');    // Cường & Còn lại
+            ->assertSee('900.000')     // Cô Dung = 700k + 200k
+            ->assertSee('300.000')     // Còn lại
+            ->assertDontSee('Cường');  // dòng này đã gỡ khỏi bảng phân chia
+    }
+
+    public function test_hai_phan_cong_lai_dung_100_phan_tram(): void
+    {
+        // Không có ràng buộc nào ở code canh việc này, mà chia sai thì bảng vẫn
+        // hiện bình thường với tổng không khớp doanh thu — sai im lặng.
+        $split = config('pricing.revenue_split');
+
+        $this->assertSame(100, array_sum($split),
+            'Tổng các phần chia phải đúng 100%.');
+        $this->assertArrayNotHasKey('cuong', $split,
+            'Phần của Cường đã gộp vào Cô Dung — không được để sót khoá cũ.');
     }
 
     public function test_pending_orders_are_excluded(): void
