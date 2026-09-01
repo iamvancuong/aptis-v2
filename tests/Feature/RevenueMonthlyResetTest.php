@@ -124,6 +124,39 @@ class RevenueMonthlyResetTest extends TestCase
             ->assertDontSee('7.000.000đ');
     }
 
+    public function test_nut_2_thang_truoc(): void
+    {
+        $this->paidOrder(1_000_000, now()->startOfMonth()->addDays(2));               // tháng này
+        $this->paidOrder(5_000_000, now()->startOfMonth()->subMonth()->addDays(3));   // tháng trước
+        $this->paidOrder(9_000_000, now()->startOfMonth()->subMonths(2)->addDays(4)); // 2 tháng trước
+
+        $haiThangTruoc = now()->startOfMonth()->subMonths(2);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.revenue.index', ['range' => '2_thang_truoc']))
+            ->assertOk()
+            ->assertSee('9.000.000đ')
+            ->assertDontSee('5.000.000đ')
+            ->assertDontSee('1.000.000đ')
+            ->assertSee('Tháng ' . $haiThangTruoc->format('n/Y'));
+    }
+
+    public function test_ba_moc_thang_khong_dam_len_nhau(): void
+    {
+        // Mỗi nút phải ra đúng tháng của nó — lỗi lệch một tháng là loại sai
+        // rất khó thấy vì con số nào cũng "trông có vẻ hợp lý".
+        $this->travelTo(Carbon::parse('2026-03-15 09:00:00'));
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.revenue.index'))->assertSee('Tháng 3/2026');
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.revenue.index', ['range' => 'thang_truoc']))->assertSee('Tháng 2/2026');
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.revenue.index', ['range' => '2_thang_truoc']))->assertSee('Tháng 1/2026');
+    }
+
     public function test_loc_ngay_tu_chon_van_chay(): void
     {
         $this->seedTwoMonths();

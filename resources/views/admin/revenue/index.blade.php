@@ -25,8 +25,12 @@
         <div class="flex flex-col gap-2 sm:items-end">
             {{-- Hai phạm vi hay dùng nhất, một chạm. --}}
             <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden self-start sm:self-auto">
+                <a href="{{ route('admin.revenue.index', ['range' => '2_thang_truoc']) }}"
+                   class="px-4 py-2 text-sm font-medium {{ $period['mode'] === '2_thang_truoc' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+                    2 tháng trước
+                </a>
                 <a href="{{ route('admin.revenue.index', ['range' => 'thang_truoc']) }}"
-                   class="px-4 py-2 text-sm font-medium {{ $period['mode'] === 'thang_truoc' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+                   class="px-4 py-2 text-sm font-medium border-l border-gray-300 {{ $period['mode'] === 'thang_truoc' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
                     Tháng trước
                 </a>
                 <a href="{{ route('admin.revenue.index') }}"
@@ -40,7 +44,10 @@
             </div>
 
             {{-- Bộ lọc thời gian tuỳ chọn (xem lại tháng cũ, hoặc một khoảng bất kỳ) --}}
-            <form method="GET" class="flex items-end gap-2">
+            {{-- `flex-wrap`: trên màn 375px, hàng "Từ ngày / Đến ngày / Lọc" rộng
+                 397px nên nút Lọc bị cắt mất và KHÔNG bấm được — trang không cuộn
+                 ngang nên cũng không kéo tới nó được. Cho xuống dòng là xong. --}}
+            <form method="GET" class="flex flex-wrap items-end gap-2">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Từ ngày</label>
                     <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">

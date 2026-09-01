@@ -22,7 +22,7 @@ class RevenueController extends Controller
         $filters = $request->validate([
             'from'  => 'nullable|date',
             'to'    => 'nullable|date',
-            'range' => 'nullable|in:thang,thang_truoc,tat_ca',
+            'range' => 'nullable|in:thang,thang_truoc,2_thang_truoc,tat_ca',
         ]);
 
         // MẶC ĐỊNH LÀ THÁNG NÀY, không phải toàn bộ.
@@ -38,22 +38,24 @@ class RevenueController extends Controller
         $coLocNgay = ! empty($filters['from']) || ! empty($filters['to']);
         $phamVi    = $coLocNgay ? 'tuy_chon' : ($filters['range'] ?? 'thang');
 
-        // Đầu tháng cần xem, dùng cho cả phép lọc lẫn nhãn.
-        //
-        // `startOfMonth()` RỒI MỚI `subMonth()` — không làm ngược lại. Ngày 31/3
-        // trừ một tháng ra 28/2 (Carbon kẹp về ngày cuối tháng), rồi lấy
-        // `startOfMonth` vẫn ra 1/2 nên tình cờ đúng; nhưng ngày 31/5 trừ một
-        // tháng ra 30/4 — cũng may là đúng. Đi từ ngày 1 thì không phải dựa vào
-        // may mắn: 1/x trừ một tháng luôn là ngày 1 của tháng liền trước.
-        $dauThang = match ($phamVi) {
-            'thang_truoc' => now()->startOfMonth()->subMonth(),
-            default       => now()->startOfMonth(),
+        // Lùi bao nhiêu tháng so với tháng hiện tại. Dùng SỐ thay vì mỗi nút một
+        // nhánh tính ngày riêng: thêm "3 tháng trước" sau này chỉ là một dòng.
+        $luiThang = match ($phamVi) {
+            'thang_truoc'   => 1,
+            '2_thang_truoc' => 2,
+            default         => 0,
         };
+
+        // `startOfMonth()` RỒI MỚI `subMonths()` — không làm ngược lại. Ngày 31/3
+        // trừ một tháng ra 28/2 vì tháng 2 không có ngày 31 (Carbon kẹp về ngày
+        // cuối tháng). Đi từ ngày 1 thì không phải dựa vào may mắn: ngày 1 của
+        // tháng nào trừ đi n tháng cũng luôn là ngày 1.
+        $dauThang = now()->startOfMonth()->subMonths($luiThang);
 
         $paid = Order::where('status', Order::STATUS_PAID);
 
         // So sánh datetime (không bọc DATE()) để tận dụng index paid_at.
-        if ($phamVi === 'thang' || $phamVi === 'thang_truoc') {
+        if (in_array($phamVi, ['thang', 'thang_truoc', '2_thang_truoc'], true)) {
             $paid->where('paid_at', '>=', $dauThang)
                  ->where('paid_at', '<=', $dauThang->copy()->endOfMonth());
         } elseif ($phamVi === 'tuy_chon') {
@@ -69,7 +71,7 @@ class RevenueController extends Controller
         $period = [
             'mode'  => $phamVi,
             'label' => match ($phamVi) {
-                'thang', 'thang_truoc' => 'Tháng ' . $dauThang->format('n/Y'),
+                'thang', 'thang_truoc', '2_thang_truoc' => 'Tháng ' . $dauThang->format('n/Y'),
                 'tat_ca'  => 'Toàn bộ từ trước tới nay',
                 default   => trim(
                     (! empty($filters['from']) ? 'từ ' . Carbon::parse($filters['from'])->format('d/m/Y') . ' ' : '')
