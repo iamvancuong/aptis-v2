@@ -20,19 +20,51 @@ class RevenueController extends Controller
     public function index(Request $request)
     {
         $filters = $request->validate([
-            'from' => 'nullable|date',
-            'to'   => 'nullable|date',
+            'from'  => 'nullable|date',
+            'to'    => 'nullable|date',
+            'range' => 'nullable|in:thang,tat_ca',
         ]);
+
+        // MẶC ĐỊNH LÀ THÁNG NÀY, không phải toàn bộ.
+        //
+        // Bản cũ không lọc gì khi vào trang, nên con số cộng dồn từ ngày mở bán:
+        // sang tháng mới vẫn thấy tổng của mọi tháng trước và không đọc ra được
+        // tháng này bán được bao nhiêu. Nay mỗi đầu tháng bảng tự về 0, còn số
+        // luỹ kế xem bằng nút "Tổng".
+        //
+        // Mốc tháng tính theo giờ Việt Nam (`config/app.php` đặt
+        // Asia/Ho_Chi_Minh), nên "ngày 1" đúng là ngày 1 ở đây chứ không lệch
+        // 7 tiếng như khi để UTC.
+        $coLocNgay = ! empty($filters['from']) || ! empty($filters['to']);
+        $phamVi    = $coLocNgay ? 'tuy_chon' : ($filters['range'] ?? 'thang');
 
         $paid = Order::where('status', Order::STATUS_PAID);
 
         // So sánh datetime (không bọc DATE()) để tận dụng index paid_at.
-        if (! empty($filters['from'])) {
-            $paid->where('paid_at', '>=', Carbon::parse($filters['from'])->startOfDay());
+        if ($phamVi === 'thang') {
+            $paid->where('paid_at', '>=', now()->startOfMonth())
+                 ->where('paid_at', '<=', now()->endOfMonth());
+        } elseif ($phamVi === 'tuy_chon') {
+            if (! empty($filters['from'])) {
+                $paid->where('paid_at', '>=', Carbon::parse($filters['from'])->startOfDay());
+            }
+            if (! empty($filters['to'])) {
+                $paid->where('paid_at', '<=', Carbon::parse($filters['to'])->endOfDay());
+            }
         }
-        if (! empty($filters['to'])) {
-            $paid->where('paid_at', '<=', Carbon::parse($filters['to'])->endOfDay());
-        }
+        // 'tat_ca' → không thêm điều kiện nào: đây là nút "Tổng".
+
+        $period = [
+            'mode'  => $phamVi,
+            'label' => match ($phamVi) {
+                'thang'   => 'Tháng ' . now()->format('n/Y'),
+                'tat_ca'  => 'Toàn bộ từ trước tới nay',
+                default   => trim(
+                    (! empty($filters['from']) ? 'từ ' . Carbon::parse($filters['from'])->format('d/m/Y') . ' ' : '')
+                    . (! empty($filters['to']) ? 'đến ' . Carbon::parse($filters['to'])->format('d/m/Y') : '')
+                ),
+            },
+        ];
 
         // Tổng theo loại (clone để không đụng nhau).
         $registration = (int) (clone $paid)->where('type', Order::TYPE_REGISTRATION)->sum('amount');
@@ -112,6 +144,6 @@ class RevenueController extends Controller
 
         $orders = (clone $paid)->latest('paid_at')->paginate(30)->withQueryString();
 
-        return view('admin.revenue.index', compact('summary', 'orders', 'filters', 'sales'));
+        return view('admin.revenue.index', compact('summary', 'orders', 'filters', 'sales', 'period'));
     }
 }
