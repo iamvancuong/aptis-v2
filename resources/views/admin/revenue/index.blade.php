@@ -12,23 +12,45 @@
         <div>
             <h1 class="text-2xl font-bold text-gray-900">💰 Doanh số</h1>
             <p class="text-sm text-gray-500 mt-1">Tính từ các đơn đã thanh toán. Không bao gồm thuế.</p>
+            {{-- Nhãn phạm vi luôn hiện. Không có nó thì "12.400.000đ" là con số
+                 không đọc được — của tháng này hay của cả năm? --}}
+            <p class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Đang xem: {{ $period['label'] }}
+            </p>
         </div>
 
-        {{-- Bộ lọc thời gian --}}
-        <form method="GET" class="flex items-end gap-2">
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Từ ngày</label>
-                <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <div class="flex flex-col gap-2 sm:items-end">
+            {{-- Hai phạm vi hay dùng nhất, một chạm. --}}
+            <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden self-start sm:self-auto">
+                <a href="{{ route('admin.revenue.index') }}"
+                   class="px-4 py-2 text-sm font-medium {{ $period['mode'] === 'thang' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+                    Tháng này
+                </a>
+                <a href="{{ route('admin.revenue.index', ['range' => 'tat_ca']) }}"
+                   class="px-4 py-2 text-sm font-medium border-l border-gray-300 {{ $period['mode'] === 'tat_ca' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+                    Tổng
+                </a>
             </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Đến ngày</label>
-                <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-            </div>
-            <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Lọc</button>
-            @if(($filters['from'] ?? null) || ($filters['to'] ?? null))
-                <a href="{{ route('admin.revenue.index') }}" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Xóa lọc</a>
-            @endif
-        </form>
+
+            {{-- Bộ lọc thời gian tuỳ chọn (xem lại tháng cũ, hoặc một khoảng bất kỳ) --}}
+            <form method="GET" class="flex items-end gap-2">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Từ ngày</label>
+                    <input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Đến ngày</label>
+                    <input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Lọc</button>
+                @if($period['mode'] === 'tuy_chon')
+                    <a href="{{ route('admin.revenue.index') }}" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Xóa lọc</a>
+                @endif
+            </form>
+        </div>
     </div>
 
     {{-- Tổng --}}
