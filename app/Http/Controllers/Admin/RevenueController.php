@@ -22,7 +22,7 @@ class RevenueController extends Controller
         $filters = $request->validate([
             'from'  => 'nullable|date',
             'to'    => 'nullable|date',
-            'range' => 'nullable|in:thang,tat_ca',
+            'range' => 'nullable|in:thang,thang_truoc,tat_ca',
         ]);
 
         // MẶC ĐỊNH LÀ THÁNG NÀY, không phải toàn bộ.
@@ -38,12 +38,24 @@ class RevenueController extends Controller
         $coLocNgay = ! empty($filters['from']) || ! empty($filters['to']);
         $phamVi    = $coLocNgay ? 'tuy_chon' : ($filters['range'] ?? 'thang');
 
+        // Đầu tháng cần xem, dùng cho cả phép lọc lẫn nhãn.
+        //
+        // `startOfMonth()` RỒI MỚI `subMonth()` — không làm ngược lại. Ngày 31/3
+        // trừ một tháng ra 28/2 (Carbon kẹp về ngày cuối tháng), rồi lấy
+        // `startOfMonth` vẫn ra 1/2 nên tình cờ đúng; nhưng ngày 31/5 trừ một
+        // tháng ra 30/4 — cũng may là đúng. Đi từ ngày 1 thì không phải dựa vào
+        // may mắn: 1/x trừ một tháng luôn là ngày 1 của tháng liền trước.
+        $dauThang = match ($phamVi) {
+            'thang_truoc' => now()->startOfMonth()->subMonth(),
+            default       => now()->startOfMonth(),
+        };
+
         $paid = Order::where('status', Order::STATUS_PAID);
 
         // So sánh datetime (không bọc DATE()) để tận dụng index paid_at.
-        if ($phamVi === 'thang') {
-            $paid->where('paid_at', '>=', now()->startOfMonth())
-                 ->where('paid_at', '<=', now()->endOfMonth());
+        if ($phamVi === 'thang' || $phamVi === 'thang_truoc') {
+            $paid->where('paid_at', '>=', $dauThang)
+                 ->where('paid_at', '<=', $dauThang->copy()->endOfMonth());
         } elseif ($phamVi === 'tuy_chon') {
             if (! empty($filters['from'])) {
                 $paid->where('paid_at', '>=', Carbon::parse($filters['from'])->startOfDay());
@@ -57,7 +69,7 @@ class RevenueController extends Controller
         $period = [
             'mode'  => $phamVi,
             'label' => match ($phamVi) {
-                'thang'   => 'Tháng ' . now()->format('n/Y'),
+                'thang', 'thang_truoc' => 'Tháng ' . $dauThang->format('n/Y'),
                 'tat_ca'  => 'Toàn bộ từ trước tới nay',
                 default   => trim(
                     (! empty($filters['from']) ? 'từ ' . Carbon::parse($filters['from'])->format('d/m/Y') . ' ' : '')

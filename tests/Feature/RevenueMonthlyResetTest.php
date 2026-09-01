@@ -93,6 +93,37 @@ class RevenueMonthlyResetTest extends TestCase
             ->assertSee('3.000.000đ');
     }
 
+    public function test_nut_thang_truoc(): void
+    {
+        $this->seedTwoMonths();
+
+        $thangTruoc = now()->startOfMonth()->subMonth();
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.revenue.index', ['range' => 'thang_truoc']))
+            ->assertOk()
+            ->assertSee('5.000.000đ')                              // chỉ tháng trước
+            ->assertDontSee('6.000.000đ')                          // không cộng dồn
+            ->assertSee('Tháng ' . $thangTruoc->format('n/Y'));
+    }
+
+    public function test_thang_truoc_dung_moc_ngay_1_khong_bi_tran_ngay(): void
+    {
+        // Bẫy Carbon: 31/3 trừ một tháng ra 28/2 vì tháng 2 không có ngày 31.
+        // Đi từ NGÀY 1 rồi mới trừ thì không phụ thuộc vào chuyện đó.
+        $this->travelTo(Carbon::parse('2026-03-31 09:00:00'));
+
+        $this->paidOrder(2_000_000, Carbon::parse('2026-02-15 10:00:00'));  // tháng trước
+        $this->paidOrder(7_000_000, Carbon::parse('2026-01-20 10:00:00'));  // hai tháng trước
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.revenue.index', ['range' => 'thang_truoc']))
+            ->assertOk()
+            ->assertSee('Tháng 2/2026')
+            ->assertSee('2.000.000đ')
+            ->assertDontSee('7.000.000đ');
+    }
+
     public function test_loc_ngay_tu_chon_van_chay(): void
     {
         $this->seedTwoMonths();

@@ -25,8 +25,12 @@
         <div class="flex flex-col gap-2 sm:items-end">
             {{-- Hai phạm vi hay dùng nhất, một chạm. --}}
             <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden self-start sm:self-auto">
+                <a href="{{ route('admin.revenue.index', ['range' => 'thang_truoc']) }}"
+                   class="px-4 py-2 text-sm font-medium {{ $period['mode'] === 'thang_truoc' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+                    Tháng trước
+                </a>
                 <a href="{{ route('admin.revenue.index') }}"
-                   class="px-4 py-2 text-sm font-medium {{ $period['mode'] === 'thang' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
+                   class="px-4 py-2 text-sm font-medium border-l border-gray-300 {{ $period['mode'] === 'thang' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }}">
                     Tháng này
                 </a>
                 <a href="{{ route('admin.revenue.index', ['range' => 'tat_ca']) }}"
