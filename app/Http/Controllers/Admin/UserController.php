@@ -7,11 +7,13 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
 use App\Models\LoginSession;
+use App\Support\SpeakingAudio;
 use App\Exports\UsersExport;
 use App\Exports\UsersTemplateExport;
 use App\Imports\UsersImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
@@ -149,12 +151,24 @@ class UserController extends Controller
                 ->with('error', 'Cannot delete your own account.');
         }
         
-        DB::transaction(function () use ($user) {
+        $audioPaths = [];
+
+        DB::transaction(function () use ($user, &$audioPaths) {
             // Get all attempt IDs for this user
             $attemptIds = \App\Models\Attempt::where('user_id', $user->id)->pluck('id');
-            
-            // Get all attempt answer IDs for these attempts
-            $answerIds = \App\Models\AttemptAnswer::whereIn('attempt_id', $attemptIds)->pluck('id');
+
+            // Get all attempt answers for these attempts (kèm `answer` để rút đường
+            // dẫn file ghi âm bài Nói trước khi xoá dòng — DB xoá xong thì không còn
+            // biết file nào là của user này nữa, sẽ thành rác mồ côi trên đĩa).
+            $answers = \App\Models\AttemptAnswer::whereIn('attempt_id', $attemptIds)
+                ->get(['id', 'answer']);
+            $answerIds = $answers->pluck('id');
+
+            foreach ($answers as $answer) {
+                foreach (SpeakingAudio::pathsOf($answer->answer) as $path) {
+                    $audioPaths[] = $path;
+                }
+            }
 
             // 1. Delete writing reviews (specifically for student's submissions)
             if ($answerIds->isNotEmpty()) {
@@ -183,6 +197,14 @@ class UserController extends Controller
             // 7. Delete the user record
             $user->delete();
         });
+
+        // Xoá file ghi âm SAU KHI transaction commit: nếu DB rollback giữa chừng
+        // thì file vẫn còn (còn dòng answer để dọn sau), tránh mất file mà dữ liệu
+        // vẫn nằm đó. `disk('public')->delete()` không ném lỗi khi file đã biến mất.
+        $disk = Storage::disk('public');
+        foreach (array_unique($audioPaths) as $path) {
+            $disk->delete($path);
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User and all related history deleted successfully.');
