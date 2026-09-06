@@ -69,10 +69,24 @@ Schedule::command('classes:sync-exam-groups')->dailyAt('03:00')->withoutOverlapp
 // dòng này không mở thêm quyền cho ai.
 Schedule::command('sessions:prune')->dailyAt('04:00')->withoutOverlapping();
 
-// ⚠️ CỐ Ý ĐỂ TẮT. Dọn file ghi âm bài Nói cũ (hosting 30GB chia 21 web).
-// Lệnh này XOÁ AUDIO THẬT CỦA HỌC VIÊN và không khôi phục được, nên không tự
-// bật. Chạy thử trước rồi mới bỏ comment dòng dưới:
+// Dọn file ghi âm bài Nói CŨ HƠN 2 THÁNG (60 ngày) — chính sách giữ audio 2
+// tháng rồi xoá để đỡ đầy ổ (hosting NVMe có hạn, audio tích luỹ mãi).
 //
-//   php artisan speaking:cleanup-audio --dry-run
+// ⚠️ Lệnh này XOÁ AUDIO THẬT, không khôi phục được. Đã có sẵn ba lớp chắn trong
+// CleanupSpeakingAudio: chỉ đụng file cũ hơn --days, KHÔNG xoá phần chưa chấm
+// xong, và từ chối chạy nếu --days < 30. Chạy 03:15 mỗi ngày (sau các job lớp
+// lúc 03:00/03:30 nhưng vẫn giờ vắng) để disk luôn được giữ gọn.
 //
-// Schedule::command('speaking:cleanup-audio')->weeklyOn(1, '03:00')->withoutOverlapping();
+// Muốn xem trước sẽ xoá gì mà không xoá thật:
+//   php artisan speaking:cleanup-audio --days=60 --dry-run
+Schedule::command('speaking:cleanup-audio --days=60')
+    ->dailyAt('03:15')
+    ->withoutOverlapping();
+
+// Vét file ghi âm MỒ CÔI (không còn attempt_answer nào trỏ tới) — lưới an toàn
+// cho audio còn sót của user đã xoá trước khi có bản vá xoá-user-xoá-audio, hoặc
+// của lần xoá tay trên cPanel. Từ nay xoá user đã tự dọn file (UserController::
+// destroy), nên đây chỉ chạy hằng tuần cho chắc, không cần dày.
+Schedule::command('speaking:cleanup-orphan-audio')
+    ->weeklyOn(1, '03:45')
+    ->withoutOverlapping();
