@@ -23,6 +23,10 @@ class StoreUserRequest extends FormRequest
         // bị sửa gửi lên role khác thì cũng không tạo được admin bằng đường này.
         $this->merge(['role' => 'user']);
 
+        // Không có ô nhập mật khẩu ở form — mọi tài khoản tạo tay đều dùng mật
+        // khẩu mặc định 12345678 (học viên đổi ở lần đăng nhập đầu).
+        $this->merge(['password' => '12345678']);
+
         // Convert expires_at to end of day if present
         if ($this->filled('expires_at')) {
             $this->merge([
@@ -42,7 +46,7 @@ class StoreUserRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'role' => 'required|in:user',
-            // Mật khẩu BẮT BUỘC nhập tay — không còn mặc định 12345678.
+            // Luôn được gán 12345678 ở prepareForValidation (không có ô nhập).
             'password' => 'required|string|min:8',
             'status' => 'nullable|in:active,blocked',
             'expires_at' => 'nullable|date|after_or_equal:today',

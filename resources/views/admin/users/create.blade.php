@@ -30,19 +30,12 @@
             :error="$errors->first('email')"
         />
 
-        {{-- Màn này chỉ tạo học viên (role user); role được ép ở server. --}}
-
-        <!-- Password (bắt buộc nhập tay) -->
-        <div class="mb-4" id="password-field">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Password <span class="text-red-500">*</span>
-            </label>
-            <input type="password" name="password" id="password" required minlength="8"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <p class="mt-1 text-sm text-gray-500">Tối thiểu 8 ký tự. Bắt buộc nhập tay.</p>
-            @error('password')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
+        {{-- Màn này chỉ tạo học viên (role user); role được ép ở server.
+             Không có ô mật khẩu: mọi tài khoản tạo tay dùng mặc định 12345678. --}}
+        <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+            <p class="text-sm text-blue-700">
+                Mật khẩu mặc định: <span class="font-semibold">12345678</span> — học viên đổi ở lần đăng nhập đầu.
+            </p>
         </div>
 
         <!-- Expiration Date -->
