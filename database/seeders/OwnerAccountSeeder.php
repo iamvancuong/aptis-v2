@@ -30,12 +30,16 @@ class OwnerAccountSeeder extends Seeder
 {
     public function run(): void
     {
-        $email    = env('OWNER_EMAIL');
-        $password = env('OWNER_PASSWORD');
+        // Đọc qua config() chứ KHÔNG env() trực tiếp: khi production đã
+        // config:cache thì env() ngoài thư mục config/ trả về null. Xem
+        // config/owner.php. Nhớ set .env TRƯỚC rồi mới config:cache.
+        $email    = config('owner.email');
+        $password = config('owner.password');
 
         if (empty($email) || empty($password)) {
             $this->command?->warn(
-                'Bỏ qua OwnerAccountSeeder: cần đặt OWNER_EMAIL và OWNER_PASSWORD trong .env.'
+                'Bỏ qua OwnerAccountSeeder: chưa thấy OWNER_EMAIL/OWNER_PASSWORD. '
+                . 'Đặt trong .env rồi chạy lại `php artisan config:clear` trước khi seed.'
             );
             return;
         }
