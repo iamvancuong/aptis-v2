@@ -30,26 +30,16 @@
             :error="$errors->first('email')"
         />
 
-        <!-- Role -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Role <span class="text-red-500">*</span>
-            </label>
-            <select name="role" id="role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="user" {{ old('role', 'user') == 'user' ? 'selected' : '' }}>User</option>
-                <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-            </select>
-            @error('role')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
-        </div>
+        {{-- Màn này chỉ tạo học viên (role user); role được ép ở server. --}}
 
-        <!-- Password (conditional) -->
+        <!-- Password (bắt buộc nhập tay) -->
         <div class="mb-4" id="password-field">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-            <input type="password" name="password" id="password"
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Password <span class="text-red-500">*</span>
+            </label>
+            <input type="password" name="password" id="password" required minlength="8"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <p class="mt-1 text-sm text-gray-500" id="password-hint"></p>
+            <p class="mt-1 text-sm text-gray-500">Tối thiểu 8 ký tự. Bắt buộc nhập tay.</p>
             @error('password')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
@@ -107,29 +97,4 @@
         </div>
     </form>
 </x-card>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const roleSelect = document.getElementById('role');
-    const passwordField = document.getElementById('password');
-    const passwordHint = document.getElementById('password-hint');
-
-    function updatePasswordField() {
-        if (roleSelect.value === 'user') {
-            passwordField.required = false;
-            passwordHint.textContent = 'Default password: 12345678 (will be set automatically)';
-            passwordHint.classList.remove('text-gray-500');
-            passwordHint.classList.add('text-blue-600', 'font-semibold');
-        } else {
-            passwordField.required = true;
-            passwordHint.textContent = 'Required for admin accounts (minimum 8 characters)';
-            passwordHint.classList.remove('text-blue-600', 'font-semibold');
-            passwordHint.classList.add('text-gray-500');
-        }
-    }
-
-    roleSelect.addEventListener('change', updatePasswordField);
-    updatePasswordField(); // Initial state
-});
-</script>
 @endsection

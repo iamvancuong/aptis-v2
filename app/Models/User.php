@@ -3,9 +3,11 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -29,6 +31,46 @@ class User extends Authenticatable
         self::SOURCE_MANUAL   => 'Admin tự thêm',
         self::SOURCE_IMPORT   => 'Dữ liệu cũ',
     ];
+
+    /** Nguồn của tài khoản owner: sinh bằng seeder, không phải người dùng thật. */
+    public const SOURCE_SYSTEM = 'system';
+
+    /**
+     * Vai trò OWNER — chủ sở hữu hệ thống.
+     *
+     * Toàn quyền như admin (xem `isAdmin()`) NHƯNG bị ẩn khỏi mọi truy vấn của
+     * người khác bởi global scope `hideOwner` bên dưới — kể cả admin hiện tại
+     * cũng không thấy tài khoản này trong danh sách người dùng/học viên. Chỉ
+     * chính owner (khi đã đăng nhập) mới thấy được các bản ghi owner.
+     */
+    public const ROLE_OWNER = 'owner';
+
+    /**
+     * Global scope ẩn tài khoản owner khỏi MỌI truy vấn Eloquent, trừ khi người
+     * đang đăng nhập chính là owner. Nhờ đặt ở tầng model, mọi màn (danh sách
+     * user, export, đếm theo nguồn, gợi ý mời lớp…) tự động không thấy owner mà
+     * không phải sửa từng nơi.
+     *
+     * ⚠️ Dùng `Auth::hasUser()` chứ KHÔNG `Auth::user()`: gọi `user()` sẽ kích
+     * hoạt việc phân giải phiên đăng nhập, mà phân giải đó lại chạy một truy vấn
+     * `users` → truy vấn đó gọi lại scope này → gọi `user()` lần nữa → đệ quy vô
+     * hạn (tràn stack). `hasUser()` chỉ trả về true khi user ĐÃ được phân giải
+     * xong, nên không kích hoạt gì thêm.
+     *
+     * Khách chưa đăng nhập (login `Auth::attempt`, phân giải phiên) KHÔNG bị ẩn,
+     * nhờ vậy owner vẫn đăng nhập được. Ở console/queue (seeder, schedule) cũng
+     * không có user đăng nhập → không ẩn, nên seeder tìm/ghi owner bình thường;
+     * các luồng học viên chạy nền được chặn owner bằng bộ lọc vai trò tường minh
+     * (xem `scopeInvitableToClass`) chứ không dựa vào scope này.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('hideOwner', function (Builder $query) {
+            if (Auth::hasUser() && Auth::user()->role !== self::ROLE_OWNER) {
+                $query->where($query->qualifyColumn('role'), '!=', self::ROLE_OWNER);
+            }
+        });
+    }
 
     protected $fillable = [
         'name',
@@ -114,7 +156,15 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        // Owner có TOÀN QUYỀN như admin: mọi cổng admin (middleware AdminOnly,
+        // hạn mức AI không giới hạn, bỏ giới hạn thiết bị ở SessionLimit…) đều mở.
+        return in_array($this->role, ['admin', self::ROLE_OWNER], true);
+    }
+
+    /** Chủ sở hữu hệ thống — vai trò ẩn, chỉ chính owner mới thấy (xem `booted()`). */
+    public function isOwner(): bool
+    {
+        return $this->role === self::ROLE_OWNER;
     }
 
     public function isBlocked(): bool
@@ -174,7 +224,10 @@ class User extends Authenticatable
      */
     public function scopeInvitableToClass(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('role', '!=', 'admin')
+        // Loại cả admin lẫn owner: owner còn hạn + active nên sẽ lọt vào đây và
+        // bị mời vào lớp / nhận mail nhắc giờ khi lệnh chạy ở console (nơi global
+        // scope `hideOwner` không áp vì không có ai đăng nhập). Chặn tường minh.
+        return $query->whereNotIn('role', ['admin', self::ROLE_OWNER])
             ->where('status', 'active')
             ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
             ->orderBy('name');

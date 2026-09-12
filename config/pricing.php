@@ -35,6 +35,12 @@ return [
     // Phí gửi 1 bài cho giáo viên chấm tay (Speaking / Writing).
     'grading_price' => (int) env('PRICE_GRADING', 99000),
 
+    // Giá trị QUY ĐỔI của một học viên do admin thêm tay (source='manual'). Nhóm
+    // này trả tiền offline (tiền mặt / chuyển khoản thẳng) nên KHÔNG có trong
+    // bảng `orders`. Chỉ dùng cho phần thống kê doanh thu TỔNG của chủ sở hữu
+    // (role owner) ở màn Doanh số — không ai khác thấy con số này. 2 triệu/HV.
+    'manual_student_value' => (int) env('MANUAL_STUDENT_VALUE', 2000000),
+
     // Chia doanh thu ĐĂNG KÝ (không tính doanh thu chấm bài).
     // Doanh thu chấm bài để riêng, dành cho Cô Dung (xem màn Doanh số).
     //

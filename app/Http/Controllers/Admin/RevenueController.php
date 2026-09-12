@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\User;
 use App\Support\Sales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -156,6 +157,31 @@ class RevenueController extends Controller
 
         $orders = (clone $paid)->latest('paid_at')->paginate(30)->withQueryString();
 
-        return view('admin.revenue.index', compact('summary', 'orders', 'filters', 'sales', 'period'));
+        // ─── Thống kê CHỈ owner thấy ──────────────────────────────────────────
+        // Doanh thu THẬT gồm cả tiền offline: mỗi học viên admin thêm tay
+        // (source='manual') là 2 triệu (không nằm trong `orders`), cộng toàn bộ
+        // doanh thu web từ trước tới nay. Cố tình KHÔNG lọc theo kỳ đang xem —
+        // đây là con số tổng luỹ kế, tách khỏi các nút Tháng này/Tháng trước.
+        // Chỉ set khi người xem là owner; view chỉ hiện khi biến này khác null,
+        // nên admin thường không bao giờ thấy phần này.
+        $ownerStats = null;
+        if (auth()->user()?->isOwner()) {
+            $manualCount   = User::where('source', User::SOURCE_MANUAL)
+                ->whereNotIn('role', ['admin', User::ROLE_OWNER])
+                ->count();
+            $offlinePer    = (int) config('pricing.manual_student_value');
+            $offlineTotal  = $manualCount * $offlinePer;
+            $webAllTime    = (int) Order::where('status', Order::STATUS_PAID)->sum('amount');
+
+            $ownerStats = [
+                'manual_count'  => $manualCount,
+                'offline_per'   => $offlinePer,
+                'offline_total' => $offlineTotal,
+                'web_all_time'  => $webAllTime,
+                'grand_total'   => $offlineTotal + $webAllTime,
+            ];
+        }
+
+        return view('admin.revenue.index', compact('summary', 'orders', 'filters', 'sales', 'period', 'ownerStats'));
     }
 }

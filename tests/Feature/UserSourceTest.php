@@ -132,8 +132,36 @@ class UserSourceTest extends TestCase
         $this->actingAs($admin)->post(route('admin.users.store'), [
             'name' => 'Học viên mới', 'email' => 'moi@example.test',
             'role' => 'user', 'status' => 'active',
+            'password' => 'matkhau-nhap-tay',   // mật khẩu nay bắt buộc nhập tay
         ])->assertSessionHasNoErrors();
 
         $this->assertSame(User::SOURCE_MANUAL, User::firstWhere('email', 'moi@example.test')->source);
+    }
+
+    public function test_tao_tay_bat_buoc_nhap_mat_khau(): void
+    {
+        $admin = $this->user(['role' => 'admin']);
+
+        // Không gửi password → phải báo lỗi, không còn tự gán 12345678.
+        $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Thiếu mật khẩu', 'email' => 'thieu@example.test',
+            'role' => 'user', 'status' => 'active',
+        ])->assertSessionHasErrors('password');
+
+        $this->assertNull(User::firstWhere('email', 'thieu@example.test'));
+    }
+
+    public function test_khong_tao_duoc_admin_qua_man_tao_tay(): void
+    {
+        $admin = $this->user(['role' => 'admin']);
+
+        // Dù form bị sửa gửi role=admin, server ép về user.
+        $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Cố tạo admin', 'email' => 'coadmin@example.test',
+            'role' => 'admin', 'status' => 'active',
+            'password' => 'matkhau-nhap-tay',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('user', User::firstWhere('email', 'coadmin@example.test')->role);
     }
 }

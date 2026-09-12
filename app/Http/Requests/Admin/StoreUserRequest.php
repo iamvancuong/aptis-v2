@@ -19,12 +19,9 @@ class StoreUserRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        // Default password for students
-        if ($this->role === 'user' && !$this->filled('password')) {
-            $this->merge([
-                'password' => '12345678',
-            ]);
-        }
+        // Màn tạo tay chỉ tạo học viên (role user). Ép cứng ở đây để dù form có
+        // bị sửa gửi lên role khác thì cũng không tạo được admin bằng đường này.
+        $this->merge(['role' => 'user']);
 
         // Convert expires_at to end of day if present
         if ($this->filled('expires_at')) {
@@ -41,23 +38,15 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
+        return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|in:user,admin',
+            'role' => 'required|in:user',
+            // Mật khẩu BẮT BUỘC nhập tay — không còn mặc định 12345678.
+            'password' => 'required|string|min:8',
             'status' => 'nullable|in:active,blocked',
             'expires_at' => 'nullable|date|after_or_equal:today',
         ];
-
-        // Admin users must provide custom password, user role will have default set
-        if ($this->role === 'admin') {
-            $rules['password'] = 'required|string|min:8';
-        } else {
-            // For user role, password is optional but will be defaulted to 12345678
-            $rules['password'] = 'nullable|string|min:8';
-        }
-
-        return $rules;
     }
 
     /**
@@ -66,7 +55,7 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'password.required' => 'Admin accounts require a custom password.',
+            'password.required' => 'Vui lòng nhập mật khẩu cho tài khoản (tối thiểu 8 ký tự).',
         ];
     }
 }

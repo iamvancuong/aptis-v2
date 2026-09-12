@@ -105,14 +105,9 @@ class UserController extends Controller
         }
 
         $user = User::create($data);
-        
-        $message = 'User created successfully.';
-        if ($request->role === 'user' && !$request->filled('password')) {
-            $message .= ' Default password: 12345678';
-        }
-        
+
         return redirect()->route('admin.users.index')
-            ->with('success', $message);
+            ->with('success', 'User created successfully.');
     }
 
     public function edit(User $user)

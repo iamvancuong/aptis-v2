@@ -64,6 +64,40 @@
         </div>
     </div>
 
+    {{-- Doanh thu TỔNG THẬT — CHỈ chủ sở hữu (role owner) thấy. Controller chỉ
+         gán $ownerStats khi người xem là owner, nên admin thường không thấy khối
+         này. Con số luỹ kế toàn thời gian (không theo bộ lọc kỳ ở trên). --}}
+    @if(! is_null($ownerStats))
+        <div class="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 shadow-lg">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-lg">🔒</span>
+                <h2 class="text-lg font-bold text-amber-900">Doanh thu tổng thật (chỉ chủ sở hữu)</h2>
+            </div>
+            <p class="text-xs text-amber-700 mb-4">
+                Gồm cả tiền offline. Luỹ kế toàn thời gian, không đổi theo bộ lọc kỳ bên dưới.
+                Không ai khác — kể cả admin — nhìn thấy khối này.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-5 shadow">
+                    <div class="text-xs uppercase tracking-wider text-amber-100">Tổng thật (web + offline)</div>
+                    <div class="text-3xl font-black mt-1">{{ $fmt($ownerStats['grand_total']) }}</div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 border border-amber-200">
+                    <div class="text-xs uppercase tracking-wider text-gray-500">Doanh thu web (toàn bộ)</div>
+                    <div class="text-2xl font-bold text-gray-900 mt-1">{{ $fmt($ownerStats['web_all_time']) }}</div>
+                    <div class="text-xs text-gray-400 mt-1">Đơn đã thanh toán qua web</div>
+                </div>
+                <div class="bg-white rounded-2xl p-5 border border-amber-200">
+                    <div class="text-xs uppercase tracking-wider text-gray-500">Học viên thêm tay (offline)</div>
+                    <div class="text-2xl font-bold text-gray-900 mt-1">{{ $fmt($ownerStats['offline_total']) }}</div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        {{ number_format($ownerStats['manual_count'], 0, ',', '.') }} học viên × {{ $fmt($ownerStats['offline_per']) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Tổng --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-5 shadow-lg">
