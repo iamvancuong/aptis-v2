@@ -144,6 +144,16 @@ class User extends Authenticatable
         return $this->hasMany(WritingAiUsage::class);
     }
 
+    public function vocabularyItems()
+    {
+        return $this->hasMany(VocabularyItem::class);
+    }
+
+    public function vocabLookupUsages()
+    {
+        return $this->hasMany(VocabLookupUsage::class);
+    }
+
     public function securityFlags()
     {
         return $this->hasMany(SecurityFlag::class);

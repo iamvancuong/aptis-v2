@@ -1328,3 +1328,81 @@ Chỉ `git reset --hard origin/main` rồi `optimize:clear && config:cache && ro
 `GradingPaymentTest` **fail 4/5 ca** — đã fail sẵn TRƯỚC thay đổi này (kiểm chứng bằng `git stash`).
 Là tồn dư của commit `f33a978` "Tắt hoàn toàn chức năng gửi giáo viên chấm bài": chức năng đã tắt
 nhưng test cũ vẫn kỳ vọng luồng cũ. Cần sửa hoặc bỏ test cho khớp thực tế.
+
+---
+
+## 33. 📖 PHIÊN 23/09/2026 (AA) — TRA TỪ BẰNG AI + SỔ TAY TỪ VỰNG (gói B)
+
+Học viên **bôi đen** từ/câu trong bài đọc → hiện nút **"Tra từ"** → popup nghĩa tiếng Việt
+**theo ngữ cảnh** → bấm **"Lưu từ"** vào sổ tay → **ôn tập bằng thẻ** theo lịch giãn cách.
+
+### Tại sao khác Google Dịch (đây là thứ bán được)
+Mỗi lượt tra gửi kèm **câu chứa từ đó**, nên từ nhiều nghĩa ra đúng nghĩa trong bài — lỗi mà
+Google Dịch hay mắc và làm học viên hiểu sai. Câu gốc cũng được lưu vào sổ tay để nhớ theo ngữ cảnh.
+
+### 🔴 QUYẾT ĐỊNH NGHIỆP VỤ: KHÔNG bật trong THI THỬ
+`/mock-test/*` **không** nạp partial tra từ. Tra được từ lúc thi thì điểm Reading cao ảo và mất
+hết ý nghĩa đánh giá. Cố ý **không có công tắc** `.env` cho việc này — muốn đổi phải sửa code để
+có người rà lại. `VocabularyLookupTest::test_trang_thi_thu_khong_gan_tra_tu` canh đúng điều đó.
+
+### Chi phí — ba lớp chặn
+1. **Kho đệm dùng chung** (`ai_lookups`, khoá = sha256(mode + từ đã chuẩn hoá)). Học viên B tra
+   lại từ học viên A đã tra → **không gọi API**. Đo thực tế lúc kiểm thử: 4 lượt tra → **1 lần
+   gọi API** (3 lần trúng đệm). Bảng này càng dùng lâu càng thành từ điển APTIS riêng.
+2. **Hạn mức theo NGÀY** (`vocab_lookup_usages`, mặc định 60 lượt/học viên/ngày). Khác quota chấm
+   Writing/Speaking (đếm trọn đời) vì tra từ là thao tác vặt, phải tự làm mới mỗi ngày.
+   Cột `api_calls` tách riêng để biết thật sự tốn bao nhiêu lượt API.
+3. **`throttle:40,1`** trên endpoint tra từ — chặn script quét cả bài đọc.
+
+Ước tính: `gpt-4o-mini`, ~3–4 VNĐ/lượt tra khi KHÔNG trúng đệm.
+
+### Công tắc tắt nhanh
+```bash
+# .env
+VOCAB_LOOKUP_ENABLED=false   # tắt cả popup lẫn trang /tu-vung (trả 404)
+VOCAB_DAILY_LIMIT=60
+VOCAB_MAX_CHARS=300
+VOCAB_AI_MODEL=gpt-4o-mini
+```
+⚠️ Production đã cache config → phải chạy lại `config:cache`.
+
+### Bẫy đã gặp (đừng vá lại từ đầu)
+- **`user-select:none` của trang luyện tập**: `practice/show.blade.php` cố tình cấm bôi chọn để
+  chống sao chép đề. Partial mở lại quyền bôi **chỉ trong `[data-vocab-scope]`**. Chặn Ctrl+C /
+  chuột phải vẫn giữ nguyên → đề vẫn không copy ra ngoài được, chỉ là chọn được để tra nghĩa.
+- **Vị trí popup không được đoán bằng hằng số**: chiều cao thẻ phụ thuộc nội dung AI trả về.
+  Bản đầu đoán 260px → nút "Lưu từ" bị đẩy xuống dưới mép màn hình. Nay đo bằng `ResizeObserver`.
+  Không dùng `$nextTick` vì Alpine **giữ lại** nextTick trong lúc `x-transition` đang chạy.
+- **`$attributes` của `VocabularyItem`**: model vừa `create()` KHÔNG đọc default của DB, nên `box`
+  là null và lịch ôn tính sai. Default phải khai cả ở model.
+- **`usage_date` phải truyền Carbon, không truyền chuỗi `Y-m-d`**: cột có cast `date` nên giá trị
+  lưu xuống là `… 00:00:00`; tìm bằng chuỗi ngày trần thì `firstOrCreate` insert lại và vỡ unique.
+
+### Ôn tập — Leitner 5 hộp (1/3/7/16/35 ngày)
+Chọn Leitner thay vì SM-2: học viên chỉ bấm **Quên / Mơ hồ / Nhớ**, không phải tự chấm 0–5 như
+SM-2 đòi hỏi (thực tế người học chấm không chính xác nên SM-2 cũng không cho lịch tốt hơn).
+"Đã thuộc" = tới hộp 5 **và** còn nhớ đúng thêm 2 lần ở đó.
+Phiên ôn lấy **hộp thấp trước** — bỏ dở giữa chừng thì phần đã ôn vẫn là phần quan trọng nhất.
+
+### Đã kiểm thử thật (không chỉ test giả lập)
+Chạy bằng SQLite cục bộ + `php artisan serve`, bôi chữ thật trên trang luyện tập:
+bôi → nút "Tra từ" → popup → "Lưu từ" → `/tu-vung` → `/tu-vung/on-tap` → bấm "Nhớ" →
+DB đúng (`box 1→2`, `interval 3`, `due +3 ngày`). Giao diện mobile 375px không tràn ngang.
+Máy dev chưa cắm `OPENAI_API_KEY` → `AiService` trả kết quả giả lập, luồng vẫn chạy đủ.
+
+**Test:** `VocabularyLookupTest` — 18 ca.
+
+### Deploy
+**CÓ MIGRATION** (3 bảng: `ai_lookups`, `vocabulary_items`, `vocab_lookup_usages`) **VÀ đổi JS/Blade**:
+```bash
+git reset --hard origin/main
+php artisan migrate --force
+npm run build          # rồi upload public/build (xem §14 + DEPLOY.md)
+php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
+```
+
+### 🔴 Việc còn lại
+- **Chưa chạy migration trên DB nào** — kể cả DB test `ujxmchhx_aptis_test_2026` trong `.env`.
+- Chưa đo với `OPENAI_API_KEY` thật → chưa biết chất lượng nghĩa AI trả về và độ trễ thực tế.
+  Nên tự tra thử ~20 từ trong đề thật trước khi mở cho học viên.
+- Dashboard admin cho tra từ (từ nào tra nhiều nhất, chi phí AI theo tháng) **thuộc gói C**, chưa làm.

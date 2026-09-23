@@ -160,6 +160,35 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     Route::get('/speaking-history', [App\Http\Controllers\HistoryController::class, 'speakingIndex'])->name('speakingHistory.index');
     Route::get('/speaking-history/{attempt}', [App\Http\Controllers\HistoryController::class, 'speakingShow'])->name('speakingHistory.show');
 
+    /*
+    | Tra từ bằng AI + sổ tay từ vựng.
+    |
+    | Toàn bộ nhóm tự tắt khi `aptis.vocab.enabled` = false (kiểm tra trong
+    | constructor của controller).
+    |
+    | CỐ Ý không gắn vào trang thi thử: `/mock-test/*` không nạp partial tra từ,
+    | nên học viên không bôi chọn được trong lúc thi.
+    */
+    Route::post('/tu-vung/tra-cuu', [\App\Http\Controllers\VocabularyController::class, 'lookup'])
+        // Chặn script quét cả bài đọc qua endpoint này. 40/phút vẫn thoải mái
+        // cho người đọc thật (nhanh nhất cũng chỉ vài từ mỗi phút).
+        ->middleware('throttle:40,1')
+        ->name('vocab.lookup');
+    Route::post('/tu-vung/luu', [\App\Http\Controllers\VocabularyController::class, 'store'])->name('vocab.store');
+
+    // Đặt trước route có {item} để "on-tap" / "xuat-file" không bị bắt nhầm
+    // thành ID từ vựng.
+    Route::get('/tu-vung/on-tap', [\App\Http\Controllers\VocabularyController::class, 'review'])->name('vocab.review');
+    Route::get('/tu-vung/xuat-file', [\App\Http\Controllers\VocabularyController::class, 'export'])->name('vocab.export');
+    Route::get('/tu-vung', [\App\Http\Controllers\VocabularyController::class, 'index'])->name('vocab.index');
+
+    Route::patch('/tu-vung/{item}', [\App\Http\Controllers\VocabularyController::class, 'update'])
+        ->whereNumber('item')->name('vocab.update');
+    Route::delete('/tu-vung/{item}', [\App\Http\Controllers\VocabularyController::class, 'destroy'])
+        ->whereNumber('item')->name('vocab.destroy');
+    Route::post('/tu-vung/{item}/ket-qua', [\App\Http\Controllers\VocabularyController::class, 'grade'])
+        ->whereNumber('item')->name('vocab.grade');
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Leaderboard

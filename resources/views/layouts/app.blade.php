@@ -34,6 +34,15 @@
                         <span class="whitespace-nowrap">Hướng dẫn</span>
                     </a>
 
+                    @if(config('aptis.vocab.enabled'))
+                    <a href="{{ route('vocab.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('vocab.*') ? 'text-blue-600' : '' }}">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                        </svg>
+                        <span class="whitespace-nowrap">Từ vựng</span>
+                    </a>
+                    @endif
+
                     {{-- Lớp học online — ẩn khi `aptis.classes_enabled` tắt (tính năng đang hoãn). --}}
                     @if(config('aptis.classes_enabled'))
                     <a href="{{ route('classes.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('classes.*') ? 'text-blue-600' : '' }}">

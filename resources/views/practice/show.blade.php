@@ -55,7 +55,9 @@
         {{-- Practice Step --}}
         <div x-show="step === 'practice'" class="mx-auto">
             <template x-if="currentQuestion">
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                {{-- data-vocab-scope: vùng duy nhất học viên bôi chọn được để tra
+                     từ. Xem partials/vocab-lookup.blade.php. --}}
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden" data-vocab-scope>
                     {{-- Question Header --}}
                     <div class="p-6 border-b border-gray-100 bg-blue-50">
                         <div class="max-w-3xl mx-auto">
@@ -156,8 +158,17 @@
                         <svg class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     </button>
 
-                    {{-- Notes / Translate --}}
-                    <span class="text-sm text-gray-500 hidden sm:inline">Ghi chú / Dịch</span>
+                    {{-- Tra từ / Sổ tay từ vựng --}}
+                    @if(config('aptis.vocab.enabled'))
+                        <a href="{{ route('vocab.index') }}" target="_blank" rel="noopener"
+                           class="p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                           title="Sổ tay từ vựng — bôi đen chữ trong bài để tra nghĩa">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            <span class="text-sm text-gray-500 hidden sm:inline">Sổ tay từ vựng</span>
+                        </a>
+                    @endif
                 </div>
 
                 {{-- Right: Unified Action Button --}}
@@ -172,6 +183,13 @@
         </div>
     </footer>
 </div>
+
+{{-- Popup tra từ. Đặt ngoài thẻ gốc vì nó định vị `fixed` theo cửa sổ. --}}
+@include('partials.vocab-lookup', [
+    'vocabSkill' => $set->quiz->skill,
+    'vocabPart'  => $set->quiz->part,
+    'vocabSetId' => $set->id,
+])
 
 <script>
     function practiceSession(questions, checkUrl) {

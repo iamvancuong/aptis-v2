@@ -1,5 +1,6 @@
 import './bootstrap';
 import './components/sidebar.js';
+import './components/vocab-lookup.js';
 
 // Alpine bundle qua Vite (thay CDN). Nút +/- số lượng, menu mobile, dropdown admin
 // đều dùng Alpine → không còn vỡ khi CDN bị chặn (mạng công ty/trường học).

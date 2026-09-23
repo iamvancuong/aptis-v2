@@ -488,4 +488,137 @@ class AiService
             ]
         ];
     }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     * TRA TỪ (bôi chọn trong bài → nghĩa tiếng Việt theo ngữ cảnh)
+     * ═══════════════════════════════════════════════════════════════════ */
+
+    /**
+     * Tra nghĩa một đoạn text ngắn.
+     *
+     * KHÁC gradeWriting/gradeSpeaking ở hai điểm, đều là cố ý:
+     *  • Chạy đồng bộ trong request, không qua queue — học viên đang chờ popup
+     *    hiện ra, đẩy vào hàng đợi thì trải nghiệm hỏng.
+     *  • Timeout ngắn (15s, không retry). Tra hụt một từ là chuyện nhỏ, bấm
+     *    lại là xong; giữ PHP-FPM worker 90 giây vì một từ mới là chuyện lớn.
+     *
+     * @param  string  $mode  word | phrase
+     * @return array{payload: array, usage: array}
+     *
+     * @throws \Exception khi gọi API hỏng hoặc AI trả JSON sai
+     */
+    public function lookupVocabulary(string $term, ?string $context, string $mode = 'word'): array
+    {
+        $model = (string) config('aptis.vocab.model', 'gpt-4o-mini');
+
+        $systemPrompt = view('prompts.vocab_system', compact('mode'))->render();
+        $userPrompt = view('prompts.vocab_user', compact('term', 'context'))->render();
+
+        if (empty($this->apiKey)) {
+            Log::info('AiService: chưa có OPENAI_API_KEY, trả kết quả tra từ giả lập.');
+
+            return [
+                'payload' => $this->getMockLookup($term, $mode),
+                'usage' => ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0, 'model' => 'mock-mode'],
+            ];
+        }
+
+        $response = Http::withToken($this->apiKey)
+            ->timeout(15)
+            ->post('https://api.openai.com/v1/chat/completions', [
+                'model' => $model,
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userPrompt],
+                ],
+                'response_format' => ['type' => 'json_object'],
+                'temperature' => 0.2,
+                // Đủ cho nghĩa + ví dụ + ghi chú; chặn trường hợp model lan man
+                // và đội chi phí lên nhiều lần cho một lượt tra.
+                'max_tokens' => 400,
+            ]);
+
+        if ($response->failed()) {
+            Log::error('OpenAI lookup lỗi', ['status' => $response->status(), 'body' => $response->body()]);
+            throw new \Exception('Không tra được từ lúc này.');
+        }
+
+        $result = $response->json();
+        $decoded = json_decode($result['choices'][0]['message']['content'] ?? '{}', true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded)) {
+            Log::error('AiService lookup: JSON không hợp lệ', ['term' => $term]);
+            throw new \Exception('Không tra được từ lúc này.');
+        }
+
+        return [
+            'payload' => $this->normalizeLookupPayload($decoded),
+            'usage' => [
+                'input_tokens' => $result['usage']['prompt_tokens'] ?? 0,
+                'output_tokens' => $result['usage']['completion_tokens'] ?? 0,
+                'total_tokens' => $result['usage']['total_tokens'] ?? 0,
+                'model' => $model,
+            ],
+        ];
+    }
+
+    /**
+     * Ép kết quả AI về đúng bộ khoá mà giao diện và bảng `vocabulary_items`
+     * trông đợi. Thiếu khoá thì popup vỡ, thừa khoá thì lưu rác vào DB.
+     */
+    protected function normalizeLookupPayload(array $raw): array
+    {
+        $clean = static function ($value, int $limit) {
+            if ($value === null) {
+                return null;
+            }
+            $value = trim((string) $value);
+
+            return $value === '' ? null : mb_substr($value, 0, $limit);
+        };
+
+        $cefr = $clean($raw['cefr'] ?? null, 5);
+        if ($cefr !== null && ! in_array(mb_strtoupper($cefr), ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], true)) {
+            $cefr = null;
+        }
+
+        return [
+            'meaning' => $clean($raw['meaning'] ?? null, 1000) ?? 'Không tra được từ này.',
+            'part_of_speech' => $clean($raw['part_of_speech'] ?? null, 50),
+            'phonetic' => $clean($raw['phonetic'] ?? null, 100),
+            'example' => $clean($raw['example'] ?? null, 500),
+            'example_vi' => $clean($raw['example_vi'] ?? null, 500),
+            'cefr' => $cefr === null ? null : mb_strtoupper($cefr),
+            'note' => $clean($raw['note'] ?? null, 500),
+        ];
+    }
+
+    /**
+     * Dùng khi máy dev chưa có API key — để dựng được giao diện mà không tốn
+     * tiền và không phải cắm key thật vào máy cá nhân.
+     */
+    protected function getMockLookup(string $term, string $mode): array
+    {
+        if ($mode === 'phrase') {
+            return [
+                'meaning' => '[Bản dịch giả lập] ' . $term,
+                'part_of_speech' => null,
+                'phonetic' => null,
+                'example' => null,
+                'example_vi' => null,
+                'cefr' => null,
+                'note' => 'Chế độ giả lập: chưa cấu hình OPENAI_API_KEY.',
+            ];
+        }
+
+        return [
+            'meaning' => '[Nghĩa giả lập] ' . $term,
+            'part_of_speech' => 'danh từ',
+            'phonetic' => '/mɒk/',
+            'example' => 'This is a mock example sentence.',
+            'example_vi' => 'Đây là câu ví dụ giả lập.',
+            'cefr' => 'B1',
+            'note' => 'Chế độ giả lập: chưa cấu hình OPENAI_API_KEY.',
+        ];
+    }
 }

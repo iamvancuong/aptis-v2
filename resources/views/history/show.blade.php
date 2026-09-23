@@ -24,8 +24,10 @@
     </div>
 
     {{-- Items List --}}
+    {{-- data-vocab-scope: xem lại bài đã làm là lúc học từ hiệu quả nhất
+         (đã biết mình sai ở đâu), nên bật tra từ ở đây. --}}
     @foreach($attempt->attemptAnswers as $answer)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-vocab-scope>
             {{-- Part Header --}}
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                 <h2 class="font-bold text-gray-800 text-lg">{{ $answer->question->title ?? 'Part ' . $answer->question->part }}</h2>
@@ -370,4 +372,6 @@
         </div>
     @endforeach
 </div>
+
+@include('partials.vocab-lookup', ['vocabSkill' => $attempt->skill])
 @endsection
