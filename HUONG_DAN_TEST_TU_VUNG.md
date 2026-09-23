@@ -6,6 +6,14 @@ Nhánh: `feat/vocab-ai-lookup` · Chi tiết kỹ thuật: `TIEN_DO.md` §33
 git checkout feat/vocab-ai-lookup
 ```
 
+> **Trạng thái hiện tại trên máy này (đã chuẩn bị sẵn — Đường B):**
+> `.env` đang trỏ vào `database/local-test.sqlite`, DB đó đã migrate + nạp bài demo xong,
+> assets đã build. Chỉ cần `php artisan serve --host=127.0.0.1` rồi vào
+> http://127.0.0.1:8000/practice/1 (đăng nhập `hocvien@example.test` / `12345678`).
+> Bản `.env` cũ (trỏ MySQL từ xa) nằm ở
+> `%TEMP%\claude\C--Cuong-01-coding-aptis-v2\987cefbb-1be5-4a81-a676-6ac18d547bcc\scratchpad\env.backup-remote-db`.
+> **Nếu trang load chậm, đọc mục "Chạy local mà LAG" ở cuối file.**
+
 Chọn **một** trong hai đường dưới. Đọc phần "Khác nhau chỗ nào" trước khi chọn.
 
 | | Đường A — DB test từ xa | Đường B — SQLite thuần local |
@@ -33,10 +41,10 @@ npm run build
 ```
 
 ```bash
-php artisan serve
+php artisan serve --host=127.0.0.1
 ```
 
-Mở http://localhost:8000 và **đăng nhập bằng tài khoản anh vẫn dùng trên DB test**.
+Mở http://127.0.0.1:8000 và **đăng nhập bằng tài khoản anh vẫn dùng trên DB test**.
 
 > Nếu tài khoản đó là **admin** thì không bị trừ lượt tra — muốn thử phần hạn mức
 > phải đăng nhập bằng tài khoản học viên thường.
@@ -82,10 +90,10 @@ npm run build
 ```
 
 ```bash
-php artisan serve
+php artisan serve --host=127.0.0.1
 ```
 
-Đăng nhập **hocvien@example.test / 12345678** rồi vào http://localhost:8000/practice/1
+Đăng nhập **hocvien@example.test / 12345678** rồi vào http://127.0.0.1:8000/practice/1
 
 > Test xong nhớ **khôi phục lại `.env`** từ bản sao lưu, nếu không lần sau chạy vẫn
 > đang trỏ vào SQLite cục bộ.
@@ -197,6 +205,91 @@ rồi vào `http://<IP-máy-anh>:8000`. **Giữ lâu** vào một chữ để b�
 
 Chỗ này đáng thử kỹ nhất — thao tác bôi chọn trên iOS khó hơn trên máy tính nhiều.
 Nút "Tra từ" phải hiện đúng vị trí và không bị thanh công cụ của iOS che.
+
+---
+
+## Chạy local mà LAG / không vào được
+
+Đo trên chính máy này, có **ba** nguyên nhân độc lập cộng dồn. Không liên quan gì
+tới tính năng tra từ — là môi trường dev.
+
+### 1. `.env` trỏ vào MySQL từ xa (nặng nhất)
+
+```
+DB_HOST=103.221.223.60
+```
+
+Số đo thật:
+
+| | Kết nối lần đầu | Mỗi truy vấn |
+|---|---|---|
+| MySQL từ xa | **4.596 ms** | **242–1.414 ms** |
+| SQLite cục bộ | 6,6 ms | 0,02–0,69 ms |
+
+Trang `/dashboard` chạy **12 truy vấn**. Qua DB từ xa ≈ 4,6s kết nối + 3s truy vấn
+≈ **7,6 giây cho MỘT trang**. Thêm nữa `php artisan serve` trên Windows chỉ xử lý
+**một request tại một thời điểm**, nên CSS/JS/font xếp hàng chờ phía sau → trình
+duyệt đứng im hàng chục giây, đúng cảm giác "không vào được".
+
+→ **Cách sửa: đi Đường B (SQLite cục bộ).** DB từ xa chỉ hợp khi cần đề thật và
+chấp nhận chờ.
+
+### 2. Gõ `localhost` thay vì `127.0.0.1`
+
+Trên Windows, `localhost` phân giải ra `::1` (IPv6) trước. `php artisan serve` chỉ
+nghe IPv4, nên mỗi request phải chờ `::1` thất bại rồi mới lùi về IPv4:
+
+| Địa chỉ | Thời gian **kết nối** |
+|---|---|
+| `http://localhost:8000` | **210 ms** |
+| `http://127.0.0.1:8000` | **2,7 ms** |
+
+Mất thêm 210ms × ~11 request mỗi trang ≈ **+2,3 giây**.
+
+→ **Cách sửa: luôn gõ `http://127.0.0.1:8000`.** Chạy server bằng:
+
+```bash
+php artisan serve --host=127.0.0.1
+```
+
+### 3. PHP chưa bật opcache
+
+Máy này đang **không nạp opcache**, nên mỗi request biên dịch lại ~1.500 file PHP
+của Laravel. Đo bằng CLI (cùng đoạn code Laravel bootstrap + xử lý request):
+
+| | Thời gian |
+|---|---|
+| Không opcache | **373–560 ms** |
+| Có opcache | **51–92 ms** |
+
+File `php_opcache.dll` đã có sẵn trong `C:\php-8.2.14-nts-Win32-vs16-x64\ext\`,
+chỉ là chưa được khai báo. Mở `C:\php-8.2.14-nts-Win32-vs16-x64\php.ini`, thêm
+vào cuối file:
+
+```
+zend_extension=php_opcache.dll
+opcache.enable=1
+opcache.enable_cli=1
+opcache.validate_timestamps=1
+opcache.revalidate_freq=0
+```
+
+`validate_timestamps=1` + `revalidate_freq=0` = sửa file PHP là ăn ngay, không
+phải khởi động lại server. Đây là cấu hình cho máy dev; **production thì ngược lại**
+(`validate_timestamps=0` để nhanh nhất).
+
+⚠️ Sửa `php.ini` là đổi cấu hình **toàn máy**, ảnh hưởng mọi project PHP khác.
+Sao lưu file trước khi sửa.
+
+### Sau khi sửa — số đo thực tế trên máy này
+
+Trang `/practice/1` (11 tài nguyên), SQLite + `127.0.0.1`, **chưa** bật opcache:
+
+```
+HTML: 194 ms · tải xong toàn trang: 451 ms
+```
+
+Từ ~8 giây xuống dưới **nửa giây**. Bật thêm opcache thì còn khoảng một nửa nữa.
 
 ---
 

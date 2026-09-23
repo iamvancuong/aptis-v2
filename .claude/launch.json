@@ -2,10 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "//": "Dat --host=127.0.0.1 va truy cap bang http://127.0.0.1:8010 (KHONG dung localhost). Tren Windows, localhost phan giai ra ::1 truoc; server chi nghe IPv4 nen moi request phai cho ::1 that bai roi moi lui ve IPv4 — ton them ~210ms MOI request.",
       "name": "milaedu-dev",
       "runtimeExecutable": "php",
-      "runtimeArgs": ["artisan", "serve", "--port=8010"],
-      "port": 8010
+      "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8010"],
+      "port": 8010,
+      "url": "http://127.0.0.1:8010"
     }
   ]
 }
