@@ -1401,8 +1401,45 @@ npm run build          # rồi upload public/build (xem §14 + DEPLOY.md)
 php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
 ```
 
+### ✅ Đã đo với OPENAI_API_KEY thật (23/09) — và đã phải vá prompt 2 vòng
+
+Bản prompt đầu **hỏng đúng điểm bán hàng**: `colony` trong đoạn văn về nuôi ong (có cả chữ
+`hives`) vẫn ra **"thuộc địa"**, trong khi câu ví dụ AI tự đặt lại là *"The ant colony…"* —
+nghĩa và ví dụ mâu thuẫn nhau. Tức là nó tra như từ điển, đúng cái mà mình quảng cáo là hơn
+Google Dịch. Nới ngữ cảnh từ một câu lên cả đoạn văn **không** sửa được.
+
+**Vòng 1 — bắt AI chốt nghĩa trước khi dịch.** Thêm khoá `sense_in_context` (định nghĩa tiếng
+Anh 2–6 từ) đứng TRƯỚC `meaning` trong schema, cộng quy tắc "ngữ cảnh thắng từ điển".
+Khoá này chỉ là bậc thang suy luận, `normalizeLookupPayload()` bỏ đi, không lưu vào sổ tay.
+
+**Vòng 2 — vá tác dụng phụ của vòng 1.** AI bắt đầu *dịch định nghĩa* thay vì cho từ tương
+đương: `spring` → "một đoạn kim loại cuộn có thể trở lại hình dạng ban đầu" thay vì **"lò xo"**.
+Vô dụng cho thẻ ôn tập. Phải nói rõ `meaning` là TỪ TƯƠNG ĐƯƠNG (1–4 từ), `sense_in_context`
+chỉ để tự xác định nghĩa chứ đừng dịch nó. Kèm quy tắc tự kiểm câu ví dụ.
+
+Kết quả đo lại trên 8 từ nhiều nghĩa (`fine`, `issue`, `bank` KHÔNG hề có trong prompt):
+**8/8 đúng nghĩa theo ngữ cảnh, ví dụ khớp nghĩa.** `bank` → "bờ sông", `fine` → "tiền phạt",
+`issue` (động từ) → "phát hành, công bố", `spring` → "lò xo".
+
+⚠️ **Bài học**: mỗi lần sửa prompt phải đo lại bằng từ CHƯA có trong prompt. Nhét ví dụ
+`colony` vào prompt rồi lại lấy `colony` ra đo thì chỉ là tự nghiệm thu chính mình.
+
+### ⚠️ Độ trễ: 3,2–4,7 giây mỗi lượt tra (trung bình ~3,9s)
+
+Đo thật, `gpt-4o-mini`, máy ở VN. Đây là **lượt KHÔNG trúng kho đệm**; trúng đệm thì gần như
+tức thì. Giao diện đã có khung xương chờ nên không bị cảm giác treo, nhưng 4 giây vẫn là lâu
+với một popup. Muốn nhanh hơn thì phải bớt trường AI phải sinh (bỏ `example_vi` chẳng hạn)
+hoặc đổi model qua `VOCAB_AI_MODEL` — **chưa làm, chờ quyết định**.
+
 ### 🔴 Việc còn lại
-- **Chưa chạy migration trên DB nào** — kể cả DB test `ujxmchhx_aptis_test_2026` trong `.env`.
-- Chưa đo với `OPENAI_API_KEY` thật → chưa biết chất lượng nghĩa AI trả về và độ trễ thực tế.
-  Nên tự tra thử ~20 từ trong đề thật trước khi mở cho học viên.
+- **Chưa chạy migration trên DB nào** ngoài SQLite cục bộ — kể cả DB test
+  `ujxmchhx_aptis_test_2026` trong `.env`.
+- Chất lượng mới đo trên 8 từ + 1 đoạn văn tự soạn. **Nên tra thử ~20 từ trong đề THẬT** trước
+  khi mở cho học viên.
+- `novel` (tính từ) ra "phương pháp mới" — đúng ngữ cảnh nhưng mượn danh từ trong câu; gọn hơn
+  thì nên là "mới lạ". Lỗi nhỏ, chưa vá.
+- **Kho đệm không tính ngữ cảnh** (khoá = mode + từ đã chuẩn hoá). Từ nhiều nghĩa sẽ dùng lại
+  nghĩa của lần tra ĐẦU TIÊN cho mọi học viên sau đó. Với `bank` gặp ở hai bài khác nhau (bờ
+  sông / ngân hàng) thì bài thứ hai sẽ nhận nghĩa sai. Đổi được bằng cách đưa `question_id` vào
+  khoá đệm, đánh đổi là tỉ lệ trúng đệm giảm → tốn tiền hơn. **Chưa quyết.**
 - Dashboard admin cho tra từ (từ nào tra nhiều nhất, chi phí AI theo tháng) **thuộc gói C**, chưa làm.
