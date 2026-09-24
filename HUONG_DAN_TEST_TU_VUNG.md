@@ -8,8 +8,9 @@ git checkout feat/vocab-ai-lookup
 
 > **Trạng thái hiện tại trên máy này (đã chuẩn bị sẵn — Đường B):**
 > `.env` đang trỏ vào `database/local-test.sqlite`, DB đó đã migrate + nạp bài demo xong,
-> assets đã build. Chỉ cần `php artisan serve --host=127.0.0.1` rồi vào
-> http://127.0.0.1:8000/practice/1 (đăng nhập `hocvien@example.test` / `12345678`).
+> assets đã build, `OPENAI_API_KEY` đã cắm (AI trả nghĩa thật, không còn giả lập).
+> Chỉ cần `php artisan serve --host=127.0.0.1` rồi vào http://127.0.0.1:8000/practice/1.
+> Đăng nhập `hocvien@example.test` / `12345678`, hoặc `admin@example.test` / `12345678` cho `/admin`.
 > Bản `.env` cũ (trỏ MySQL từ xa) nằm ở
 > `%TEMP%\claude\C--Cuong-01-coding-aptis-v2\987cefbb-1be5-4a81-a676-6ac18d547bcc\scratchpad\env.backup-remote-db`.
 > **Nếu trang load chậm, đọc mục "Chạy local mà LAG" ở cuối file.**
@@ -93,7 +94,14 @@ npm run build
 php artisan serve --host=127.0.0.1
 ```
 
-Đăng nhập **hocvien@example.test / 12345678** rồi vào http://127.0.0.1:8000/practice/1
+Hai tài khoản seeder tạo sẵn (đều mật khẩu `12345678`):
+
+| Tài khoản | Vai trò | Dùng để |
+|---|---|---|
+| `hocvien@example.test` | học viên | Test tra từ, sổ tay, ôn tập, **và hạn mức lượt/ngày** |
+| `admin@example.test` | admin | Vào `/admin`. ⚠️ Admin **không bị trừ lượt tra** nên không thử được hạn mức |
+
+Vào http://127.0.0.1:8000/practice/1
 
 > Test xong nhớ **khôi phục lại `.env`** từ bản sao lưu, nếu không lần sau chạy vẫn
 > đang trỏ vào SQLite cục bộ.

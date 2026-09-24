@@ -47,6 +47,23 @@ class VocabDemoSeeder extends Seeder
             ]
         );
 
+        // Tài khoản admin để vào /admin và thử phía quản trị. Admin KHÔNG bị trừ
+        // lượt tra từ (xem User::isAdmin), nên muốn thử phần hết hạn mức thì
+        // phải đăng nhập bằng tài khoản học viên ở trên.
+        User::updateOrCreate(
+            ['email' => 'admin@example.test'],
+            [
+                'name' => 'Admin Demo',
+                'password' => bcrypt('12345678'),
+                'role' => 'admin',
+                'status' => 'active',
+                'max_devices' => 99,
+                'violation_count' => 0,
+                'must_change_password' => false,
+                'devtools_guard_disabled' => true,
+            ]
+        );
+
         $quiz = Quiz::updateOrCreate(
             ['title' => 'Reading Part 4 - Demo tra từ'],
             ['skill' => 'reading', 'part' => 4, 'duration_minutes' => 20, 'is_published' => true]
@@ -86,7 +103,9 @@ class VocabDemoSeeder extends Seeder
 
         $set->questions()->syncWithoutDetaching([$question->id]);
 
-        $this->command->info('Xong. Đăng nhập: hocvien@example.test / 12345678');
-        $this->command->info('Trang luyện tập: /practice/' . $set->id);
+        $this->command->info('Xong.');
+        $this->command->info('  Học viên: hocvien@example.test / 12345678');
+        $this->command->info('  Admin:    admin@example.test / 12345678  →  /admin');
+        $this->command->info('  Trang luyện tập: /practice/' . $set->id);
     }
 }
