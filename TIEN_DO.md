@@ -24,7 +24,7 @@
 > - **M là bản vá lỗi hiển thị đang ảnh hưởng học viên thật** (quay lại câu đã làm → báo sai toàn bộ). Ưu tiên lên sớm; không cần migrate/build.
 > - 🔴 `config/sales.php` đã điền tên thật (M1 = Nguyệt Anh, M2 = Trinh). 4 link gửi sale: `/dk/M1|M2/thang|tuan`; admin copy ở `/admin/revenue`.
 >
-> 🔴 **(T) CHẤM NÓI BẰNG AI — đã code, CHƯA DEPLOY. Đọc §27 trước khi lên.**
+> ✅ **(T) CHẤM NÓI BẰNG AI — ĐÃ DEPLOY VÀ ĐANG CHẠY THẬT** (xác nhận 24/09/2026). Chi tiết §27.
 > - **CÓ MIGRATION** (`speaking_ai_usages`) → bắt buộc `php artisan migrate --force`. Không cần `npm run build`.
 > - ✅ Cổng "host có gọi được `api.openai.com` không" **đã đo 04/08 — qua** (§27).
 >   Vẫn nên **tự nộp thử 1 bài Nói** để xem toàn luồng chạy đúng, và đối chiếu điểm với cô Dung.
@@ -33,6 +33,17 @@
 > ⏸️ **PENDING (chỉ làm khi bạn nhắc):**
 > - **Lớp online — Pha 1 (Google Calendar/Meet API tự sinh phòng)**. ✅ **Pha 0 ĐÃ CODE + đã lên `main`** (§23) — chạy được ngay với **Gmail free**; chỉ nâng Business Plus khi 1 buổi vượt ~100 người.
 > - **Chấm Speaking (giáo viên) đang TẠM TẮT trong quảng cáo** (§19). Khi bật lại: thêm "Speaking" vào copy + làm nhãn Có phí/Miễn phí + vá "Chờ chấm" cho `/admin/speaking-reviews` (hiện mới làm cho Writing — §20/§21).
+
+---
+
+> ⚠️ **24/09/2026 — đính chính tài liệu.** Hai mục dưới đây từng ghi sai trạng thái và đã
+> làm người đọc (kể cả Claude ở phiên sau) kết luận nhầm là khách "trả tiền rồi mà chưa dùng được":
+> - **Chấm Nói bằng AI (§27)**: ĐÃ deploy, đang chạy thật — không phải "chờ deploy".
+> - **Chấm Speaking của giáo viên (§19/§20)**: code vẫn chạy được, **khách CHỦ ĐỘNG ẩn**
+>   vì không muốn ngồi chấm tay. Đây là quyết định vận hành, không phải việc tồn kỹ thuật.
+>
+> Bài học: mục nào đổi trạng thái sau khi deploy thì phải sửa ngay ở đây, nếu không lần sau
+> lại có người lấy tài liệu cũ đi báo cáo với khách.
 
 ---
 
@@ -726,7 +737,7 @@ find /home/ujxmchhx -maxdepth 3 -name "robots.txt" -not -path "*/vendor/*" 2>/de
 
 ---
 
-## 27. 🎤 PHIÊN 02/08/2026 (T) — CHẤM NÓI BẰNG AI (đã code, chờ deploy)
+## 27. 🎤 PHIÊN 02/08/2026 (T) — CHẤM NÓI BẰNG AI (✅ ĐÃ DEPLOY, đang chạy thật)
 
 Bối cảnh, số liệu và rủi ro: **`PLAN_CHAM_SPEAKING_AI.md`**. Mục này chỉ ghi phần đã cài đặt.
 
