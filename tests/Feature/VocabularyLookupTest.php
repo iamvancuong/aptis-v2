@@ -397,7 +397,15 @@ class VocabularyLookupTest extends TestCase
 
         $this->assertStringContainsString('Tôi đạp xe đi làm', $html);
         $this->assertStringContainsString('/ˈkɒləni/', $html);
-        $this->assertSame(6, substr_count($html, 'class="line"'), '3 dòng trống × 2 từ.');
+        $this->assertSame(6, substr_count($html, 'class="rule blank"'), '3 dòng trống × 2 từ.');
+
+        // Font Be Vietnam Pro phải trỏ tới tệp TTF có thật — sai đường dẫn thì
+        // dompdf không báo lỗi mà lặng lẽ lùi về font mặc định.
+        preg_match_all("/url\('file:\/\/([^']+)'\)/", $html, $fonts);
+        $this->assertCount(6, $fonts[1]);
+        foreach ($fonts[1] as $font) {
+            $this->assertFileExists($font);
+        }
         $this->assertStringContainsString('Tự kiểm tra', $html);
         $this->assertStringContainsString('Đáp án', $html);
     }
