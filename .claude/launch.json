@@ -8,6 +8,14 @@
       "runtimeArgs": ["artisan", "serve", "--host=127.0.0.1", "--port=8010"],
       "port": 8010,
       "url": "http://127.0.0.1:8010"
+    },
+    {
+      "//": "Nhu tren nhung ep DB ve SQLite local (database/local-test.sqlite) bang bien moi truong, khong sua .env.",
+      "name": "milaedu-sqlite",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-Command", "$env:DB_CONNECTION='sqlite'; $env:DB_DATABASE='C:/Cuong/01_coding/aptis-v2/database/local-test.sqlite'; php artisan serve --host=127.0.0.1 --port=8011"],
+      "port": 8011,
+      "url": "http://127.0.0.1:8011"
     }
   ]
 }

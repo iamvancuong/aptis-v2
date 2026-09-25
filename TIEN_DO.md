@@ -1454,3 +1454,44 @@ hoặc đổi model qua `VOCAB_AI_MODEL` — **chưa làm, chờ quyết định
   sông / ngân hàng) thì bài thứ hai sẽ nhận nghĩa sai. Đổi được bằng cách đưa `question_id` vào
   khoá đệm, đánh đổi là tỉ lệ trúng đệm giảm → tốn tiền hơn. **Chưa quyết.**
 - Dashboard admin cho tra từ (từ nào tra nhiều nhất, chi phí AI theo tháng) **thuộc gói C**, chưa làm.
+
+## 34. 🔁 PHIÊN 25/09/2026 (AB) — DỊCH NGUYÊN CỤM + ÔN KIỂU ANKI + THƯ MỤC TỪ VỰNG
+
+Nhánh `feat/vocab-ai-lookup`, tiếp §33.
+
+### Dịch cụm từ
+- **Lỗi**: bôi `I cycle to work` ra "đạp xe". Nguyên nhân: ngưỡng `phrase_word_threshold = 5`
+  → cụm 4 từ bị tra như từ đơn, prompt bảo AI "chọn nghĩa của từ" nên nó bắt mỗi `cycle`.
+- **Sửa**: 1 từ = tra từ điển; **từ 2 từ trở lên = dịch nguyên cụm**. Prompt phrase mode tự phân
+  loại: cụm cố định (`give up`, `in order to`) → có phiên âm/ví dụ; câu tự do → bản dịch cả câu
+  + ghi chú ngữ pháp. Bỏ hẳn config `phrase_word_threshold`.
+- Khoá kho đệm thêm `AiLookup::PROMPT_VERSION` (`v2|mode|term`) → mọi kết quả đệm của prompt cũ
+  tự bị bỏ qua. **Đổi prompt theo cách làm kết quả cũ sai thì tăng số này.**
+- AI trả thêm `word_type` (noun/verb/adjective/adverb/phrase/sentence/other) để chia thư mục; quên
+  khoá thì `VocabularyItem::guessWordType()` đoán từ nhãn tiếng Việt.
+
+### Ôn tập kiểu Anki (thay Leitner 5 hộp)
+- Cột mới: `srs_state` (new/learning/review/relearning), `step`, `ease` (×1000), `lapses`; bỏ `box`, `streak`.
+- Bước học (phút) `[1, 5, 10, 60]` trong `config/aptis.php → vocab.srs`. Nhớ → bước kế; Mơ hồ →
+  lặp bước; Quên → bước đầu. Qua bước cuối → ôn theo ngày từ 1 ngày, Nhớ × ease (2.5), Mơ hồ × 1.2
+  (ease −0.15), **Quên → reset về 1 phút** (ease −0.2, lapses +1). ≥ 21 ngày = "Đã thuộc".
+- Logic nằm trọn trong `VocabularyItem::schedule()` (thuần, không lưu) → `previewIntervals()` dùng
+  nó để hiện "1 phút / 5 phút / 10 phút" dưới từng nút.
+- Trang ôn: thẻ hẹn ≤ 20 phút (`learn_ahead`) quay lại ngay trong phiên; hết thẻ thì màn chờ đếm
+  ngược + nút "Ôn luôn không chờ". Phím cách lật thẻ, 1/2/3 chấm.
+
+### Thư mục
+- Bảng `vocab_folders` (tạo trong CÙNG migration `2026_09_23_000002`), `vocabulary_items.folder_id`
+  nullOnDelete — xoá thư mục không xoá từ. **Một từ một thư mục** (như deck Anki).
+- Thư mục theo loại từ là bộ lọc tự động theo `word_type`, không phải bản ghi.
+- Popup tra từ có ô "Lưu vào" + tạo thư mục ngay tại chỗ; sổ tay có cột thư mục, đổi tên/xoá,
+  chuyển thư mục từng từ, nút "Ôn thư mục này" (`/tu-vung/on-tap?folder=ID` hoặc `?type=noun`).
+
+### Lưu ý
+- Migration `2026_09_23_000002` **bị sửa tại chỗ** vì chưa chạy trên DB dùng chung nào. SQLite local
+  đã `migrate:refresh --path=` lại riêng file đó. Nếu ai đã migrate bản cũ thì phải refresh file này.
+- `npm run build` từng hỏng vì `HUONG_DAN_TEST_TU_VUNG.md` chứa đường dẫn Windows `\987c…` —
+  Tailwind v4 quét cả `.md` ở thư mục gốc. Đừng ghi `\` + chữ số hex vào file text trong repo.
+- `.claude/launch.json` thêm cấu hình `milaedu-sqlite` (cổng 8011) ép DB về SQLite bằng biến môi
+  trường, `.env` giữ nguyên trỏ DB test từ xa.
+- 27 test `VocabularyLookupTest` xanh. 4 test `GradingPaymentTest` đỏ **từ trước** (không liên quan).

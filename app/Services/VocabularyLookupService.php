@@ -21,14 +21,17 @@ class VocabularyLookupService
     public function __construct(protected AiService $ai) {}
 
     /**
-     * Cụm bao nhiêu từ thì coi là câu (dịch cả câu) thay vì tra từ điển.
+     * Một từ → tra từ điển. Từ hai từ trở lên → dịch NGUYÊN cụm; AI tự phân
+     * biệt cụm cố định ("give up") với câu tự do ("I cycle to work").
+     *
+     * Không dùng ngưỡng số từ: cụm 2–4 từ mà tra như từ đơn thì AI chỉ bắt một
+     * từ trong đó để giải nghĩa.
      */
     public function modeFor(string $term): string
     {
         $words = preg_split('/\s+/u', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        $threshold = (int) config('aptis.vocab.phrase_word_threshold', 5);
 
-        return count($words) >= $threshold ? 'phrase' : 'word';
+        return count($words) >= 2 ? 'phrase' : 'word';
     }
 
     /**

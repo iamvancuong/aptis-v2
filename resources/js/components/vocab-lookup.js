@@ -63,7 +63,7 @@ function extractContext(range, term) {
 
 function vocabLookup(config) {
     return {
-        // config: { lookupUrl, saveUrl, notebookUrl, csrf, source: {skill, part, setId} }
+        // config: { lookupUrl, saveUrl, folderUrl, notebookUrl, csrf, folders, source: {skill, part, setId} }
         cfg: config,
 
         trigger: { show: false, x: 0, y: 0 },
@@ -86,6 +86,14 @@ function vocabLookup(config) {
         saved: false,
         saving: false,
         remaining: null,
+
+        /* Thư mục lưu từ. '' = chỉ xếp tự động theo loại từ. */
+        folders: config.folders || [],
+        folderId: '',
+        /** Nhớ thư mục vừa chọn trong trang: lưu liền 10 từ vào cùng một thư
+         *  mục thì không phải chọn lại 10 lần. */
+        lastFolderId: '',
+        newFolder: { open: false, name: '', busy: false },
 
         init() {
             // Chuột: chỉ cần mouseup là biết người dùng đã bôi xong.
@@ -267,6 +275,12 @@ function vocabLookup(config) {
                 this.mode = body.mode;
                 this.saved = body.saved;
                 this.remaining = body.remaining;
+                // Từ đã lưu thì hiện đúng thư mục đang chứa nó — lưu lại mà lấy
+                // thư mục mặc định sẽ lặng lẽ kéo từ ra khỏi thư mục cũ.
+                this.folderId = body.saved
+                    ? String(body.saved_folder_id ?? '')
+                    : this.lastFolderId;
+                this.newFolder.open = false;
             } catch (e) {
                 this.error = 'Mất kết nối. Kiểm tra mạng rồi thử lại nhé.';
             } finally {
@@ -293,6 +307,7 @@ function vocabLookup(config) {
                     body: JSON.stringify({
                         term: this.term,
                         meaning: this.result.meaning,
+                        word_type: this.result.word_type,
                         part_of_speech: this.result.part_of_speech,
                         phonetic: this.result.phonetic,
                         example: this.result.example,
@@ -301,6 +316,7 @@ function vocabLookup(config) {
                         source_skill: this.cfg.source.skill,
                         source_part: this.cfg.source.part,
                         source_set_id: this.cfg.source.setId,
+                        folder_id: this.folderId === '' ? null : Number(this.folderId),
                     }),
                 });
 
@@ -311,10 +327,64 @@ function vocabLookup(config) {
                 }
 
                 this.saved = true;
+                this.lastFolderId = this.folderId;
             } catch (e) {
                 this.error = 'Mất kết nối, chưa lưu được từ này.';
             } finally {
                 this.saving = false;
+            }
+        },
+
+        /* ───────────────────────── Thư mục ───────────────────────── */
+
+        onFolderChange() {
+            if (this.folderId === '__new') {
+                this.newFolder = { open: true, name: '', busy: false };
+                this.$nextTick(() => this.$refs.newFolderInput && this.$refs.newFolderInput.focus());
+                return;
+            }
+            // Đổi thư mục của từ đã lưu → bật lại nút để lưu thay đổi.
+            this.saved = false;
+        },
+
+        cancelNewFolder() {
+            this.newFolder.open = false;
+            this.folderId = this.lastFolderId;
+        },
+
+        async createFolder() {
+            const name = this.newFolder.name.trim();
+            if (!name || this.newFolder.busy) return;
+
+            this.newFolder.busy = true;
+            this.error = null;
+            try {
+                const response = await fetch(this.cfg.folderUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.cfg.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ name }),
+                });
+                const body = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    this.error = (body.errors && body.errors.name && body.errors.name[0])
+                        || body.message || 'Chưa tạo được thư mục.';
+                    return;
+                }
+
+                this.folders.push({ id: body.id, name: body.name });
+                this.folderId = String(body.id);
+                this.newFolder.open = false;
+                this.saved = false;
+            } catch (e) {
+                this.error = 'Mất kết nối, chưa tạo được thư mục.';
+            } finally {
+                this.newFolder.busy = false;
             }
         },
 

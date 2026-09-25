@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\AiGradingException;
+use App\Models\VocabularyItem;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -582,9 +583,18 @@ class AiService
             $cefr = null;
         }
 
+        $partOfSpeech = $clean($raw['part_of_speech'] ?? null, 50);
+        $wordType = mb_strtolower((string) ($raw['word_type'] ?? ''));
+        if (! array_key_exists($wordType, VocabularyItem::WORD_TYPES)) {
+            // Model quên khoá hoặc trả mã lạ: đoán từ loại từ tiếng Việt, để từ
+            // vẫn vào đúng thư mục thay vì rơi hết vào "Khác".
+            $wordType = VocabularyItem::guessWordType($partOfSpeech);
+        }
+
         return [
             'meaning' => $clean($raw['meaning'] ?? null, 1000) ?? 'Không tra được từ này.',
-            'part_of_speech' => $clean($raw['part_of_speech'] ?? null, 50),
+            'word_type' => $wordType,
+            'part_of_speech' => $partOfSpeech,
             'phonetic' => $clean($raw['phonetic'] ?? null, 100),
             'example' => $clean($raw['example'] ?? null, 500),
             'example_vi' => $clean($raw['example_vi'] ?? null, 500),
@@ -602,7 +612,8 @@ class AiService
         if ($mode === 'phrase') {
             return [
                 'meaning' => '[Bản dịch giả lập] ' . $term,
-                'part_of_speech' => null,
+                'word_type' => 'sentence',
+                'part_of_speech' => 'câu',
                 'phonetic' => null,
                 'example' => null,
                 'example_vi' => null,
@@ -613,6 +624,7 @@ class AiService
 
         return [
             'meaning' => '[Nghĩa giả lập] ' . $term,
+            'word_type' => 'noun',
             'part_of_speech' => 'danh từ',
             'phonetic' => '/mɒk/',
             'example' => 'This is a mock example sentence.',

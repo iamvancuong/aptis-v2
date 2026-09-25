@@ -43,14 +43,38 @@ return [
         // gọi API. 300 ký tự đủ cho câu dài nhất trong đề APTIS.
         'max_chars' => (int) env('VOCAB_MAX_CHARS', 300),
 
-        // Từ 5 từ trở lên xử lý như câu (dịch + ghi chú ngữ pháp) thay vì tra
-        // kiểu từ điển.
-        'phrase_word_threshold' => 5,
+        // KHÔNG còn ngưỡng số từ: bôi 1 từ là tra từ điển, bôi từ 2 từ trở lên
+        // là dịch nguyên cụm. Ngưỡng 5 từ cũ khiến "I cycle to work" (4 từ) bị
+        // tra như một từ đơn và AI chỉ dịch "cycle" → "đạp xe".
 
         'model' => env('VOCAB_AI_MODEL', 'gpt-4o-mini'),
 
         // Số thẻ tối đa mỗi phiên ôn tập.
         'review_batch' => (int) env('VOCAB_REVIEW_BATCH', 20),
+
+        // Số thư mục tự tạo tối đa mỗi học viên — chặn spam, không phải giới
+        // hạn nghiệp vụ.
+        'max_folders' => 50,
+
+        /*
+         | Lịch ôn kiểu Anki.
+         |
+         | learning_steps: các bước (phút) của thẻ mới hoặc thẻ vừa quên. Nhớ →
+         | sang bước kế, Mơ hồ → lặp lại bước hiện tại, Quên → về bước đầu.
+         | Qua hết các bước thì "tốt nghiệp" sang ôn theo ngày.
+         */
+        'srs' => [
+            'learning_steps' => [1, 5, 10, 60],
+            'graduating_interval' => 1,   // ngày, sau khi qua bước cuối
+            'starting_ease' => 2500,      // hệ số giãn ×1000 (2.5)
+            'min_ease' => 1300,
+            'hard_multiplier' => 1.2,
+            'max_interval' => 365,        // ngày
+            'mastered_interval' => 21,    // ngày — Anki gọi là thẻ "mature"
+            // Thẻ đang học sẽ quay lại trong chính phiên ôn nếu tới hạn trong
+            // khoảng này (phút).
+            'learn_ahead' => 20,
+        ],
     ],
 
     /*

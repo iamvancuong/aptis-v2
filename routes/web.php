@@ -188,6 +188,14 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
         ->whereNumber('item')->name('vocab.destroy');
     Route::post('/tu-vung/{item}/ket-qua', [\App\Http\Controllers\VocabularyController::class, 'grade'])
         ->whereNumber('item')->name('vocab.grade');
+    Route::patch('/tu-vung/{item}/thu-muc', [\App\Http\Controllers\VocabularyController::class, 'move'])
+        ->whereNumber('item')->name('vocab.move');
+
+    Route::post('/tu-vung/thu-muc', [\App\Http\Controllers\VocabularyController::class, 'storeFolder'])->name('vocab.folders.store');
+    Route::patch('/tu-vung/thu-muc/{folder}', [\App\Http\Controllers\VocabularyController::class, 'updateFolder'])
+        ->whereNumber('folder')->name('vocab.folders.update');
+    Route::delete('/tu-vung/thu-muc/{folder}', [\App\Http\Controllers\VocabularyController::class, 'destroyFolder'])
+        ->whereNumber('folder')->name('vocab.folders.destroy');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 

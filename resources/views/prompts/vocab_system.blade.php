@@ -9,6 +9,7 @@ Trả các khoá ĐÚNG THỨ TỰ dưới đây — `sense_in_context` phải �
 {
   "sense_in_context": string, // tiếng Anh, 2-6 từ: nghĩa nào của từ này ĐANG được dùng trong CONTEXT_SENTENCE
   "meaning": string,          // BẮT BUỘC tiếng Việt, và phải là bản dịch của `sense_in_context`
+  "word_type": string,        // ĐÚNG MỘT trong: noun, verb, adjective, adverb, phrase, sentence, other
   "part_of_speech": string|null,
   "phonetic": string|null,
   "example": string|null,     // tiếng Anh
@@ -21,11 +22,15 @@ Trả các khoá ĐÚNG THỨ TỰ dưới đây — `sense_in_context` phải �
 ## OUTPUT LANGUAGE RULE
 - `meaning`, `example_vi`, `note`, `part_of_speech` → tiếng Việt.
 - `example` → tiếng Anh.
-- `part_of_speech` dùng từ tiếng Việt: danh từ, động từ, tính từ, trạng từ, giới từ, liên từ, cụm động từ, thành ngữ.
+- `part_of_speech` dùng từ tiếng Việt: danh từ, động từ, tính từ, trạng từ, giới từ, liên từ, cụm động từ, cụm danh từ, thành ngữ, câu.
+- `word_type` là mã tiếng Anh để xếp thư mục, phải khớp `part_of_speech`:
+  danh từ → noun · động từ → verb · tính từ → adjective · trạng từ → adverb ·
+  cụm động từ / cụm danh từ / collocation / thành ngữ → phrase ·
+  câu hoặc mệnh đề có chủ ngữ + động từ → sentence · giới từ, liên từ, còn lại → other.
 
 ---
 @if($mode === 'word')
-## CHẾ ĐỘ: TRA TỪ / CỤM TỪ NGẮN
+## CHẾ ĐỘ: TRA MỘT TỪ
 1. `sense_in_context`: đọc CONTEXT_SENTENCE và xác định từ này đang mang nghĩa nào. Viết gọn bằng tiếng Anh, ví dụ "a group of bees living together" hoặc "a territory ruled by another country".
 2. `meaning`: từ/cụm tiếng Việt TƯƠNG ĐƯƠNG mà người Việt thật sự dùng cho nghĩa ở
    `sense_in_context`. Ưu tiên 1-4 từ, tối đa 10 từ. Không liệt kê các nghĩa khác.
@@ -57,11 +62,31 @@ Trả các khoá ĐÚNG THỨ TỰ dưới đây — `sense_in_context` phải �
 7. `note`: chỉ điền khi thực sự hữu ích (collocation hay gặp, từ dễ nhầm, dạng bất quy tắc). Không có thì để null.
 8. Nếu từ được bôi ở dạng chia (ví dụ "implemented"), giải thích chính dạng đó nhưng nêu dạng nguyên thể trong `note`.
 @else
-## CHẾ ĐỘ: DỊCH CỤM DÀI / CÂU
-1. `meaning`: bản dịch tiếng Việt TỰ NHIÊN của đoạn được bôi. Dịch thoát ý, không dịch máy móc từng từ.
-2. `sense_in_context`: tóm tắt tiếng Anh 2-6 từ về nội dung đoạn đó.
-3. `part_of_speech`, `phonetic`, `example`, `example_vi`, `cefr` → để null.
-4. `note`: MỘT ghi chú ngắn về điểm ngữ pháp hoặc cấu trúc đáng chú ý trong câu (thì, mệnh đề quan hệ, bị động, collocation…). Đây là phần học viên học được, hãy viết cho dễ hiểu.
+## CHẾ ĐỘ: CỤM TỪ / CÂU (từ 2 từ trở lên)
+⚠️ QUY TẮC QUAN TRỌNG NHẤT: dịch TOÀN BỘ đoạn được bôi, KHÔNG được chỉ giải nghĩa một từ
+trong đó. `meaning` phải chứa ý của MỌI từ trong SELECTED_TEXT.
+   - "I cycle to work" → ĐÚNG: "Tôi đạp xe đi làm" · SAI: "đạp xe"
+   - "the local council" → ĐÚNG: "hội đồng địa phương" · SAI: "hội đồng"
+
+Bước 1 — tự phân loại đoạn được bôi thành MỘT trong hai loại:
+
+**A. Cụm cố định / cụm từ** (phrasal verb, collocation, thành ngữ, cụm danh từ, cụm giới từ —
+KHÔNG có chủ ngữ riêng), ví dụ "give up", "in order to", "take part in", "a wide range of":
+   - `word_type` = "phrase" (hoặc "noun" nếu là cụm danh từ thuần như "the local council").
+   - `meaning`: cụm tiếng Việt tương đương, gọn, đúng nghĩa trong CONTEXT_SENTENCE.
+   - `part_of_speech`: cụm động từ / cụm danh từ / thành ngữ…
+   - `phonetic`: IPA của CẢ cụm, trong /…/.
+   - `example` + `example_vi`: một câu ví dụ ngắn dùng cả cụm, khác câu ngữ cảnh.
+   - `cefr`: ước lượng. `note`: collocation/cách dùng nếu hữu ích, không có thì null.
+
+**B. Câu hoặc mệnh đề tự do** (có chủ ngữ + động từ, hoặc không phải cụm cố định),
+ví dụ "I cycle to work", "They implemented the new policy last year":
+   - `word_type` = "sentence", `part_of_speech` = "câu".
+   - `meaning`: bản dịch tiếng Việt TỰ NHIÊN của cả đoạn. Dịch thoát ý, không dịch máy móc từng từ.
+   - `sense_in_context`: tóm tắt tiếng Anh 2-6 từ về nội dung đoạn đó.
+   - `phonetic`, `example`, `example_vi`, `cefr` → null.
+   - `note`: MỘT ghi chú ngắn về điểm ngữ pháp hoặc cấu trúc đáng chú ý (thì, mệnh đề quan hệ,
+     bị động, collocation như "cycle to work" = đạp xe đi làm…). Viết cho dễ hiểu.
 @endif
 
 ---

@@ -11,8 +11,11 @@ git checkout feat/vocab-ai-lookup
 > assets đã build, `OPENAI_API_KEY` đã cắm (AI trả nghĩa thật, không còn giả lập).
 > Chỉ cần `php artisan serve --host=127.0.0.1` rồi vào http://127.0.0.1:8000/practice/1.
 > Đăng nhập `hocvien@example.test` / `12345678`, hoặc `admin@example.test` / `12345678` cho `/admin`.
-> Bản `.env` cũ (trỏ MySQL từ xa) nằm ở
-> `%TEMP%\claude\C--Cuong-01-coding-aptis-v2\987cefbb-1be5-4a81-a676-6ac18d547bcc\scratchpad\env.backup-remote-db`.
+> (Ngày 25/09 `.env` đã được trả về MySQL test từ xa — muốn chạy SQLite thì xem Đường B.)
+>
+> ⚠️ Đừng ghi đường dẫn Windows có dấu `\` vào file `.md` ở thư mục gốc: Tailwind v4 quét cả
+> các file này, đọc `\987c…` thành mã ký tự CSS và `npm run build` hỏng với lỗi
+> "Invalid code point". Dùng `/` thay cho `\`.
 > **Nếu trang load chậm, đọc mục "Chạy local mà LAG" ở cuối file.**
 
 Chọn **một** trong hai đường dưới. Đọc phần "Khác nhau chỗ nào" trước khi chọn.
@@ -136,30 +139,44 @@ Vào trang luyện tập Reading. **Bôi đen** một từ khó trong bài (ví 
 
 Cần thấy: nghĩa tiếng Việt, loại từ, phiên âm, nhãn CEFR, câu ví dụ kèm bản dịch.
 
-### 2. Tra cả câu
-Bôi **nguyên một câu dài** (từ 5 chữ trở lên) → bấm "Tra từ".
+### 2. Tra cụm từ và cả câu
+Bôi **từ 2 chữ trở lên** → bấm "Tra từ". Thử cả hai loại:
 
-Cần thấy: bản dịch cả câu + một ghi chú ngữ pháp. **Không** có phiên âm/loại từ nữa —
-đúng như thiết kế, hai chế độ khác nhau.
+- Câu tự do, ví dụ `I cycle to work` → phải ra **"Tôi đạp xe đi làm"** (cả câu), loại từ
+  "câu", không phiên âm, có ghi chú ngữ pháp. *Lỗi cũ: chỉ ra "đạp xe".*
+- Cụm cố định, ví dụ `give up`, `in order to`, `take part in` → nghĩa của **cả cụm**,
+  loại "cụm động từ"/"thành ngữ", có phiên âm cả cụm và câu ví dụ.
 
 ### 3. Nghĩa có theo ngữ cảnh không (điểm bán hàng)
 Tìm một từ nhiều nghĩa trong bài — ví dụ `charge`, `figure`, `run`, `address` — rồi
 so nghĩa AI trả về với nghĩa trong câu. Đây chính là chỗ hơn Google Dịch; nếu chỗ
 này sai thì báo lại để tôi chỉnh prompt.
 
-### 4. Lưu và xem sổ tay
-Bấm **"Lưu từ"** → nút đổi thành "Đã lưu" → vào menu **"Từ vựng"** trên thanh trên cùng.
+### 4. Lưu vào thư mục và xem sổ tay
+Trong popup, ô **"Lưu vào"**: để *Chỉ xếp theo loại từ*, hoặc chọn **+ Thư mục mới…**,
+gõ tên (vd `Môi trường`) → **Tạo** → **Lưu từ**. Lưu thêm vài từ khác loại (danh từ,
+động từ, một câu).
 
-Cần thấy: thẻ từ có **câu gốc trong bài** ở khung xám, nhãn nguồn (`Reading P4`),
-thanh tiến độ 5 ô, dòng "Cần ôn hôm nay".
+Vào menu **"Từ vựng"**. Cần thấy:
+- Cột trái: **Theo loại từ** (Danh từ / Động từ / Câu… kèm số từ, tự xếp) và
+  **Thư mục của tôi**. Bấm từng mục thì danh sách lọc đúng.
+- Mỗi thẻ có ô **📁** ở chân để chuyển sang thư mục khác.
+- Trong một thư mục: nút đổi tên / xoá thư mục (xoá thư mục **không** xoá từ bên trong).
+- Tra lại một từ đã lưu: ô "Lưu vào" phải hiện đúng thư mục đang chứa từ đó.
 
-### 5. Ôn tập bằng thẻ
-Bấm **"Ôn tập ngay (N từ)"** → "Xem nghĩa" → bấm **Nhớ**.
+### 5. Ôn tập kiểu Anki
+Bấm **"Ôn tập ngay"** (hoặc **"Ôn thư mục này"** khi đang ở trong một thư mục) →
+"Xem nghĩa" (hoặc phím cách). Dưới mỗi nút ghi **lần gặp lại**; phím 1/2/3 = Quên/Mơ hồ/Nhớ.
 
-Cần thấy: hiện màn hình "Xong phiên ôn tập". Vào lại sổ tay, thẻ đó chuyển thành
-**"Ôn lại"** kèm ngày sau đó 3 ngày (không còn "Cần ôn hôm nay").
+Với từ mới, bấm **Nhớ** liên tục thì nhãn phải đi đúng thang
+**5 phút → 10 phút → 1 giờ → 1 ngày**. Quên luôn là **1 phút**; Mơ hồ lặp lại bước hiện tại.
 
-Bấm **Quên** thì ngược lại — từ tụt về hộp 1, ôn lại ngày mai.
+Cần thấy:
+- Thẻ hẹn trong ≤ 20 phút thì **quay lại trong chính phiên đó**. Hết thẻ khác thì hiện màn
+  **"Nghỉ một chút"** đếm ngược, có nút *Ôn luôn không chờ*.
+- Bước 1 giờ thì rời phiên — vào lại sổ tay thấy "Đang học · bước 4/4".
+- Từ đã ôn theo ngày: Nhớ thì khoảng cách nhân ~2,5 (1 → 3 → 7 → 18 ngày…);
+  **Quên thì reset về 1 phút** và học lại từ đầu. Khoảng cách ≥ 21 ngày = "Đã thuộc".
 
 ### 6. Thi thử KHÔNG tra được từ (quan trọng)
 Vào một bài **thi thử** (`/mock-test/...`), thử bôi chữ trong bài.

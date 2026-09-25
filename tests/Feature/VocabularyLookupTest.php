@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AiLookup;
 use App\Models\User;
+use App\Models\VocabFolder;
 use App\Models\VocabularyItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -27,7 +28,9 @@ class VocabularyLookupTest extends TestCase
             'password' => bcrypt('password'),
             'role' => $role,
             'status' => 'active',
-            'max_devices' => 2,
+            // Mỗi request trong test là một "thiết bị" mới với SessionLimit; để 2
+            // thì test gửi quá 3 request sẽ bị khoá tài khoản giữa chừng.
+            'max_devices' => 99,
             'violation_count' => 0,
         ]);
     }
@@ -110,6 +113,70 @@ class VocabularyLookupTest extends TestCase
             ->postJson(route('vocab.lookup'), ['term' => 'They implemented the new policy last year'])
             ->assertOk()
             ->assertJsonPath('mode', 'phrase');
+    }
+
+    public function test_cum_ngan_tu_hai_tu_tro_len_cung_dich_nguyen_cum(): void
+    {
+        // Lỗi thật: "I cycle to work" (4 từ) từng bị tra như từ đơn và AI chỉ
+        // dịch "cycle" → "đạp xe".
+        $this->fakeOpenAi([
+            'meaning' => 'Tôi đạp xe đi làm',
+            'word_type' => 'sentence',
+            'part_of_speech' => 'câu',
+        ]);
+
+        $this->actingAs($this->user())
+            ->postJson(route('vocab.lookup'), ['term' => 'I cycle to work'])
+            ->assertOk()
+            ->assertJsonPath('mode', 'phrase')
+            ->assertJsonPath('data.word_type', 'sentence');
+
+        Http::assertSent(function ($request) {
+            $system = $request['messages'][0]['content'];
+
+            return str_contains($system, 'dịch TOÀN BỘ đoạn được bôi')
+                && ! str_contains($system, 'CHẾ ĐỘ: TRA MỘT TỪ');
+        });
+
+        foreach (['give up', 'in order to'] as $phrase) {
+            $this->assertSame('phrase', app(\App\Services\VocabularyLookupService::class)->modeFor($phrase));
+        }
+        $this->assertSame('word', app(\App\Services\VocabularyLookupService::class)->modeFor('  cycle '));
+    }
+
+    public function test_ket_qua_dem_cua_prompt_cu_bi_bo_qua(): void
+    {
+        // Dòng đệm được ghi theo khoá kiểu cũ (không có phiên bản prompt) phải
+        // bị bỏ qua, nếu không "đạp xe" cho cả câu sẽ sống mãi trong kho đệm.
+        AiLookup::create([
+            'hash' => hash('sha256', 'word|i cycle to work'),
+            'term' => 'I cycle to work',
+            'mode' => 'word',
+            'payload' => ['meaning' => 'đạp xe'],
+            'hit_count' => 1,
+        ]);
+        $this->fakeOpenAi(['meaning' => 'Tôi đạp xe đi làm', 'word_type' => 'sentence']);
+
+        $this->actingAs($this->user())
+            ->postJson(route('vocab.lookup'), ['term' => 'I cycle to work'])
+            ->assertOk()
+            ->assertJsonPath('data.meaning', 'Tôi đạp xe đi làm');
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_ai_quen_word_type_thi_doan_tu_loai_tu_tieng_viet(): void
+    {
+        $this->fakeOpenAi(['meaning' => 'từ bỏ', 'part_of_speech' => 'cụm động từ']);
+
+        $this->actingAs($this->user())
+            ->postJson(route('vocab.lookup'), ['term' => 'give up'])
+            ->assertOk()
+            ->assertJsonPath('data.word_type', 'phrase');
+
+        $this->assertSame('verb', VocabularyItem::guessWordType('động từ'));
+        $this->assertSame('noun', VocabularyItem::guessWordType('Danh từ'));
+        $this->assertSame('other', VocabularyItem::guessWordType(null));
     }
 
     public function test_het_han_muc_trong_ngay_thi_tu_choi(): void
@@ -219,7 +286,7 @@ class VocabularyLookupTest extends TestCase
         $item = VocabularyItem::firstOrFail();
         $item->recordReview('good');
         $item->recordReview('good');
-        $boxAfterReviews = $item->fresh()->box;
+        $stepAfterReviews = $item->fresh()->step;
 
         $this->actingAs($user)->postJson(route('vocab.store'), [
             'term' => 'Implement',
@@ -229,7 +296,8 @@ class VocabularyLookupTest extends TestCase
         $this->assertSame(1, VocabularyItem::count());
         $item->refresh();
         $this->assertSame('nghĩa mới', $item->meaning);
-        $this->assertSame($boxAfterReviews, $item->box);
+        $this->assertSame($stepAfterReviews, $item->step);
+        $this->assertSame('learning', $item->srs_state);
     }
 
     public function test_khong_xem_hay_sua_duoc_so_tay_cua_nguoi_khac(): void
@@ -287,75 +355,202 @@ class VocabularyLookupTest extends TestCase
 
     /* ─────────────────────────── Ôn tập ─────────────────────────── */
 
-    public function test_nho_thi_gian_cach_ra_quen_thi_ve_hop_mot(): void
+    private function card(User $user, array $attrs = []): VocabularyItem
     {
-        $user = $this->user();
-        $item = VocabularyItem::create([
+        static $n = 0;
+        $n++;
+
+        return VocabularyItem::create([
             'user_id' => $user->id,
-            'term' => 'implement',
-            'normalized_term' => 'implement',
-            'meaning' => 'thực hiện',
+            'term' => "word{$n}",
+            'normalized_term' => "word{$n}",
+            'meaning' => 'x',
             'due_at' => now(),
+            ...$attrs,
         ]);
+    }
+
+    public function test_the_moi_di_qua_cac_buoc_1_5_10_60_phut_roi_tot_nghiep(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+        $item = $this->card($this->user());
+
+        // Anki: bước đầu (1 phút) là nơi "Quên" đưa về; Nhớ lần đầu sang 5 phút.
+        $this->assertSame(['again' => '1 phút', 'hard' => '1 phút', 'good' => '5 phút'], $item->previewIntervals());
 
         $item->recordReview('good');
-        $this->assertSame(2, $item->box);
-        $this->assertSame(3, $item->interval_days);
+        $this->assertSame('learning', $item->srs_state);
+        $this->assertEqualsWithDelta(5, now()->diffInMinutes($item->due_at), 0.1);
 
+        $item->recordReview('good');
+        $this->assertEqualsWithDelta(10, now()->diffInMinutes($item->due_at), 0.1);
+
+        $item->recordReview('good');
+        $this->assertEqualsWithDelta(60, now()->diffInMinutes($item->due_at), 0.1);
+        $this->assertSame('1 ngày', $item->previewIntervals()['good']);
+
+        $item->recordReview('good');
+        $this->assertSame('review', $item->srs_state);
+        $this->assertSame(1, $item->interval_days);
+        $this->assertTrue($item->due_at->equalTo(now()->startOfDay()->addDay()));
+    }
+
+    public function test_mo_ho_lap_lai_buoc_hien_tai_quen_ve_buoc_dau(): void
+    {
+        $item = $this->card($this->user());
+
+        $item->recordReview('good');   // → bước 2 (5 phút)
         $item->recordReview('hard');
-        $this->assertSame(2, $item->box, 'Mơ hồ thì giữ nguyên hộp, không thăng cũng không tụt.');
-        $this->assertSame(0, $item->streak);
+        $this->assertSame(1, $item->step, 'Mơ hồ thì lặp lại đúng bước đang học.');
+        $this->assertEqualsWithDelta(5, now()->diffInMinutes($item->due_at), 0.1);
 
         $item->recordReview('again');
-        $this->assertSame(1, $item->box);
-        $this->assertSame(1, $item->interval_days);
+        $this->assertSame(0, $item->step);
+        $this->assertEqualsWithDelta(1, now()->diffInMinutes($item->due_at), 0.1);
         $this->assertSame(3, $item->reviews_count);
     }
 
-    public function test_phien_on_tap_chi_lay_tu_den_han_va_uu_tien_hop_thap(): void
+    public function test_on_theo_ngay_nho_thi_nhan_ease_quen_thi_reset(): void
+    {
+        $item = $this->card($this->user(), [
+            'srs_state' => 'review', 'interval_days' => 10, 'ease' => 2500,
+        ]);
+
+        $this->assertSame(['again' => '1 phút', 'hard' => '12 ngày', 'good' => '25 ngày'], $item->previewIntervals());
+
+        $item->recordReview('good');
+        $this->assertSame(25, $item->interval_days);
+        $this->assertTrue($item->isMastered(), 'Khoảng cách ≥ 21 ngày là đã thuộc.');
+
+        $item->recordReview('again');
+        $this->assertSame('relearning', $item->srs_state);
+        $this->assertSame(0, $item->step);
+        $this->assertSame(1, $item->lapses);
+        $this->assertSame(2300, $item->ease);
+        $this->assertFalse($item->isMastered());
+
+        // Học lại xong các bước thì bắt đầu lại từ 1 ngày — quên là reset.
+        foreach (range(1, 4) as $_) {
+            $item->recordReview('good');
+        }
+        $this->assertSame('review', $item->srs_state);
+        $this->assertSame(1, $item->interval_days);
+    }
+
+    public function test_phien_on_tap_uu_tien_the_dang_hoc_roi_on_roi_moi(): void
     {
         $user = $this->user();
 
-        $notDue = VocabularyItem::create([
-            'user_id' => $user->id, 'term' => 'chuaden', 'normalized_term' => 'chuaden',
-            'meaning' => 'x', 'box' => 3, 'due_at' => now()->addDays(5),
-        ]);
-        $dueHighBox = VocabularyItem::create([
-            'user_id' => $user->id, 'term' => 'hopcao', 'normalized_term' => 'hopcao',
-            'meaning' => 'x', 'box' => 4, 'due_at' => now()->subDay(),
-        ]);
-        $dueLowBox = VocabularyItem::create([
-            'user_id' => $user->id, 'term' => 'hopthap', 'normalized_term' => 'hopthap',
-            'meaning' => 'x', 'box' => 1, 'due_at' => now()->subDay(),
-        ]);
+        $notDue = $this->card($user, ['srs_state' => 'review', 'interval_days' => 5, 'due_at' => now()->addDays(5)]);
+        $new = $this->card($user, ['srs_state' => 'new', 'due_at' => now()->subDays(2)]);
+        $review = $this->card($user, ['srs_state' => 'review', 'interval_days' => 3, 'due_at' => now()->subDay()]);
+        $learning = $this->card($user, ['srs_state' => 'learning', 'step' => 1, 'due_at' => now()->subMinute()]);
 
-        $response = $this->actingAs($user)->get(route('vocab.review'))->assertOk();
-        $cards = $response->viewData('cards');
+        $cards = $this->actingAs($user)->get(route('vocab.review'))->assertOk()->viewData('cards');
 
-        $this->assertCount(2, $cards);
+        $this->assertSame([$learning->id, $review->id, $new->id], $cards->pluck('id')->all());
         $this->assertFalse($cards->contains('id', $notDue->id));
-        // Từ hay quên nhất phải được gặp lại trước.
-        $this->assertSame($dueLowBox->id, $cards->first()->id);
-        $this->assertTrue($cards->contains('id', $dueHighBox->id));
+        // Thẻ đang ở bước 5 phút: Mơ hồ lặp lại 5 phút.
+        $this->assertSame('5 phút', $cards->first()['intervals']['hard']);
     }
 
     public function test_cham_ket_qua_on_tap_qua_endpoint(): void
     {
         $user = $this->user();
-        $item = VocabularyItem::create([
-            'user_id' => $user->id, 'term' => 'implement', 'normalized_term' => 'implement',
-            'meaning' => 'thực hiện', 'due_at' => now(),
-        ]);
+        $item = $this->card($user);
 
         $this->actingAs($user)
             ->postJson(route('vocab.grade', $item), ['result' => 'good'])
             ->assertOk()
-            ->assertJsonPath('box', 2)
-            ->assertJsonPath('interval_days', 3);
+            ->assertJsonPath('srs_state', 'learning')
+            ->assertJsonPath('step', 1)
+            ->assertJsonPath('intervals.good', '10 phút');
 
         $this->actingAs($user)
             ->postJson(route('vocab.grade', $item), ['result' => 'khong-hop-le'])
             ->assertStatus(422);
+    }
+
+    /* ─────────────────────────── Thư mục ─────────────────────────── */
+
+    public function test_tao_thu_muc_va_luu_tu_vao_thu_muc(): void
+    {
+        $user = $this->user();
+
+        $folderId = $this->actingAs($user)
+            ->postJson(route('vocab.folders.store'), ['name' => 'Môi trường'])
+            ->assertCreated()
+            ->json('id');
+
+        $this->actingAs($user)
+            ->postJson(route('vocab.folders.store'), ['name' => 'Môi trường'])
+            ->assertStatus(422);
+
+        $this->actingAs($user)->postJson(route('vocab.store'), [
+            'term' => 'pollution',
+            'meaning' => 'ô nhiễm',
+            'word_type' => 'noun',
+            'folder_id' => $folderId,
+        ])->assertCreated();
+
+        $item = VocabularyItem::firstOrFail();
+        $this->assertSame($folderId, $item->folder_id);
+        $this->assertSame('noun', $item->word_type);
+
+        $this->actingAs($user)
+            ->get(route('vocab.index', ['folder' => $folderId]))
+            ->assertOk()
+            ->assertSee('pollution');
+
+        $this->actingAs($user)
+            ->get(route('vocab.index', ['type' => 'verb']))
+            ->assertOk()
+            ->assertDontSee('ô nhiễm');
+    }
+
+    public function test_khong_luu_duoc_vao_thu_muc_cua_nguoi_khac(): void
+    {
+        $owner = $this->user();
+        $other = $this->user();
+        $folder = VocabFolder::create(['user_id' => $owner->id, 'name' => 'Của tôi']);
+
+        $this->actingAs($other)->postJson(route('vocab.store'), [
+            'term' => 'hack', 'meaning' => 'x', 'folder_id' => $folder->id,
+        ])->assertStatus(422);
+
+        $this->actingAs($other)->delete(route('vocab.folders.destroy', $folder))->assertForbidden();
+    }
+
+    public function test_xoa_thu_muc_giu_lai_tu_ben_trong(): void
+    {
+        $user = $this->user();
+        $folder = VocabFolder::create(['user_id' => $user->id, 'name' => 'Tạm']);
+        $item = $this->card($user, ['folder_id' => $folder->id]);
+
+        $this->actingAs($user)->delete(route('vocab.folders.destroy', $folder))->assertRedirect();
+
+        $this->assertNull($item->fresh()->folder_id);
+        $this->assertSame(0, VocabFolder::count());
+    }
+
+    public function test_chuyen_thu_muc_va_on_rieng_mot_thu_muc(): void
+    {
+        $user = $this->user();
+        $folder = VocabFolder::create(['user_id' => $user->id, 'name' => 'Chủ đề A']);
+        $inFolder = $this->card($user);
+        $outside = $this->card($user);
+
+        $this->actingAs($user)
+            ->patchJson(route('vocab.move', $inFolder), ['folder_id' => $folder->id])
+            ->assertOk();
+
+        $cards = $this->actingAs($user)
+            ->get(route('vocab.review', ['folder' => $folder->id]))
+            ->assertOk()
+            ->viewData('cards');
+
+        $this->assertSame([$inFolder->id], $cards->pluck('id')->all());
+        $this->assertFalse($cards->contains('id', $outside->id));
     }
 
     /* ──────────────────── Ranh giới với thi thử ──────────────────── */

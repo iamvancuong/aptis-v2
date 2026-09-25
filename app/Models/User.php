@@ -149,6 +149,11 @@ class User extends Authenticatable
         return $this->hasMany(VocabularyItem::class);
     }
 
+    public function vocabFolders()
+    {
+        return $this->hasMany(VocabFolder::class)->orderBy('sort_order')->orderBy('name');
+    }
+
     public function vocabLookupUsages()
     {
         return $this->hasMany(VocabLookupUsage::class);
