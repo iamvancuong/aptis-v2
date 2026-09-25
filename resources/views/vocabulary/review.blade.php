@@ -74,11 +74,27 @@
 
             {{-- Thẻ --}}
             <div x-show="!finished && current" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div class="px-6 pt-4 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide">
-                    <span :class="badge.cls" x-text="badge.text"></span>
+                <div class="px-6 pt-4 flex items-center justify-between">
+                    <span class="text-[11px] font-semibold uppercase tracking-wide" :class="badge.cls" x-text="badge.text"></span>
+
+                    {{-- Bật/tắt tự đọc khi lật thẻ — nhớ theo trình duyệt --}}
+                    <label x-show="canSpeak" class="flex items-center gap-1.5 text-[11px] text-gray-400 select-none">
+                        <input type="checkbox" x-model="autoSpeak" @change="saveAutoSpeak()"
+                               class="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        Tự đọc khi lật
+                    </label>
                 </div>
                 <div class="px-6 pb-10 pt-4 text-center min-h-[220px] flex flex-col items-center justify-center gap-3">
-                    <p class="text-3xl font-black text-gray-900 break-words" x-text="current?.term"></p>
+                    <div class="flex items-center justify-center gap-2">
+                        <p class="text-3xl font-black text-gray-900 break-words" x-text="current?.term"></p>
+                        <button x-show="canSpeak" @click="speak()" type="button" title="Nghe phát âm (phím R)"
+                                class="shrink-0 p-2 rounded-full transition"
+                                :class="speaking ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H3v6h3l5 4V5z" />
+                            </svg>
+                        </button>
+                    </div>
 
                     <p class="text-sm text-gray-400" x-show="current?.phonetic" x-text="current?.phonetic"></p>
 
@@ -106,7 +122,7 @@
 
                 {{-- Hành động --}}
                 <div class="border-t border-gray-100 p-4">
-                    <button x-show="!revealed" @click="revealed = true" type="button"
+                    <button x-show="!revealed" @click="reveal()" type="button"
                             class="w-full py-3.5 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition">
                         Xem nghĩa
                         <span class="block text-[10px] font-normal text-gray-400 mt-0.5">phím cách</span>
@@ -195,17 +211,67 @@
             countdown: '',
             timer: null,
 
+            /* Đọc phát âm bằng giọng có sẵn của trình duyệt (Web Speech API):
+               không tốn tiền API, không cần file âm thanh. */
+            canSpeak: typeof window.speechSynthesis !== 'undefined',
+            autoSpeak: true,
+            speaking: false,
+
             start() {
+                // localStorage có thể ném lỗi (chế độ ẩn danh, chặn dữ liệu trang).
+                try {
+                    this.autoSpeak = localStorage.getItem('vocab.autoSpeak') !== '0';
+                } catch (e) {}
+
                 this.pick();
                 document.addEventListener('keydown', (e) => {
                     if (!this.current || this.saving || e.target.closest('input, textarea, select')) return;
                     if (!this.revealed && (e.key === ' ' || e.key === 'Enter')) {
                         e.preventDefault();
-                        this.revealed = true;
+                        this.reveal();
                     } else if (this.revealed && ['1', '2', '3'].includes(e.key)) {
                         this.grade({ 1: 'again', 2: 'hard', 3: 'good' }[e.key]);
+                    } else if (e.key === 'r' || e.key === 'R') {
+                        this.speak();
                     }
                 });
+            },
+
+            reveal() {
+                this.revealed = true;
+                if (this.autoSpeak) this.speak();
+            },
+
+            saveAutoSpeak() {
+                try {
+                    localStorage.setItem('vocab.autoSpeak', this.autoSpeak ? '1' : '0');
+                } catch (e) {}
+            },
+
+            /** Chọn giọng Anh-Anh cho khớp phiên âm IPA; không có thì giọng Anh bất kỳ. */
+            voice() {
+                const voices = window.speechSynthesis.getVoices();
+                return voices.find((v) => v.lang === 'en-GB')
+                    || voices.find((v) => v.lang && v.lang.startsWith('en'))
+                    || null;
+            },
+
+            speak() {
+                if (!this.canSpeak || !this.current?.term) return;
+
+                const synth = window.speechSynthesis;
+                // Bấm liên tục thì đọc lại từ đầu, không xếp hàng chồng lên nhau.
+                synth.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(this.current.term);
+                const voice = this.voice();
+                if (voice) utterance.voice = voice;
+                utterance.lang = voice?.lang || 'en-GB';
+                utterance.rate = 0.9;
+                utterance.onstart = () => { this.speaking = true; };
+                utterance.onend = utterance.onerror = () => { this.speaking = false; };
+
+                synth.speak(utterance);
             },
 
             get learningCount() {
@@ -228,6 +294,7 @@
             /** Chọn thẻ tới hạn sớm nhất; không có thì chờ thẻ đang học. */
             pick() {
                 clearInterval(this.timer);
+                if (this.canSpeak) window.speechSynthesis.cancel();
                 this.revealed = false;
                 this.waitingFor = null;
 

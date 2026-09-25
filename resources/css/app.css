@@ -34,6 +34,21 @@
     .animate-blob { animation: none; }
 }
 
+/* Tailwind v4 bỏ `cursor: pointer` mặc định của nút (preflight để `default`) →
+   rê chuột vào nút không hiện bàn tay, trông như nút chết. Trả lại cho mọi nút
+   bấm được; nút đang `disabled` giữ con trỏ thường. */
+@layer base {
+    button:not(:disabled),
+    [role="button"]:not([aria-disabled="true"]),
+    summary,
+    select:not(:disabled),
+    label[for],
+    input[type="checkbox"]:not(:disabled),
+    input[type="radio"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
 /* Alpine x-cloak: ẩn phần tử cho tới khi Alpine khởi tạo (menu mobile…). */
 [x-cloak] { display: none !important; }
 
