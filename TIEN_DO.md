@@ -1495,3 +1495,13 @@ Nhánh `feat/vocab-ai-lookup`, tiếp §33.
 - `.claude/launch.json` thêm cấu hình `milaedu-sqlite` (cổng 8011) ép DB về SQLite bằng biến môi
   trường, `.env` giữ nguyên trỏ DB test từ xa.
 - 27 test `VocabularyLookupTest` xanh. 4 test `GradingPaymentTest` đỏ **từ trước** (không liên quan).
+
+### Bổ sung 25/09 — Xuất PDF luyện viết (thay CSV)
+- Nút "Xuất PDF luyện viết" ở sổ tay (`/tu-vung/xuat-pdf`, throttle 10/phút): in đúng thư mục/loại từ/bộ lọc
+  đang xem. Mỗi từ: nghĩa, phiên âm, ví dụ, **dòng chép mờ** để tô + 1–4 dòng trống tự viết. Cuối tệp: trang
+  **tự kiểm tra** (nghĩa → viết từ, xáo trộn cố định theo ngày) + **đáp án**. Tối đa 200 từ/tệp (`vocab.pdf_max_items`).
+- Thư viện mới **`barryvdh/laravel-dompdf`** → trên server phải chạy `composer install --no-dev --optimize-autoloader`.
+  Font DejaVu Sans (kèm dompdf) có đủ dấu tiếng Việt + IPA. Bật `isFontSubsettingEnabled`: 7 từ 1,2 MB → 58 KB;
+  200 từ ≈ 3,5 s, ≈ 590 KB.
+- Đã **bỏ xuất CSV** (route `vocab.export`).
+- Ôn thẻ: tự đọc phát âm khi lật (Web Speech API, giọng en-GB), nút 🔊 + phím R. Nút toàn site có lại `cursor: pointer`.

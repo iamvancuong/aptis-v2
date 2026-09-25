@@ -176,10 +176,13 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
         ->name('vocab.lookup');
     Route::post('/tu-vung/luu', [\App\Http\Controllers\VocabularyController::class, 'store'])->name('vocab.store');
 
-    // Đặt trước route có {item} để "on-tap" / "xuat-file" không bị bắt nhầm
+    // Đặt trước route có {item} để "on-tap" / "xuat-pdf" không bị bắt nhầm
     // thành ID từ vựng.
     Route::get('/tu-vung/on-tap', [\App\Http\Controllers\VocabularyController::class, 'review'])->name('vocab.review');
-    Route::get('/tu-vung/xuat-file', [\App\Http\Controllers\VocabularyController::class, 'export'])->name('vocab.export');
+    Route::get('/tu-vung/xuat-pdf', [\App\Http\Controllers\VocabularyController::class, 'exportPdf'])
+        // dompdf nặng CPU/RAM: chặn bấm liên tục làm nghẽn host chia sẻ.
+        ->middleware('throttle:10,1')
+        ->name('vocab.export.pdf');
     Route::get('/tu-vung', [\App\Http\Controllers\VocabularyController::class, 'index'])->name('vocab.index');
 
     Route::patch('/tu-vung/{item}', [\App\Http\Controllers\VocabularyController::class, 'update'])

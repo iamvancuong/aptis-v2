@@ -27,13 +27,61 @@
         </div>
 
         @if($totalAll > 0)
-            <a href="{{ route('vocab.export') }}"
-               class="self-start lg:self-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium text-sm hover:bg-gray-50 transition">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Xuất file
-            </a>
+            {{-- Xuất PDF luyện viết: in đúng phạm vi + bộ lọc đang xem --}}
+            <div x-data="{ open: false }" class="relative self-start lg:self-auto">
+                <button type="button" @click="open = !open"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium text-sm hover:bg-gray-50 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Xuất PDF luyện viết
+                </button>
+
+                <form x-show="open" x-cloak @click.outside="open = false" x-transition.opacity.duration.120ms
+                      method="GET" action="{{ route('vocab.export.pdf') }}" @submit="setTimeout(() => open = false, 300)"
+                      class="absolute right-0 lg:right-0 left-0 lg:left-auto mt-2 w-72 max-w-[calc(100vw-32px)] z-30 bg-white rounded-xl border border-gray-200 shadow-xl p-4 space-y-3">
+                    @foreach(array_filter($filters) as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">Phiếu luyện viết (PDF)</p>
+                        <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                            In <strong>{{ $scopeTitle }}</strong>
+                            @if(array_filter(\Illuminate\Support\Arr::only($filters, ['q', 'skill', 'status'])))
+                                theo bộ lọc đang chọn
+                            @endif
+                            · {{ $items->total() }} từ. Mỗi từ có nghĩa, dòng chép mờ để tô và dòng trống để tự viết.
+                        </p>
+                    </div>
+
+                    <label class="flex items-center justify-between gap-3 text-sm text-gray-700">
+                        <span>Số dòng tự viết mỗi từ</span>
+                        <select name="lines" class="text-sm py-1.5 pl-2 pr-7 border border-gray-300 rounded-lg">
+                            @foreach([1, 2, 3, 4] as $n)
+                                <option value="{{ $n }}" @selected($n === 2)>{{ $n }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label class="flex items-start gap-2 text-sm text-gray-700">
+                        <input type="hidden" name="self_test" value="0">
+                        <input type="checkbox" name="self_test" value="1" checked
+                               class="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>Kèm trang tự kiểm tra <span class="text-gray-400">(nhìn nghĩa viết lại từ, có đáp án)</span></span>
+                    </label>
+
+                    <button type="submit" @disabled($items->total() === 0)
+                            class="w-full py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition">
+                        Tải PDF
+                    </button>
+                    @if($items->total() > (int) config('aptis.vocab.pdf_max_items', 200))
+                        <p class="text-[11px] text-amber-700 leading-relaxed">
+                            Mỗi tệp in tối đa {{ config('aptis.vocab.pdf_max_items', 200) }} từ — chọn một thư mục hoặc loại từ để in phần còn lại.
+                        </p>
+                    @endif
+                </form>
+            </div>
         @endif
     </div>
 

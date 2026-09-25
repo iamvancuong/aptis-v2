@@ -336,21 +336,79 @@ class VocabularyLookupTest extends TestCase
             ->assertDontSee('theirword');
     }
 
-    public function test_xuat_file_csv_co_bom_utf8(): void
+    public function test_xuat_pdf_luyen_viet(): void
     {
         $user = $this->user();
         $this->actingAs($user)->postJson(route('vocab.store'), [
             'term' => 'implement',
             'meaning' => 'thực hiện, triển khai',
+            'phonetic' => '/ˈɪmplɪment/',
         ])->assertCreated();
 
-        $response = $this->actingAs($user)->get(route('vocab.export'));
-        $response->assertOk();
+        $response = $this->actingAs($user)->get(route('vocab.export.pdf', ['lines' => 3, 'self_test' => 1]));
 
-        $content = $response->streamedContent();
-        // Thiếu BOM là Excel trên Windows mở ra vỡ hết dấu tiếng Việt.
-        $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
-        $this->assertStringContainsString('thực hiện, triển khai', $content);
+        $response->assertOk();
+        $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('.pdf', $response->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_pdf_chi_in_tu_trong_pham_vi_dang_xem(): void
+    {
+        $user = $this->user();
+        $folder = VocabFolder::create(['user_id' => $user->id, 'name' => 'Môi trường']);
+        $this->card($user, ['term' => 'pollution', 'meaning' => 'ô nhiễm', 'folder_id' => $folder->id]);
+        $this->card($user, ['term' => 'outside', 'meaning' => 'ngoài thư mục']);
+        $this->card($this->user(), ['term' => 'stranger', 'meaning' => 'của người khác']);
+
+        // Render thẳng HTML của view thay vì đọc PDF: nội dung PDF bị nén, không
+        // tìm chữ trong đó được.
+        $this->withoutExceptionHandling();
+        \Barryvdh\DomPDF\Facade\Pdf::shouldReceive('loadView')
+            ->once()
+            ->withArgs(function (string $view, array $data) {
+                $terms = $data['items']->pluck('term')->all();
+
+                return $view === 'vocabulary.pdf'
+                    && $terms === ['pollution']
+                    && $data['scopeLabel'] === 'Môi trường'
+                    && $data['quiz']->pluck('term')->all() === ['pollution'];
+            })
+            ->andReturnSelf();
+        \Barryvdh\DomPDF\Facade\Pdf::shouldReceive('setPaper')->andReturnSelf();
+        \Barryvdh\DomPDF\Facade\Pdf::shouldReceive('setOption')->andReturnSelf();
+        \Barryvdh\DomPDF\Facade\Pdf::shouldReceive('download')->andReturn(response('pdf'));
+
+        $this->actingAs($user)->get(route('vocab.export.pdf', ['folder' => $folder->id]))->assertOk();
+    }
+
+    public function test_pdf_view_hien_du_nghia_va_trang_tu_kiem_tra(): void
+    {
+        $user = $this->user();
+        $items = collect([
+            $this->card($user, ['term' => 'I cycle to work', 'meaning' => 'Tôi đạp xe đi làm', 'word_type' => 'sentence']),
+            $this->card($user, ['term' => 'colony', 'meaning' => 'đàn ong', 'phonetic' => '/ˈkɒləni/']),
+        ]);
+
+        $html = view('vocabulary.pdf', [
+            'user' => $user, 'items' => $items, 'quiz' => $items->reverse()->values(),
+            'selfTest' => true, 'lines' => 3, 'truncated' => false, 'scopeLabel' => null,
+        ])->render();
+
+        $this->assertStringContainsString('Tôi đạp xe đi làm', $html);
+        $this->assertStringContainsString('/ˈkɒləni/', $html);
+        $this->assertSame(6, substr_count($html, 'class="line"'), '3 dòng trống × 2 từ.');
+        $this->assertStringContainsString('Tự kiểm tra', $html);
+        $this->assertStringContainsString('Đáp án', $html);
+    }
+
+    public function test_pdf_khong_co_tu_thi_quay_lai_kem_thong_bao(): void
+    {
+        $this->actingAs($this->user())
+            ->from(route('vocab.index'))
+            ->get(route('vocab.export.pdf'))
+            ->assertRedirect(route('vocab.index'))
+            ->assertSessionHas('error');
     }
 
     /* ─────────────────────────── Ôn tập ─────────────────────────── */

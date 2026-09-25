@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\VocabFolder;
 use App\Models\VocabularyItem;
 use App\Services\VocabularyLookupService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -12,7 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Random\Engine\Mt19937;
+use Random\Randomizer;
 
 class VocabularyController extends Controller
 {
@@ -148,34 +150,10 @@ class VocabularyController extends Controller
     {
         $user = $request->user();
 
-        $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:100'],
-            'skill' => ['nullable', Rule::in(['reading', 'listening', 'writing', 'speaking', 'grammar'])],
-            'status' => ['nullable', Rule::in(['due', 'learning', 'mastered'])],
-            ...$this->scopeRules(),
-        ]);
+        $filters = $request->validate($this->listRules());
 
-        $query = $this->scopedQuery($request, $filters);
-
-        if ($keyword = $filters['q'] ?? null) {
-            $query->where(function ($q) use ($keyword) {
-                $q->where('term', 'like', "%{$keyword}%")
-                    ->orWhere('meaning', 'like', "%{$keyword}%");
-            });
-        }
-
-        if ($skill = $filters['skill'] ?? null) {
-            $query->where('source_skill', $skill);
-        }
-
-        match ($filters['status'] ?? null) {
-            'due' => $query->due(),
-            'mastered' => $query->mastered(),
-            'learning' => $query->learning(),
-            default => null,
-        };
-
-        $items = $query->with('folder')->latest()->paginate(24)->withQueryString();
+        $items = $this->filteredQuery($request, $filters)
+            ->with('folder')->latest()->paginate(24)->withQueryString();
 
         // Thống kê theo phạm vi đang xem (thư mục / loại từ) — để nút "Ôn thư
         // mục này" hiện đúng số từ đến hạn của chính thư mục đó.
@@ -372,48 +350,97 @@ class VocabularyController extends Controller
 
     /* ────────────────────────── Xuất file ────────────────────────── */
 
-    public function export(Request $request): StreamedResponse
+    /**
+     * PDF luyện viết: mỗi từ có nghĩa + dòng chép mờ + dòng trống, cuối tệp là
+     * trang tự kiểm tra (nhìn nghĩa viết lại từ) và đáp án.
+     *
+     * In đúng những gì học viên đang xem trên sổ tay (thư mục, loại từ, bộ lọc).
+     */
+    public function exportPdf(Request $request)
     {
         $user = $request->user();
-        $filename = 'so-tay-tu-vung-' . now()->format('Y-m-d') . '.csv';
 
-        return response()->streamDownload(function () use ($user) {
-            $handle = fopen('php://output', 'w');
-
-            // BOM UTF-8: thiếu dòng này Excel trên Windows mở ra là tiếng Việt
-            // vỡ hết dấu — lỗi khách báo lại đầu tiên mỗi khi quên.
-            fwrite($handle, "\xEF\xBB\xBF");
-
-            fputcsv($handle, ['Từ', 'Loại từ', 'Thư mục', 'Phiên âm', 'Nghĩa', 'Ví dụ', 'Câu gốc trong bài', 'Mức CEFR', 'Tiến độ', 'Ngày ôn kế tiếp', 'Ngày lưu']);
-
-            VocabularyItem::where('user_id', $user->id)
-                ->with('folder')
-                ->orderBy('created_at')
-                ->chunk(200, function ($chunk) use ($handle) {
-                    foreach ($chunk as $item) {
-                        fputcsv($handle, [
-                            $item->term,
-                            $item->part_of_speech ?? $item->wordTypeLabel(),
-                            $item->folder?->name,
-                            $item->phonetic,
-                            $item->meaning,
-                            $item->example,
-                            $item->context_sentence,
-                            $item->cefr,
-                            $item->statusLabel(),
-                            $item->due_at?->format('d/m/Y H:i'),
-                            $item->created_at->format('d/m/Y'),
-                        ]);
-                    }
-                });
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+        $filters = $request->validate([
+            ...$this->listRules(),
+            'lines' => ['nullable', 'integer', 'between:1,4'],
+            'self_test' => ['nullable', 'boolean'],
         ]);
+
+        // dompdf dựng cả tệp trong RAM: vài trăm từ đã mất vài giây trên host
+        // chia sẻ. Chặn trần để một cú bấm không làm treo tiến trình PHP.
+        $max = (int) config('aptis.vocab.pdf_max_items', 200);
+
+        $items = $this->filteredQuery($request, $filters)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->limit($max + 1)
+            ->get();
+
+        if ($items->isEmpty()) {
+            return back()->with('error', 'Không có từ nào để in. Hãy lưu thêm từ hoặc đổi bộ lọc.');
+        }
+
+        $truncated = $items->count() > $max;
+        $items = $items->take($max)->values();
+        $selfTest = (bool) ($filters['self_test'] ?? true);
+
+        $pdf = Pdf::loadView('vocabulary.pdf', [
+            'user' => $user,
+            'items' => $items,
+            // Xáo trộn cố định theo ngày: in lại trong ngày ra cùng thứ tự,
+            // đáp án khớp với bản đã in trước đó.
+            'quiz' => $selfTest
+                ? collect((new Randomizer(new Mt19937(crc32($user->id . '|' . now()->toDateString()))))->shuffleArray($items->all()))
+                : collect(),
+            'selfTest' => $selfTest,
+            'lines' => (int) ($filters['lines'] ?? 2),
+            'truncated' => $truncated,
+            'scopeLabel' => $this->scopeLabel($request, $filters),
+        ])->setPaper('a4')
+            // Chỉ nhúng những ký tự thật sự dùng: nhúng nguyên bộ DejaVu thì tệp
+            // 7 từ đã nặng 1,2 MB.
+            ->setOption('isFontSubsettingEnabled', true);
+
+        return $pdf->download('luyen-viet-tu-vung-' . now()->format('Y-m-d') . '.pdf');
     }
 
     /* ─────────────────────────── Nội bộ ─────────────────────────── */
+
+    /** Bộ lọc của trang sổ tay — dùng chung cho danh sách và bản in PDF. */
+    protected function listRules(): array
+    {
+        return [
+            'q' => ['nullable', 'string', 'max:100'],
+            'skill' => ['nullable', Rule::in(['reading', 'listening', 'writing', 'speaking', 'grammar'])],
+            'status' => ['nullable', Rule::in(['due', 'learning', 'mastered'])],
+            ...$this->scopeRules(),
+        ];
+    }
+
+    protected function filteredQuery(Request $request, array $filters): Builder
+    {
+        $query = $this->scopedQuery($request, $filters);
+
+        if ($keyword = $filters['q'] ?? null) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('term', 'like', "%{$keyword}%")
+                    ->orWhere('meaning', 'like', "%{$keyword}%");
+            });
+        }
+
+        if ($skill = $filters['skill'] ?? null) {
+            $query->where('source_skill', $skill);
+        }
+
+        match ($filters['status'] ?? null) {
+            'due' => $query->due(),
+            'mastered' => $query->mastered(),
+            'learning' => $query->learning(),
+            default => null,
+        };
+
+        return $query;
+    }
 
     /** Phạm vi xem/ôn: một thư mục tự tạo, hoặc một loại từ. */
     protected function scopeRules(): array

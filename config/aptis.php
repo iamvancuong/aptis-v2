@@ -56,6 +56,9 @@ return [
         // hạn nghiệp vụ.
         'max_folders' => 50,
 
+        // Số từ tối đa mỗi tệp PDF luyện viết (dompdf dựng cả tệp trong RAM).
+        'pdf_max_items' => 200,
+
         /*
          | Lịch ôn kiểu Anki.
          |
