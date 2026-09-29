@@ -295,6 +295,8 @@ function vocabLookup(config) {
             if (!this.result || this.saved || this.saving) return;
 
             this.saving = true;
+            // Lỗi của lần bấm trước không được treo lại khi lần này đã thành công.
+            this.error = null;
             try {
                 const response = await fetch(this.cfg.saveUrl, {
                     method: 'POST',

@@ -99,9 +99,12 @@ class VocabularyController extends Controller
             'example' => ['nullable', 'string', 'max:500'],
             'cefr' => ['nullable', 'string', 'max:5'],
             'context_sentence' => ['nullable', 'string', 'max:1000'],
-            'source_skill' => ['nullable', 'string', 'max:20'],
-            'source_part' => ['nullable', 'integer', 'between:1,4'],
-            'source_set_id' => ['nullable', 'integer'],
+            // Nguồn chỉ là ghi chú "từ này gặp ở bài nào" — KHÔNG được làm hỏng
+            // lượt lưu. Từng chặn `between:1,4` trong khi đề có cả Part 5 (Grammar
+            // & Vocabulary) → học viên tra được mà bấm Lưu thì báo lỗi.
+            'source_skill' => ['nullable', 'string'],
+            'source_part' => ['nullable'],
+            'source_set_id' => ['nullable'],
             'folder_id' => ['nullable', 'integer', $this->ownFolderRule($request)],
         ]);
 
@@ -124,9 +127,7 @@ class VocabularyController extends Controller
                 'example' => $data['example'] ?? null,
                 'cefr' => $data['cefr'] ?? null,
                 'context_sentence' => $data['context_sentence'] ?? null,
-                'source_skill' => $data['source_skill'] ?? null,
-                'source_part' => $data['source_part'] ?? null,
-                'source_set_id' => $data['source_set_id'] ?? null,
+                ...$this->sourceFields($data),
                 'folder_id' => $data['folder_id'] ?? null,
             ],
         );
@@ -494,6 +495,27 @@ class VocabularyController extends Controller
             'context' => $card->context_sentence,
             'srs_state' => $card->srs_state,
             'intervals' => $card->previewIntervals(),
+        ];
+    }
+
+    /**
+     * Làm sạch thông tin nguồn thay vì từ chối: giá trị lạ thì bỏ trống, từ
+     * vẫn được lưu. Giới hạn theo kiểu cột (tinyint / bigint / varchar 20).
+     */
+    protected function sourceFields(array $data): array
+    {
+        $part = filter_var($data['source_part'] ?? null, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => 255],
+        ]);
+        $setId = filter_var($data['source_set_id'] ?? null, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        $skill = is_string($data['source_skill'] ?? null) ? mb_substr(trim($data['source_skill']), 0, 20) : '';
+
+        return [
+            'source_skill' => $skill !== '' ? $skill : null,
+            'source_part' => $part === false ? null : $part,
+            'source_set_id' => $setId === false ? null : $setId,
         ];
     }
 

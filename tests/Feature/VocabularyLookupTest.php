@@ -274,6 +274,38 @@ class VocabularyLookupTest extends TestCase
         $this->assertTrue($item->due_at->isPast() || $item->due_at->isCurrentMinute());
     }
 
+    public function test_nguon_la_khong_lam_hong_luot_luu(): void
+    {
+        // Lỗi thật: bài Part 5 (Grammar & Vocabulary) bấm Lưu thì báo "The
+        // source part field must be between 1 and 4" dù tra nghĩa bình thường.
+        $user = $this->user();
+
+        $this->actingAs($user)->postJson(route('vocab.store'), [
+            'term' => 'graveyard',
+            'meaning' => 'nghĩa trang',
+            'source_skill' => 'grammar',
+            'source_part' => 5,
+            'source_set_id' => 12,
+        ])->assertCreated();
+
+        $this->actingAs($user)->postJson(route('vocab.store'), [
+            'term' => 'cemetery',
+            'meaning' => 'nghĩa trang',
+            'source_skill' => str_repeat('x', 40),
+            'source_part' => 'abc',
+            'source_set_id' => -3,
+        ])->assertCreated();
+
+        $saved = VocabularyItem::where('term', 'graveyard')->firstOrFail();
+        $this->assertSame(5, $saved->source_part);
+        $this->assertSame(12, (int) $saved->source_set_id);
+
+        $junk = VocabularyItem::where('term', 'cemetery')->firstOrFail();
+        $this->assertNull($junk->source_part);
+        $this->assertNull($junk->source_set_id);
+        $this->assertSame(20, mb_strlen($junk->source_skill));
+    }
+
     public function test_luu_lai_tu_da_co_khong_xoa_tien_do_on_tap(): void
     {
         $user = $this->user();
