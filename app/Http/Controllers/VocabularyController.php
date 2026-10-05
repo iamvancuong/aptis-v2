@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\VocabDailyStat;
 use App\Models\VocabFolder;
 use App\Models\VocabularyItem;
 use App\Services\VocabularyLookupService;
@@ -324,6 +325,7 @@ class VocabularyController extends Controller
             'remainingAfter' => max(0, $this->scopedQuery($request, $filters)->due()->count() - $cards->count()),
             'totalItems' => VocabularyItem::where('user_id', $user->id)->count(),
             'learnAheadMinutes' => (int) config('aptis.vocab.srs.learn_ahead', 20),
+            'streak' => VocabDailyStat::streak($user->id),
         ]);
     }
 
@@ -336,8 +338,11 @@ class VocabularyController extends Controller
         ]);
 
         $item->recordReview($data['result']);
+        VocabDailyStat::record($item->user_id, $data['result'] === 'good');
 
         return response()->json([
+            'streak' => VocabDailyStat::streak($item->user_id),
+            'reviewed_today' => VocabDailyStat::reviewedToday($item->user_id),
             'srs_state' => $item->srs_state,
             'step' => $item->step,
             'interval_days' => $item->interval_days,

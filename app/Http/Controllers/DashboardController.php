@@ -140,7 +140,23 @@ class DashboardController extends Controller
                 ->first()
             : null;
 
+        // Thẻ "Ôn từ vựng hôm nay". Chỉ hiện khi học viên đã có từ trong sổ tay —
+        // sổ tay trống thì thẻ chỉ là thêm một lời nhắc vô nghĩa.
+        $vocabToday = null;
+        if (config('aptis.vocab.enabled')) {
+            $vocabTotal = \App\Models\VocabularyItem::where('user_id', $user->id)->count();
+            if ($vocabTotal > 0) {
+                $vocabToday = [
+                    'total' => $vocabTotal,
+                    'due' => \App\Models\VocabularyItem::where('user_id', $user->id)->due()->count(),
+                    'reviewed' => \App\Models\VocabDailyStat::reviewedToday($user->id),
+                    'streak' => \App\Models\VocabDailyStat::streak($user->id),
+                ];
+            }
+        }
+
         return view('dashboard', compact(
+            'vocabToday',
             'nextClass',
             'statisticsData',
             'totalAttempts',

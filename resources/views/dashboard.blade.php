@@ -54,6 +54,46 @@
 </div>
 @endif
 
+{{-- Ôn từ vựng hôm nay: nhắc đúng hạn + giữ chuỗi ngày học --}}
+@if($vocabToday ?? null)
+<div class="mb-6 p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-3
+            {{ $vocabToday['due'] > 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-emerald-50 border-emerald-200' }}">
+    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-lg
+                {{ $vocabToday['due'] > 0 ? 'bg-indigo-100' : 'bg-emerald-100' }}">
+        {{ $vocabToday['streak'] > 0 ? '🔥' : '📒' }}
+    </div>
+    <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold {{ $vocabToday['due'] > 0 ? 'text-indigo-900' : 'text-emerald-800' }}">
+            @if($vocabToday['due'] > 0)
+                Hôm nay có {{ $vocabToday['due'] }} từ cần ôn
+            @else
+                Đã ôn xong từ vựng hôm nay
+            @endif
+        </p>
+        <p class="text-xs {{ $vocabToday['due'] > 0 ? 'text-indigo-600' : 'text-emerald-600' }}">
+            @if($vocabToday['streak'] > 0)
+                Chuỗi {{ $vocabToday['streak'] }} ngày liên tiếp
+                @if($vocabToday['reviewed'] === 0) — ôn ít nhất 1 từ hôm nay để giữ chuỗi @endif
+            @else
+                Ôn mỗi ngày một ít để bắt đầu chuỗi ngày học
+            @endif
+            · đã ôn {{ $vocabToday['reviewed'] }} lượt hôm nay · {{ $vocabToday['total'] }} từ trong sổ tay
+        </p>
+    </div>
+    @if($vocabToday['due'] > 0)
+        <a href="{{ route('vocab.review') }}"
+           class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-center">
+            Ôn ngay →
+        </a>
+    @else
+        <a href="{{ route('vocab.index') }}"
+           class="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-100 rounded-lg transition-colors text-center">
+            Xem sổ tay
+        </a>
+    @endif
+</div>
+@endif
+
 {{-- Lớp học online sắp tới / đang diễn ra --}}
 @if($nextClass ?? null)
 <div class="mb-6 p-4 {{ $nextClass->isJoinable() ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200' }} border rounded-xl flex flex-col sm:flex-row sm:items-center gap-3">

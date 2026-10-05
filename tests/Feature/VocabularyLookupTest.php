@@ -569,6 +569,79 @@ class VocabularyLookupTest extends TestCase
             ->assertStatus(422);
     }
 
+    /* ──────────────────── Chuỗi ngày + nhắc ôn ──────────────────── */
+
+    public function test_cham_the_ghi_luot_on_va_tra_ve_chuoi_ngay(): void
+    {
+        $user = $this->user();
+        $item = $this->card($user);
+
+        $this->actingAs($user)
+            ->postJson(route('vocab.grade', $item), ['result' => 'good'])
+            ->assertOk()
+            ->assertJsonPath('streak', 1)
+            ->assertJsonPath('reviewed_today', 1);
+
+        $this->actingAs($user)
+            ->postJson(route('vocab.grade', $item), ['result' => 'again'])
+            ->assertJsonPath('reviewed_today', 2);
+
+        $this->assertDatabaseHas('vocab_daily_stats', ['user_id' => $user->id, 'reviews' => 2, 'correct' => 1]);
+        $this->assertSame(1, \App\Models\VocabDailyStat::count(), 'Cùng một ngày thì cộng dồn, không tạo dòng mới.');
+    }
+
+    public function test_chuoi_ngay_dem_lien_tiep_va_dut_khi_bo_mot_ngay(): void
+    {
+        $user = $this->user();
+        $day = fn (int $ago) => \App\Models\VocabDailyStat::create([
+            'user_id' => $user->id, 'stat_date' => today()->subDays($ago), 'reviews' => 3, 'correct' => 2,
+        ]);
+
+        $this->assertSame(0, \App\Models\VocabDailyStat::streak($user->id));
+
+        // Hôm qua + hôm kia: hôm nay chưa ôn nhưng chuỗi vẫn còn.
+        $day(1);
+        $day(2);
+        $this->assertSame(2, \App\Models\VocabDailyStat::streak($user->id));
+
+        $day(0);
+        $this->assertSame(3, \App\Models\VocabDailyStat::streak($user->id));
+
+        // Ngày 4 trước có ôn nhưng ngày 3 trước bỏ → không tính.
+        $day(4);
+        $this->assertSame(3, \App\Models\VocabDailyStat::streak($user->id));
+
+        // Không ôn từ hôm kia → chuỗi đứt.
+        $other = $this->user();
+        \App\Models\VocabDailyStat::create(['user_id' => $other->id, 'stat_date' => today()->subDays(2), 'reviews' => 1]);
+        $this->assertSame(0, \App\Models\VocabDailyStat::streak($other->id));
+    }
+
+    public function test_menu_hien_so_tu_can_on_va_dashboard_co_the_on_tap(): void
+    {
+        $user = $this->user();
+        $this->card($user, ['due_at' => now()->subHour()]);
+        $this->card($user, ['due_at' => now()->subMinute()]);
+        $this->card($user, ['due_at' => now()->addDays(3)]);
+
+        $this->actingAs($user)->get(route('vocab.index'))
+            ->assertOk()
+            ->assertSee('title="2 từ đến hạn ôn"', false);
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Hôm nay có 2 từ cần ôn')
+            ->assertSee(route('vocab.review'), false);
+    }
+
+    public function test_dashboard_khong_hien_the_on_khi_so_tay_trong(): void
+    {
+        $this->actingAs($this->user())->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('từ cần ôn')
+            ->assertDontSee('Đã ôn xong từ vựng hôm nay');
+    }
+
     /* ─────────────────────────── Thư mục ─────────────────────────── */
 
     public function test_tao_thu_muc_va_luu_tu_vao_thu_muc(): void

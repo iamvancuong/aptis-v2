@@ -1505,3 +1505,10 @@ Nhánh `feat/vocab-ai-lookup`, tiếp §33.
   200 từ ≈ 3,5 s, ≈ 590 KB.
 - Đã **bỏ xuất CSV** (route `vocab.export`).
 - Ôn thẻ: tự đọc phát âm khi lật (Web Speech API, giọng en-GB), nút 🔊 + phím R. Nút toàn site có lại `cursor: pointer`.
+
+### Bổ sung 06/10 — Nhắc ôn, chuỗi ngày, 3 kiểu ôn
+- **Migration mới** `2026_10_06_000001_create_vocab_daily_stats_table` (lượt ôn theo ngày) → deploy PHẢI `php artisan migrate --force`.
+- Huy hiệu đỏ "N từ cần ôn" trên menu Từ vựng (View composer ở `AppServiceProvider`, bọc try/catch để lỗi DB không làm sập mọi trang).
+- Dashboard có thẻ "Hôm nay có N từ cần ôn · chuỗi X ngày" (chỉ hiện khi sổ tay có từ). Chuỗi: hôm nay chưa ôn vẫn giữ nếu hôm qua có ôn.
+- Trang ôn có 3 kiểu (nhớ theo trình duyệt): **Lật thẻ** · **Điền từ** (đục lỗ câu gốc trong bài → câu ví dụ → nhìn nghĩa; câu dài lùi về lật thẻ) · **Nghe & gõ** (tự đọc, gõ lại; câu thì chép cả câu).
+  Kiểu gõ tự so đáp án (`resources/js/components/vocab-practice.js`): đúng → gợi ý Nhớ, sai chính tả nhẹ (≤ 1/6 độ dài, từ < 6 ký tự không tính) → Mơ hồ, sai → Quên; dùng gợi ý thì hạ Nhớ xuống Mơ hồ. Enter chọn nút gợi ý, 1/2/3 vẫn tự chọn được.

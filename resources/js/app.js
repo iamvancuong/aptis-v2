@@ -1,6 +1,7 @@
 import './bootstrap';
 import './components/sidebar.js';
 import './components/speech.js';
+import './components/vocab-practice.js';
 import './components/vocab-lookup.js';
 
 // Alpine bundle qua Vite (thay CDN). Nút +/- số lượng, menu mobile, dropdown admin

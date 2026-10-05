@@ -5,6 +5,7 @@
 @section('content')
 @php
     $scopeParams = array_filter(['folder' => $filters['folder'] ?? null, 'type' => $filters['type'] ?? null]);
+    $speakerIcon = '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H3v6h3l5 4V5z" /></svg>';
 @endphp
 <div class="max-w-2xl mx-auto">
 
@@ -34,13 +35,27 @@
                     Từ đang học sẽ quay lại sau vài phút, từ đã thuộc sẽ quay lại sau vài ngày. Ôn đúng nhịp nhớ lâu hơn ôn dồn.
                 @endif
             </p>
+            @if($streak > 0)
+                <p class="mt-3 text-sm font-semibold text-orange-600">🔥 Chuỗi {{ $streak }} ngày liên tiếp</p>
+            @endif
             <a href="{{ route('vocab.index', $scopeParams) }}" class="inline-block mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
                 Về sổ tay
             </a>
         </div>
     @else
-        <div x-data="vocabReview(@js($cards), '{{ url('/tu-vung') }}', '{{ csrf_token() }}', {{ $learnAheadMinutes }})"
+        <div x-data="vocabReview(@js($cards), '{{ url('/tu-vung') }}', '{{ csrf_token() }}', {{ $learnAheadMinutes }}, {{ $streak }})"
              x-init="start()">
+
+            {{-- Kiểu ôn — nhớ theo trình duyệt --}}
+            <div x-show="!finished" class="mb-4 grid grid-cols-3 gap-1 p-1 bg-gray-100 rounded-xl text-sm font-medium">
+                <template x-for="m in modes" :key="m.key">
+                    <button type="button" @click="setMode(m.key)"
+                            class="py-2 rounded-lg transition"
+                            :class="mode === m.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'">
+                        <span x-text="m.icon"></span> <span x-text="m.label"></span>
+                    </button>
+                </template>
+            </div>
 
             {{-- Tiến độ --}}
             <div class="mb-4" x-show="!finished">
@@ -72,9 +87,9 @@
                 </button>
             </div>
 
-            {{-- Thẻ --}}
+            {{-- ─────────────── Thẻ ─────────────── --}}
             <div x-show="!finished && current" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div class="px-6 pt-4 flex items-center justify-between">
+                <div class="px-6 pt-4 flex items-center justify-between gap-3">
                     <span class="text-[11px] font-semibold uppercase tracking-wide" :class="badge.cls" x-text="badge.text"></span>
 
                     {{-- Bật/tắt tự đọc khi lật thẻ — nhớ theo trình duyệt --}}
@@ -84,23 +99,108 @@
                         Tự đọc khi lật
                     </label>
                 </div>
-                <div class="px-6 pb-10 pt-4 text-center min-h-[220px] flex flex-col items-center justify-center gap-3">
-                    <div class="flex items-center justify-center gap-2">
-                        <p class="text-3xl font-black text-gray-900 break-words" x-text="current?.term"></p>
-                        <button x-show="canSpeak" @click="speak()" type="button" title="Nghe phát âm (phím R)"
-                                class="shrink-0 p-2 rounded-full transition"
-                                :class="speaking ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H3v6h3l5 4V5z" />
-                            </svg>
-                        </button>
-                    </div>
 
-                    <p class="text-sm text-gray-400" x-show="current?.phonetic" x-text="current?.phonetic"></p>
+                <div class="px-6 pb-8 pt-4 text-center min-h-[220px] flex flex-col items-center justify-center gap-3">
+
+                    {{-- Mặt trước: Lật thẻ — hiện từ tiếng Anh --}}
+                    <template x-if="kind === 'flip' || revealed">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="flex items-center justify-center gap-2">
+                                <p class="text-3xl font-black text-gray-900 break-words" x-text="current?.term"></p>
+                                <button x-show="canSpeak" @click="speak()" type="button" title="Nghe phát âm (phím R)"
+                                        class="shrink-0 p-2 rounded-full transition"
+                                        :class="speaking ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'">
+                                    {!! $speakerIcon !!}
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-400" x-show="current?.phonetic" x-text="current?.phonetic"></p>
+                            <p x-show="fallbackNote && !revealed" class="text-[11px] text-gray-400" x-text="fallbackNote"></p>
+                        </div>
+                    </template>
+
+                    {{-- Mặt trước: Điền từ — câu gốc đục lỗ --}}
+                    <template x-if="kind === 'cloze' && !revealed">
+                        <div class="w-full">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-3"
+                               x-text="cloze.source === 'context' ? 'Câu gốc trong bài' : 'Câu ví dụ'"></p>
+                            <p class="text-lg text-gray-800 leading-relaxed">
+                                <span x-text="cloze.before"></span><span class="inline-block min-w-[5rem] mx-1 border-b-2 border-indigo-400 text-indigo-600 font-semibold"
+                                      x-text="hint ? hintMask : ' '"></span><span x-text="cloze.after"></span>
+                            </p>
+                            <p class="mt-3 text-xs text-gray-400" x-show="current?.part_of_speech" x-text="current?.part_of_speech"></p>
+                        </div>
+                    </template>
+
+                    {{-- Mặt trước: Điền từ khi không có câu nào chứa từ → nhìn nghĩa --}}
+                    <template x-if="kind === 'meaning' && !revealed">
+                        <div class="w-full">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-3">Viết từ tiếng Anh có nghĩa</p>
+                            <p class="text-2xl font-bold text-indigo-700 leading-snug" x-text="current?.meaning"></p>
+                            <p class="mt-2 text-xs text-gray-400" x-show="current?.part_of_speech" x-text="current?.part_of_speech"></p>
+                            <p class="mt-3 text-lg font-semibold text-indigo-600 tracking-widest" x-show="hint" x-text="hintMask"></p>
+                        </div>
+                    </template>
+
+                    {{-- Mặt trước: Nghe & gõ --}}
+                    <template x-if="kind === 'listen' && !revealed">
+                        <div class="flex flex-col items-center gap-3">
+                            <button @click="speak()" type="button" title="Nghe lại (phím R)"
+                                    class="w-20 h-20 rounded-full flex items-center justify-center transition"
+                                    :class="speaking ? 'bg-indigo-600 text-white scale-105' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'">
+                                <svg class="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H3v6h3l5 4V5z" />
+                                </svg>
+                            </button>
+                            <p class="text-sm text-gray-500"
+                               x-text="isLongTerm ? 'Nghe rồi chép lại cả câu' : 'Nghe rồi gõ lại từ bạn nghe được'"></p>
+                            <p class="text-sm text-indigo-600" x-show="hint" x-text="current?.meaning"></p>
+                            <p class="text-lg font-semibold text-indigo-600 tracking-widest" x-show="hint && !isLongTerm" x-text="hintMask"></p>
+                        </div>
+                    </template>
+
+                    {{-- Ô gõ đáp án (Điền từ / Nghe & gõ) --}}
+                    <template x-if="typing && !revealed">
+                        <div class="w-full max-w-md mt-2">
+                            <div class="flex gap-2">
+                                <input x-ref="answer" x-model="answer" type="text" autocomplete="off" autocapitalize="off"
+                                       autocorrect="off" spellcheck="false"
+                                       @keydown.enter.prevent="check()"
+                                       :placeholder="isLongTerm ? 'Gõ lại cả câu…' : 'Gõ từ tiếng Anh…'"
+                                       class="flex-1 min-w-0 px-4 py-3 text-base border border-gray-300 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                                <button type="button" @click="check()"
+                                        class="px-4 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition">
+                                    Kiểm tra
+                                </button>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
+                                <span>Enter để kiểm tra</span>
+                                <button type="button" @click="useHint()" x-show="!hint" class="text-indigo-600 hover:text-indigo-800 font-medium">
+                                    💡 Gợi ý
+                                </button>
+                                <span x-show="hint" class="text-amber-600">Đã dùng gợi ý</span>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Kết quả so đáp án --}}
+                    <template x-if="revealed && checked">
+                        <div class="w-full max-w-md rounded-xl px-4 py-3 text-sm text-left"
+                             :class="{
+                                'bg-emerald-50 text-emerald-800 border border-emerald-100': checked.verdict === 'exact',
+                                'bg-amber-50 text-amber-800 border border-amber-100': checked.verdict === 'close',
+                                'bg-red-50 text-red-800 border border-red-100': checked.verdict === 'wrong',
+                             }">
+                            <p class="font-semibold"
+                               x-text="{ exact: '✓ Chính xác', close: '≈ Gần đúng — sai chính tả nhẹ', wrong: '✗ Chưa đúng' }[checked.verdict]"></p>
+                            <p class="mt-0.5" x-show="checked.verdict !== 'exact'">
+                                Bạn gõ: <span class="font-mono line-through decoration-1" x-text="answer || '(bỏ trống)'"></span>
+                            </p>
+                        </div>
+                    </template>
 
                     {{-- Mặt sau --}}
                     <template x-if="revealed">
-                        <div class="w-full space-y-3 pt-4 mt-2 border-t border-gray-100">
+                        <div class="w-full space-y-3 pt-4 mt-1 border-t border-gray-100">
                             <p class="text-xs text-gray-400 font-medium" x-show="current?.part_of_speech" x-text="current?.part_of_speech"></p>
                             <p class="text-xl font-bold text-indigo-700 leading-snug" x-text="current?.meaning"></p>
                             <p class="text-sm text-gray-600 italic leading-relaxed" x-show="current?.example" x-text="current?.example"></p>
@@ -108,9 +208,9 @@
                     </template>
                 </div>
 
-                {{-- Câu gốc: gợi ý ngữ cảnh, xem trước khi lật vẫn không lộ nghĩa
-                     tiếng Việt nên không phá giá trị của lần nhớ lại. --}}
-                <div class="px-6 pb-5" x-show="current?.context">
+                {{-- Câu gốc: ở kiểu Lật thẻ là gợi ý (không lộ nghĩa tiếng Việt);
+                     ở kiểu Điền từ thì chính nó là đề nên chỉ hiện sau khi lật. --}}
+                <div class="px-6 pb-5" x-show="current?.context && (kind === 'flip' || revealed)">
                     <details class="group">
                         <summary class="text-xs text-gray-400 cursor-pointer hover:text-indigo-600 list-none select-none">
                             Xem câu gốc trong bài
@@ -122,29 +222,24 @@
 
                 {{-- Hành động --}}
                 <div class="border-t border-gray-100 p-4">
-                    <button x-show="!revealed" @click="reveal()" type="button"
+                    <button x-show="!revealed && !typing" @click="reveal()" type="button"
                             class="w-full py-3.5 rounded-xl bg-gray-900 text-white font-semibold hover:bg-gray-800 transition">
                         Xem nghĩa
                         <span class="block text-[10px] font-normal text-gray-400 mt-0.5">phím cách</span>
                     </button>
 
-                    {{-- Nhãn dưới mỗi nút = lần gặp lại, như Anki --}}
+                    {{-- Nhãn dưới mỗi nút = lần gặp lại, như Anki. Kiểu gõ thì nút
+                         được gợi ý sáng viền — bấm Enter để chọn nút đó. --}}
                     <div x-show="revealed" class="grid grid-cols-3 gap-2">
-                        <button @click="grade('again')" :disabled="saving" type="button"
-                                class="py-3 rounded-xl bg-red-50 text-red-700 font-semibold text-sm border border-red-100 hover:bg-red-100 disabled:opacity-50 transition">
-                            Quên
-                            <span class="block text-[10px] font-normal text-red-400 mt-0.5" x-text="current?.intervals?.again"></span>
-                        </button>
-                        <button @click="grade('hard')" :disabled="saving" type="button"
-                                class="py-3 rounded-xl bg-amber-50 text-amber-700 font-semibold text-sm border border-amber-100 hover:bg-amber-100 disabled:opacity-50 transition">
-                            Mơ hồ
-                            <span class="block text-[10px] font-normal text-amber-500 mt-0.5" x-text="current?.intervals?.hard"></span>
-                        </button>
-                        <button @click="grade('good')" :disabled="saving" type="button"
-                                class="py-3 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-sm border border-emerald-100 hover:bg-emerald-100 disabled:opacity-50 transition">
-                            Nhớ
-                            <span class="block text-[10px] font-normal text-emerald-500 mt-0.5" x-text="current?.intervals?.good"></span>
-                        </button>
+                        <template x-for="b in gradeButtons" :key="b.key">
+                            <button @click="grade(b.key)" :disabled="saving" type="button"
+                                    class="py-3 rounded-xl font-semibold text-sm border disabled:opacity-50 transition"
+                                    :class="[b.cls, suggestion === b.key ? 'ring-2 ring-offset-1 ' + b.ring : '']">
+                                <span x-text="b.label"></span>
+                                <span class="block text-[10px] font-normal mt-0.5" :class="b.sub"
+                                      x-text="suggestion === b.key ? `${current?.intervals?.[b.key] ?? ''} · Enter` : current?.intervals?.[b.key]"></span>
+                            </button>
+                        </template>
                     </div>
 
                     <p x-show="error" x-cloak class="mt-3 text-xs text-red-600 text-center" x-text="error"></p>
@@ -155,11 +250,14 @@
             <div x-show="finished" x-cloak class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-12 text-center">
                 <div class="text-4xl mb-3">🎯</div>
                 <h2 class="font-bold text-gray-900 text-lg mb-1">Xong phiên ôn tập</h2>
-                <p class="text-sm text-gray-500 mb-6">
+                <p class="text-sm text-gray-500 mb-2">
                     Bạn vừa ôn <span class="font-semibold text-gray-900" x-text="reviewed"></span> lượt ·
                     nhớ <span class="font-semibold text-emerald-600" x-text="goodCount"></span> lượt.
                     <span x-show="laterCount > 0" x-text="`${laterCount} thẻ đang học sẽ quay lại sau 1 giờ.`"></span>
                 </p>
+                <p class="text-sm font-semibold text-orange-600 mb-6" x-show="streak > 0"
+                   x-text="`🔥 Chuỗi ${streak} ngày liên tiếp`"></p>
+                <div class="mb-6" x-show="streak === 0"></div>
 
                 <div class="flex items-center justify-center gap-2">
                     @if($remainingAfter > 0)
@@ -182,30 +280,55 @@
 
 <script>
     /**
-     * Phiên ôn kiểu Anki.
+     * Phiên ôn kiểu Anki, 3 kiểu ôn:
+     *   flip   — Lật thẻ: nhìn từ, tự nhớ nghĩa, tự chấm.
+     *   cloze  — Điền từ: câu gốc trong bài bị đục đúng chỗ từ đó, gõ từ vào.
+     *   listen — Nghe & gõ: nghe phát âm, gõ lại (câu thì chép cả câu).
+     * Kiểu gõ tự so đáp án (resources/js/components/vocab-practice.js) và gợi ý
+     * nút chấm; học viên vẫn có quyền bấm nút khác.
      *
      * Hàng đợi giữ thẻ kèm thời điểm tới hạn (`dueMs`). Thẻ vừa chấm mà tới hạn
      * trong `learnAhead` phút (bước 1 / 5 / 10 phút) thì quay lại hàng đợi của
      * chính phiên này; xa hơn (bước 1 giờ, hoặc đã sang ôn theo ngày) thì rời
      * phiên và sẽ hiện ở lần ôn sau.
      */
-    function vocabReview(cards, baseUrl, csrf, learnAhead) {
+    function vocabReview(cards, baseUrl, csrf, learnAhead, streak) {
         const now = () => Date.now();
+        const practice = () => window.vocabPractice;
 
         return {
             baseUrl, csrf,
             learnAheadMs: learnAhead * 60 * 1000,
+            streak,
+
+            modes: [
+                { key: 'flip', icon: '🃏', label: 'Lật thẻ' },
+                { key: 'cloze', icon: '✍️', label: 'Điền từ' },
+                { key: 'listen', icon: '🎧', label: 'Nghe & gõ' },
+            ],
+            mode: 'flip',
+
+            gradeButtons: [
+                { key: 'again', label: 'Quên', cls: 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100', sub: 'text-red-400', ring: 'ring-red-400' },
+                { key: 'hard', label: 'Mơ hồ', cls: 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100', sub: 'text-amber-500', ring: 'ring-amber-400' },
+                { key: 'good', label: 'Nhớ', cls: 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100', sub: 'text-emerald-500', ring: 'ring-emerald-400' },
+            ],
 
             queue: cards.map((c) => ({ ...c, dueMs: 0 })),
             total: cards.length,
             current: null,
-            revealed: false,
             saving: false,
             finished: false,
             reviewed: 0,
             goodCount: 0,
             laterCount: 0,
             error: null,
+
+            // Trạng thái của thẻ đang hiện
+            revealed: false,
+            answer: '',
+            checked: null,
+            hint: false,
 
             waitingFor: null,
             countdown: '',
@@ -221,20 +344,111 @@
                 // localStorage có thể ném lỗi (chế độ ẩn danh, chặn dữ liệu trang).
                 try {
                     this.autoSpeak = localStorage.getItem('vocab.autoSpeak') !== '0';
+                    const saved = localStorage.getItem('vocab.reviewMode');
+                    if (this.modes.some((m) => m.key === saved)) this.mode = saved;
                 } catch (e) {}
 
                 this.pick();
                 document.addEventListener('keydown', (e) => {
-                    if (!this.current || this.saving || e.target.closest('input, textarea, select')) return;
-                    if (!this.revealed && (e.key === ' ' || e.key === 'Enter')) {
+                    if (!this.current || this.saving || e.target.closest?.('input, textarea, select')) return;
+
+                    if (!this.revealed && !this.typing && (e.key === ' ' || e.key === 'Enter')) {
                         e.preventDefault();
                         this.reveal();
+                    } else if (this.revealed && e.key === 'Enter' && this.suggestion) {
+                        e.preventDefault();
+                        this.grade(this.suggestion);
                     } else if (this.revealed && ['1', '2', '3'].includes(e.key)) {
                         this.grade({ 1: 'again', 2: 'hard', 3: 'good' }[e.key]);
                     } else if (e.key === 'r' || e.key === 'R') {
                         this.speak();
                     }
                 });
+            },
+
+            /* ── Kiểu ôn của thẻ hiện tại ── */
+
+            /** Kiểu thực tế cho thẻ này — có thể lùi về kiểu khác nếu không hợp. */
+            get kind() {
+                if (!this.current) return 'flip';
+                if (this.mode === 'listen') return this.canSpeak ? 'listen' : 'flip';
+                if (this.mode === 'cloze') return this.cloze.kind;
+                return 'flip';
+            },
+
+            get cloze() {
+                return this.current ? practice().clozePrompt(this.current) : { kind: 'flip' };
+            },
+
+            get typing() {
+                return ['cloze', 'meaning', 'listen'].includes(this.kind);
+            },
+
+            get isLongTerm() {
+                return this.current ? practice().isSentence(this.current) : false;
+            },
+
+            /** Vì sao thẻ này không ở kiểu đã chọn. */
+            get fallbackNote() {
+                if (this.mode === 'cloze' && this.kind === 'flip') return 'Câu dài không đục lỗ được — ôn bằng lật thẻ';
+                if (this.mode === 'listen' && !this.canSpeak) return 'Trình duyệt không hỗ trợ đọc — ôn bằng lật thẻ';
+                return '';
+            },
+
+            /** Đáp án đúng: kiểu Điền từ lấy đúng dạng chữ trong câu bị đục. */
+            get expected() {
+                if (!this.current) return '';
+                return this.kind === 'cloze' ? this.cloze.answer : this.current.term;
+            },
+
+            /** Gợi ý: chữ cái đầu + số ký tự còn lại, giữ khoảng trắng của cụm từ. */
+            get hintMask() {
+                const term = this.expected;
+                return [...term].map((ch, i) => (i === 0 || ch === ' ' || ch === '-' ? ch : '_')).join(' ');
+            },
+
+            get suggestion() {
+                return this.checked?.suggestion ?? null;
+            },
+
+            setMode(key) {
+                this.mode = key;
+                try { localStorage.setItem('vocab.reviewMode', key); } catch (e) {}
+                this.resetCard();
+                this.onCardShown();
+            },
+
+            resetCard() {
+                this.revealed = false;
+                this.answer = '';
+                this.checked = null;
+                this.hint = false;
+            },
+
+            /** Thẻ vừa hiện: kiểu gõ thì đặt con trỏ vào ô, kiểu nghe thì đọc luôn. */
+            onCardShown() {
+                if (!this.current) return;
+                this.$nextTick(() => {
+                    if (this.typing) this.$refs.answer?.focus();
+                    // Chrome chặn đọc trước khi người dùng tương tác với trang:
+                    // thẻ đầu tiên có thể phải bấm nút loa.
+                    if (this.kind === 'listen') this.speak();
+                });
+            },
+
+            useHint() {
+                this.hint = true;
+                this.$nextTick(() => this.$refs.answer?.focus());
+            },
+
+            check() {
+                if (!this.current || this.revealed) return;
+
+                this.checked = practice().applyHintPenalty(practice().checkAnswer(this.answer, this.expected), this.hint);
+                this.revealed = true;
+                // Rời ô gõ để phím Enter / 1-2-3 điều khiển nút chấm.
+                this.$refs.answer?.blur();
+                if (this.autoSpeak) this.speak();
             },
 
             reveal() {
@@ -257,6 +471,8 @@
                 });
             },
 
+            /* ── Hàng đợi ── */
+
             get learningCount() {
                 return this.queue.filter((c) => c.dueMs > now()).length;
             },
@@ -278,7 +494,7 @@
             pick() {
                 clearInterval(this.timer);
                 if (this.canSpeak) window.vocabSpeech.cancel();
-                this.revealed = false;
+                this.resetCard();
                 this.waitingFor = null;
 
                 if (this.queue.length === 0) {
@@ -292,6 +508,7 @@
 
                 if (next.dueMs <= now()) {
                     this.current = next;
+                    this.onCardShown();
                     return;
                 }
 
@@ -347,6 +564,7 @@
                     const body = await response.json();
                     this.reviewed++;
                     if (result === 'good') this.goodCount++;
+                    if (typeof body.streak === 'number') this.streak = body.streak;
 
                     this.queue = this.queue.filter((c) => c !== card);
 
