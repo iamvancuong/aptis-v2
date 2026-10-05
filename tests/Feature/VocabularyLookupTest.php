@@ -474,7 +474,8 @@ class VocabularyLookupTest extends TestCase
         $item = $this->card($this->user());
 
         // Anki: bước đầu (1 phút) là nơi "Quên" đưa về; Nhớ lần đầu sang 5 phút.
-        $this->assertSame(['again' => '1 phút', 'hard' => '1 phút', 'good' => '5 phút'], $item->previewIntervals());
+        // Mơ hồ = trung bình bước 1 và bước 2 (1 & 5 phút), KHÁC Quên.
+        $this->assertSame(['again' => '1 phút', 'hard' => '3 phút', 'good' => '5 phút'], $item->previewIntervals());
 
         $item->recordReview('good');
         $this->assertSame('learning', $item->srs_state);
@@ -493,14 +494,32 @@ class VocabularyLookupTest extends TestCase
         $this->assertTrue($item->due_at->equalTo(now()->startOfDay()->addDay()));
     }
 
+    public function test_mo_ho_luon_cho_lau_hon_quen_o_moi_buoc_hoc(): void
+    {
+        // Lỗi thật: thẻ mới bấm Quên hay Mơ hồ đều ra "1 phút".
+        $item = $this->card($this->user());
+        $expected = [
+            0 => ['1 phút', '3 phút', '5 phút'],
+            1 => ['1 phút', '8 phút', '10 phút'],
+            2 => ['1 phút', '35 phút', '1 giờ'],
+            3 => ['1 phút', '1,5 giờ', '1 ngày'],
+        ];
+
+        foreach ($expected as $step => [$again, $hard, $good]) {
+            $item->forceFill(['srs_state' => 'learning', 'step' => $step]);
+            $this->assertSame(['again' => $again, 'hard' => $hard, 'good' => $good], $item->previewIntervals(), "bước $step");
+        }
+    }
+
     public function test_mo_ho_lap_lai_buoc_hien_tai_quen_ve_buoc_dau(): void
     {
         $item = $this->card($this->user());
 
         $item->recordReview('good');   // → bước 2 (5 phút)
         $item->recordReview('hard');
-        $this->assertSame(1, $item->step, 'Mơ hồ thì lặp lại đúng bước đang học.');
-        $this->assertEqualsWithDelta(5, now()->diffInMinutes($item->due_at), 0.1);
+        $this->assertSame(1, $item->step, 'Mơ hồ thì ở lại bước đang học.');
+        // …nhưng chờ giữa bước này và bước kế: (5 + 10) / 2 ≈ 8 phút.
+        $this->assertEqualsWithDelta(8, now()->diffInMinutes($item->due_at), 0.1);
 
         $item->recordReview('again');
         $this->assertSame(0, $item->step);
@@ -548,8 +567,8 @@ class VocabularyLookupTest extends TestCase
 
         $this->assertSame([$learning->id, $review->id, $new->id], $cards->pluck('id')->all());
         $this->assertFalse($cards->contains('id', $notDue->id));
-        // Thẻ đang ở bước 5 phút: Mơ hồ lặp lại 5 phút.
-        $this->assertSame('5 phút', $cards->first()['intervals']['hard']);
+        // Thẻ đang ở bước 5 phút: Mơ hồ chờ giữa bước này và bước 10 phút.
+        $this->assertSame('8 phút', $cards->first()['intervals']['hard']);
     }
 
     public function test_cham_ket_qua_on_tap_qua_endpoint(): void

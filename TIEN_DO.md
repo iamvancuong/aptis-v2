@@ -1520,3 +1520,16 @@ Nhánh `feat/vocab-ai-lookup`, tiếp §33.
 - DB test `ujxmchhx_aptis_test_2026` (06/10): đã chạy riêng migration `vocab_daily_stats` và nâng `vocabulary_items`
   lên schema mới (có `vocab_folders`, `srs_state`) — trước đó còn schema Leitner cũ vì từng migrate trước khi sửa
   migration tại chỗ. 6 migration cũ (users/login_sessions/…) vẫn Pending, chưa đụng.
+
+### Bổ sung 06/10 (tối) — Mơ hồ ≠ Quên, đo chất lượng dịch, đổi model, log lộ
+- **Lỗi lịch ôn**: thẻ mới bấm Quên hay Mơ hồ đều "1 phút". Sửa như Anki: Mơ hồ ở lại bước nhưng chờ trung bình
+  bước này & bước kế (1/5 → 3 phút, 5/10 → 8, 10/60 → 35), bước cuối ×1.5 (90 phút, hiện "1,5 giờ").
+- Trang ôn hiện "*từ* → Mơ hồ · gặp lại sau 3 phút" sau mỗi lần chấm; sổ tay ghi "ôn lúc HH:mm" cho từ đang học.
+- **Đo dịch trên 28 từ/cụm của đề Reading thật** (sanctioned, author (động từ), means, bond, field…): đúng nghĩa
+  ngữ cảnh 28/28, không sa bẫy nghĩa từ điển. Nhưng gpt-4o-mini hay kéo chữ trong câu vào `meaning`
+  ("alike" → "cả nhân viên và công ty"). Prompt v3 thêm "chỉ dịch đúng từ được bôi" + bước tự kiểm; vẫn chập chờn
+  → **đổi mặc định sang `gpt-4.1-mini`** (sạch 28/28, ~10đ/lượt). Production có đặt `VOCAB_AI_MODEL` trong `.env`
+  thì giá trị đó thắng — kiểm lại.
+- `AiLookup::PROMPT_VERSION` = v3 → kho đệm cũ tự bỏ qua.
+- **Bảo mật**: key OpenAI KHÔNG có trong repo/lịch sử git/build. Nhưng `https://milaedu.com/storage/logs/laravel.log`
+  (log cũ 05/03 nằm trong `public_html`, 34 lỗi SQL) ai cũng tải được → phải xoá trên server.

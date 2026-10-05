@@ -70,6 +70,11 @@
                     <div class="h-full bg-indigo-600 transition-all duration-300"
                          :style="`width: ${progress}%`"></div>
                 </div>
+                {{-- Xác nhận vừa chấm: thẻ đó sẽ quay lại lúc nào --}}
+                <p x-show="lastGraded" x-cloak class="mt-2 text-xs text-gray-500">
+                    <span class="font-semibold text-gray-800" x-text="lastGraded?.term"></span>
+                    → <span x-text="lastGraded?.label"></span>
+                </p>
             </div>
 
             {{-- Chờ thẻ đang học tới hạn (bước 1 / 5 / 10 phút) --}}
@@ -330,6 +335,7 @@
             goodCount: 0,
             laterCount: 0,
             error: null,
+            lastGraded: null,
 
             // Trạng thái của thẻ đang hiện
             revealed: false,
@@ -577,6 +583,12 @@
 
                     const body = await response.json();
                     this.reviewed++;
+                    const when = card.intervals?.[result];
+                    const verb = { again: 'Quên', hard: 'Mơ hồ', good: 'Nhớ' }[result];
+                    this.lastGraded = {
+                        term: card.term,
+                        label: when ? `${verb} · gặp lại sau ${when}` : verb,
+                    };
                     if (result === 'good') this.goodCount++;
                     if (typeof body.streak === 'number') this.streak = body.streak;
 

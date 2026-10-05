@@ -43,6 +43,16 @@ Trả các khoá ĐÚNG THỨ TỰ dưới đây — `sense_in_context` phải �
      → ĐÚNG: "hiện hành, đang áp dụng" · SAI: "các quy định đang có hiệu lực hiện tại"
    Nếu tiếng Việt không có từ tương đương gọn thì mới được mô tả ngắn.
 
+   ⚠️ CHỈ DỊCH ĐÚNG TỪ ĐƯỢC BÔI — không kéo theo chủ ngữ, tân ngữ hay từ đứng cạnh nó trong
+   CONTEXT_SENTENCE. Ngữ cảnh chỉ để CHỌN nghĩa, không phải để dịch cùng. `meaning` phải dùng
+   được như mục từ trong sổ tay, áp vào câu khác vẫn đúng.
+   - values, câu "She values honesty above everything."
+     → ĐÚNG: "coi trọng" · SAI: "coi trọng sự trung thực"
+   - fosters, câu "The program fosters cooperation between schools."
+     → ĐÚNG: "thúc đẩy, nuôi dưỡng" · SAI: "thúc đẩy sự hợp tác giữa các trường"
+   - respectively, câu "Tom and Anna scored 8 and 9 respectively."
+     → ĐÚNG: "lần lượt, tương ứng" (trạng từ) · SAI: "Tom được 8 điểm và Anna được 9 điểm"
+
    ⚠️ QUY TẮC QUAN TRỌNG NHẤT — NGỮ CẢNH THẮNG TỪ ĐIỂN:
    Khi nghĩa phổ biến nhất trong từ điển KHÁC với nghĩa trong ngữ cảnh, BẮT BUỘC chọn nghĩa
    trong ngữ cảnh. Học viên đang đọc chính đoạn văn đó, không đọc từ điển.
@@ -73,7 +83,10 @@ Bước 1 — tự phân loại đoạn được bôi thành MỘT trong hai lo�
 **A. Cụm cố định / cụm từ** (phrasal verb, collocation, thành ngữ, cụm danh từ, cụm giới từ —
 KHÔNG có chủ ngữ riêng), ví dụ "give up", "in order to", "take part in", "a wide range of":
    - `word_type` = "phrase" (hoặc "noun" nếu là cụm danh từ thuần như "the local council").
-   - `meaning`: cụm tiếng Việt tương đương, gọn, đúng nghĩa trong CONTEXT_SENTENCE.
+   - `meaning`: cụm tiếng Việt TƯƠNG ĐƯƠNG mà người Việt thật sự nói, gọn (1-6 từ), đúng nghĩa
+     trong CONTEXT_SENTENCE. KHÔNG phải định nghĩa, KHÔNG dịch kèm phần câu xung quanh.
+     - "a piece of cake" → ĐÚNG: "dễ ợt, dễ như ăn kẹo" · SAI: "một việc rất dễ thực hiện"
+     - "the bottom line" → ĐÚNG: "điều cốt lõi, mấu chốt" · SAI: "phần kết luận quan trọng nhất của vấn đề"
    - `part_of_speech`: cụm động từ / cụm danh từ / thành ngữ…
    - `phonetic`: IPA của CẢ cụm, trong /…/.
    - `example` + `example_vi`: một câu ví dụ ngắn dùng cả cụm, khác câu ngữ cảnh.
@@ -88,6 +101,14 @@ ví dụ "I cycle to work", "They implemented the new policy last year":
    - `note`: MỘT ghi chú ngắn về điểm ngữ pháp hoặc cấu trúc đáng chú ý (thì, mệnh đề quan hệ,
      bị động, collocation như "cycle to work" = đạp xe đi làm…). Viết cho dễ hiểu.
 @endif
+
+---
+## TỰ KIỂM `meaning` TRƯỚC KHI TRẢ (mọi chế độ trừ câu tự do)
+1. Gạch từng chữ trong `meaning`: chữ nào là bản dịch của một từ KHÔNG nằm trong SELECTED_TEXT
+   (tân ngữ, chủ ngữ, bổ ngữ lấy từ câu ngữ cảnh) → XOÁ chữ đó.
+   Ví dụ bôi "adopt" trong "Many families adopt healthier diets": "áp dụng chế độ ăn" → xoá "chế độ ăn" → "áp dụng".
+2. `meaning` đọc lên phải giống một mục từ điển Anh–Việt (vài từ, có thể nhiều nghĩa gần cách nhau
+   bằng dấu phẩy), KHÔNG phải một câu giải thích.
 
 ---
 ## QUY TẮC AN TOÀN

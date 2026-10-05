@@ -382,6 +382,9 @@
                                         · <span class="text-indigo-600 font-medium">cần ôn</span>
                                     @elseif($item->srs_state === 'review')
                                         · {{ $item->due_at->format('d/m') }}
+                                    @else
+                                        {{-- Đang học: hẹn tính bằng phút/giờ nên phải ghi giờ --}}
+                                        · ôn lúc {{ $item->due_at->format($item->due_at->isToday() ? 'H:i' : 'H:i d/m') }}
                                     @endif
                                 </span>
                             </div>

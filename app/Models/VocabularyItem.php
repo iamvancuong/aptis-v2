@@ -238,7 +238,15 @@ class VocabularyItem extends Model
         }
 
         if ($result === 'hard') {
-            return $this->learningStep($state, $step, $steps, $interval, $ease, $lapses, $now);
+            // Như Anki: Mơ hồ ở lại bước hiện tại nhưng chờ LÂU HƠN Quên — trung
+            // bình bước này và bước kế (1 & 5 phút → 3 phút); bước cuối thì ×1.5.
+            // Từng để lặp đúng bước hiện tại → Quên và Mơ hồ cùng ra "1 phút".
+            $current = (int) $steps[$step];
+            $delay = isset($steps[$step + 1])
+                ? (int) round(($current + (int) $steps[$step + 1]) / 2)
+                : (int) round($current * 1.5);
+
+            return $this->learningStep($state, $step, $steps, $interval, $ease, $lapses, $now, $delay);
         }
 
         if ($step + 1 < count($steps)) {
@@ -250,7 +258,7 @@ class VocabularyItem extends Model
         return $this->graduated((int) self::srs('graduating_interval'), $ease, $lapses, $now);
     }
 
-    protected function learningStep(string $state, int $step, array $steps, int $interval, int $ease, int $lapses, Carbon $now): array
+    protected function learningStep(string $state, int $step, array $steps, int $interval, int $ease, int $lapses, Carbon $now, ?int $delayMinutes = null): array
     {
         return [
             'srs_state' => $state,
@@ -258,7 +266,7 @@ class VocabularyItem extends Model
             'interval_days' => $interval,
             'ease' => $ease,
             'lapses' => $lapses,
-            'due_at' => $now->copy()->addMinutes((int) $steps[$step]),
+            'due_at' => $now->copy()->addMinutes($delayMinutes ?? (int) $steps[$step]),
         ];
     }
 
@@ -320,7 +328,8 @@ class VocabularyItem extends Model
         }
 
         if ($minutes < 1440) {
-            return round($minutes / 60) . ' giờ';
+            // Một chữ số thập phân: 90 phút là "1,5 giờ" chứ không làm tròn lên "2 giờ".
+            return str_replace('.', ',', (string) round($minutes / 60, 1)) . ' giờ';
         }
 
         return self::humanizeDays((int) round($minutes / 1440));

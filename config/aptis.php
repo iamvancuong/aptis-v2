@@ -54,7 +54,11 @@ return [
         // là dịch nguyên cụm. Ngưỡng 5 từ cũ khiến "I cycle to work" (4 từ) bị
         // tra như một từ đơn và AI chỉ dịch "cycle" → "đạp xe".
 
-        'model' => env('VOCAB_AI_MODEL', 'gpt-4o-mini'),
+        // gpt-4.1-mini thay gpt-4o-mini (06/10): đo trên 28 từ trong đề Reading thật,
+        // 4o-mini hay kéo chữ trong câu vào nghĩa ("alike" → "cả nhân viên và công
+        // ty", "pursue" → "theo đuổi sở thích") dù prompt đã cấm; 4.1-mini sạch cả
+        // 28. Đắt hơn ~2,7 lần nhưng vẫn chỉ ~10đ/lượt chưa trúng kho đệm.
+        'model' => env('VOCAB_AI_MODEL', 'gpt-4.1-mini'),
 
         // Số thẻ tối đa mỗi phiên ôn tập.
         'review_batch' => (int) env('VOCAB_REVIEW_BATCH', 20),

@@ -28,8 +28,9 @@ class AiLookup extends Model
      * Phiên bản prompt. Tăng số này mỗi khi prompt/schema đổi theo cách làm kết
      * quả cũ sai: mọi dòng đệm cũ tự bị bỏ qua mà không phải xoá bảng.
      * v2: dịch nguyên cụm từ 2 từ trở lên + thêm `word_type`.
+     * v3: chỉ dịch đúng từ được bôi, không kéo chủ ngữ/tân ngữ trong câu vào nghĩa.
      */
-    public const PROMPT_VERSION = 'v2';
+    public const PROMPT_VERSION = 'v3';
 
     /**
      * Khoá đệm. Chuẩn hoá trước khi băm để "However" và "however " trúng cùng
