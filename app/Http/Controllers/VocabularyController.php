@@ -499,6 +499,9 @@ class VocabularyController extends Controller
             'example' => $card->example,
             'context' => $card->context_sentence,
             'srs_state' => $card->srs_state,
+            // Kiểu ôn "Trộn" chọn dạng bài theo bước học và số lần đã ôn.
+            'step' => $card->step,
+            'reviews_count' => $card->reviews_count,
             'intervals' => $card->previewIntervals(),
         ];
     }

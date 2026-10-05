@@ -47,10 +47,10 @@
              x-init="start()">
 
             {{-- Kiểu ôn — nhớ theo trình duyệt --}}
-            <div x-show="!finished" class="mb-4 grid grid-cols-3 gap-1 p-1 bg-gray-100 rounded-xl text-sm font-medium">
+            <div x-show="!finished" class="mb-4 grid grid-cols-4 gap-1 p-1 bg-gray-100 rounded-xl text-xs sm:text-sm font-medium">
                 <template x-for="m in modes" :key="m.key">
                     <button type="button" @click="setMode(m.key)"
-                            class="py-2 rounded-lg transition"
+                            class="py-2 px-1 rounded-lg transition leading-tight"
                             :class="mode === m.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'">
                         <span x-text="m.icon"></span> <span x-text="m.label"></span>
                     </button>
@@ -90,7 +90,11 @@
             {{-- ─────────────── Thẻ ─────────────── --}}
             <div x-show="!finished && current" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="px-6 pt-4 flex items-center justify-between gap-3">
-                    <span class="text-[11px] font-semibold uppercase tracking-wide" :class="badge.cls" x-text="badge.text"></span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wide">
+                        <span :class="badge.cls" x-text="badge.text"></span>
+                        {{-- Kiểu Trộn: cho học viên biết thẻ này đang ở dạng nào --}}
+                        <span x-show="mode === 'mixed'" class="text-gray-400" x-text="'· ' + kindLabel"></span>
+                    </span>
 
                     {{-- Bật/tắt tự đọc khi lật thẻ — nhớ theo trình duyệt --}}
                     <label x-show="canSpeak" class="flex items-center gap-1.5 text-[11px] text-gray-400 select-none">
@@ -302,11 +306,14 @@
             streak,
 
             modes: [
+                { key: 'mixed', icon: '🔀', label: 'Trộn' },
                 { key: 'flip', icon: '🃏', label: 'Lật thẻ' },
                 { key: 'cloze', icon: '✍️', label: 'Điền từ' },
                 { key: 'listen', icon: '🎧', label: 'Nghe & gõ' },
             ],
-            mode: 'flip',
+            // Mặc định Trộn: mỗi từ lần lượt gặp cả 3 dạng theo mức thuộc,
+            // vẫn chỉ một lịch ôn nên khối lượng ôn mỗi ngày không tăng.
+            mode: 'mixed',
 
             gradeButtons: [
                 { key: 'again', label: 'Quên', cls: 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100', sub: 'text-red-400', ring: 'ring-red-400' },
@@ -371,9 +378,16 @@
             /** Kiểu thực tế cho thẻ này — có thể lùi về kiểu khác nếu không hợp. */
             get kind() {
                 if (!this.current) return 'flip';
-                if (this.mode === 'listen') return this.canSpeak ? 'listen' : 'flip';
-                if (this.mode === 'cloze') return this.cloze.kind;
+                const mode = this.mode === 'mixed'
+                    ? practice().mixedMode(this.current, this.canSpeak)
+                    : this.mode;
+                if (mode === 'listen') return this.canSpeak ? 'listen' : 'flip';
+                if (mode === 'cloze') return this.cloze.kind;
                 return 'flip';
+            },
+
+            get kindLabel() {
+                return { flip: 'Lật thẻ', cloze: 'Điền từ', meaning: 'Điền từ', listen: 'Nghe & gõ' }[this.kind];
             },
 
             get cloze() {
@@ -570,7 +584,15 @@
 
                     const dueMs = body.due_at ? Date.parse(body.due_at) : Infinity;
                     if (body.srs_state !== 'review' && dueMs - now() <= this.learnAheadMs) {
-                        this.queue.push({ ...card, srs_state: body.srs_state, intervals: body.intervals, dueMs });
+                        // Cập nhật bước học để kiểu Trộn đổi dạng bài ở lần gặp lại.
+                        this.queue.push({
+                            ...card,
+                            srs_state: body.srs_state,
+                            step: body.step,
+                            reviews_count: (card.reviews_count || 0) + 1,
+                            intervals: body.intervals,
+                            dueMs,
+                        });
                     } else if (body.srs_state !== 'review') {
                         this.laterCount++;
                     }

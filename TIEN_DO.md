@@ -1512,3 +1512,10 @@ Nhánh `feat/vocab-ai-lookup`, tiếp §33.
 - Dashboard có thẻ "Hôm nay có N từ cần ôn · chuỗi X ngày" (chỉ hiện khi sổ tay có từ). Chuỗi: hôm nay chưa ôn vẫn giữ nếu hôm qua có ôn.
 - Trang ôn có 3 kiểu (nhớ theo trình duyệt): **Lật thẻ** · **Điền từ** (đục lỗ câu gốc trong bài → câu ví dụ → nhìn nghĩa; câu dài lùi về lật thẻ) · **Nghe & gõ** (tự đọc, gõ lại; câu thì chép cả câu).
   Kiểu gõ tự so đáp án (`resources/js/components/vocab-practice.js`): đúng → gợi ý Nhớ, sai chính tả nhẹ (≤ 1/6 độ dài, từ < 6 ký tự không tính) → Mơ hồ, sai → Quên; dùng gợi ý thì hạ Nhớ xuống Mơ hồ. Enter chọn nút gợi ý, 1/2/3 vẫn tự chọn được.
+- **Kiểu Trộn (mặc định)**: một lịch ôn duy nhất, dạng bài tăng độ khó theo mức thuộc (`mixedMode()` trong
+  `vocab-practice.js`): mới / bước 1 → Lật thẻ · bước 2 → Điền từ · bước 3+ → Nghe & gõ · ôn theo ngày xoay vòng
+  Điền từ → Nghe & gõ → Lật thẻ theo `reviews_count`. Câu dài thay Điền từ bằng Nghe & gõ. KHÔNG tách 3 lịch ôn
+  riêng cho mỗi từ (kiểu card type của Anki) vì sẽ gấp 3 khối lượng ôn mỗi ngày.
+- DB test `ujxmchhx_aptis_test_2026` (06/10): đã chạy riêng migration `vocab_daily_stats` và nâng `vocabulary_items`
+  lên schema mới (có `vocab_folders`, `srs_state`) — trước đó còn schema Leitner cũ vì từng migrate trước khi sửa
+  migration tại chỗ. 6 migration cũ (users/login_sessions/…) vẫn Pending, chưa đụng.

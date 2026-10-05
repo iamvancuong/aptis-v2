@@ -60,6 +60,41 @@ export function clozePrompt(card) {
     return { kind: 'meaning' };
 }
 
+/**
+ * Kiểu ôn "Trộn": chọn dạng bài theo mức thuộc của thẻ — một lịch ôn duy nhất,
+ * độ khó tăng dần thay vì bắt học viên làm cả 3 dạng cho mỗi từ.
+ *
+ *   mới / bước học đầu        → flip   (nhận diện)
+ *   bước học thứ 2            → cloze  (nhớ lại + chính tả)
+ *   bước học thứ 3 trở đi     → listen (khó nhất)
+ *   đang ôn theo ngày         → xoay vòng cloze → listen → flip theo số lần đã ôn
+ *
+ * Câu dài không đục lỗ được thì thay "cloze" bằng "listen" (chép chính tả);
+ * trình duyệt không đọc được thì "listen" lùi về "cloze", rồi "flip".
+ *
+ * @returns {'flip'|'cloze'|'listen'}
+ */
+export function mixedMode(card, canSpeak) {
+    const state = card.srs_state || 'new';
+    const step = Number(card.step) || 0;
+
+    let wanted;
+    if (state === 'review') {
+        wanted = ['cloze', 'listen', 'flip'][(Number(card.reviews_count) || 0) % 3];
+    } else if (state === 'new' || step === 0) {
+        wanted = 'flip';
+    } else if (step === 1) {
+        wanted = 'cloze';
+    } else {
+        wanted = 'listen';
+    }
+
+    if (wanted === 'cloze' && isSentence(card)) wanted = 'listen';
+    if (wanted === 'listen' && !canSpeak) wanted = isSentence(card) ? 'flip' : 'cloze';
+
+    return wanted;
+}
+
 /** Chuẩn hoá để so: thường hoá, gộp khoảng trắng, bỏ dấu câu, thống nhất dấu nháy. */
 export function normalizeAnswer(text) {
     return (text || '')
@@ -125,6 +160,6 @@ export function applyHintPenalty(result, usedHint) {
 
 if (typeof window !== 'undefined') {
     window.vocabPractice = {
-        isSentence, blankOut, clozePrompt, normalizeAnswer, levenshtein, checkAnswer, applyHintPenalty,
+        isSentence, blankOut, clozePrompt, mixedMode, normalizeAnswer, levenshtein, checkAnswer, applyHintPenalty,
     };
 }
