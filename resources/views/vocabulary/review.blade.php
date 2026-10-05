@@ -211,9 +211,9 @@
             countdown: '',
             timer: null,
 
-            /* Đọc phát âm bằng giọng có sẵn của trình duyệt (Web Speech API):
-               không tốn tiền API, không cần file âm thanh. */
-            canSpeak: typeof window.speechSynthesis !== 'undefined',
+            /* Đọc phát âm: dùng chung resources/js/components/speech.js với
+               popup tra từ (gắn sẵn ở window.vocabSpeech). */
+            canSpeak: !!window.vocabSpeech?.canSpeak,
             autoSpeak: true,
             speaking: false,
 
@@ -248,30 +248,13 @@
                 } catch (e) {}
             },
 
-            /** Chọn giọng Anh-Anh cho khớp phiên âm IPA; không có thì giọng Anh bất kỳ. */
-            voice() {
-                const voices = window.speechSynthesis.getVoices();
-                return voices.find((v) => v.lang === 'en-GB')
-                    || voices.find((v) => v.lang && v.lang.startsWith('en'))
-                    || null;
-            },
-
             speak() {
                 if (!this.canSpeak || !this.current?.term) return;
 
-                const synth = window.speechSynthesis;
-                // Bấm liên tục thì đọc lại từ đầu, không xếp hàng chồng lên nhau.
-                synth.cancel();
-
-                const utterance = new SpeechSynthesisUtterance(this.current.term);
-                const voice = this.voice();
-                if (voice) utterance.voice = voice;
-                utterance.lang = voice?.lang || 'en-GB';
-                utterance.rate = 0.9;
-                utterance.onstart = () => { this.speaking = true; };
-                utterance.onend = utterance.onerror = () => { this.speaking = false; };
-
-                synth.speak(utterance);
+                window.vocabSpeech.speak(this.current.term, {
+                    onStart: () => { this.speaking = true; },
+                    onEnd: () => { this.speaking = false; },
+                });
             },
 
             get learningCount() {
@@ -294,7 +277,7 @@
             /** Chọn thẻ tới hạn sớm nhất; không có thì chờ thẻ đang học. */
             pick() {
                 clearInterval(this.timer);
-                if (this.canSpeak) window.speechSynthesis.cancel();
+                if (this.canSpeak) window.vocabSpeech.cancel();
                 this.revealed = false;
                 this.waitingFor = null;
 

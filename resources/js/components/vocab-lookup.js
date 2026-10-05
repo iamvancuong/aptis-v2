@@ -9,6 +9,8 @@
  * gọi luôn thì vừa đốt tiền vừa nhấp nháy popup gây khó chịu.
  */
 
+import { canSpeak, speak, cancel as cancelSpeech } from './speech.js';
+
 /** Giới hạn ký tự — khớp với `aptis.vocab.max_chars` phía server. */
 const MAX_CHARS = 300;
 
@@ -86,6 +88,11 @@ function vocabLookup(config) {
         saved: false,
         saving: false,
         remaining: null,
+
+        /* Nghe phát âm. `speakingKey` = phần đang được đọc ('term' | 'example')
+           để chỉ nút đó sáng lên. */
+        canSpeak,
+        speakingKey: null,
 
         /* Thư mục lưu từ. '' = chỉ xếp tự động theo loại từ. */
         folders: config.folders || [],
@@ -182,7 +189,16 @@ function vocabLookup(config) {
             this.trigger.show = false;
         },
 
+        say(key, text) {
+            speak(text, {
+                onStart: () => { this.speakingKey = key; },
+                onEnd: () => { if (this.speakingKey === key) this.speakingKey = null; },
+            });
+        },
+
         closeAll() {
+            cancelSpeech();
+            this.speakingKey = null;
             this.trigger.show = false;
             this.panel.show = false;
             this.result = null;

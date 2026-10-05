@@ -59,7 +59,17 @@
         {{-- Đầu thẻ: từ đang tra --}}
         <div class="flex items-start justify-between gap-2 px-4 py-3 bg-indigo-50 border-b border-indigo-100">
             <div class="min-w-0">
-                <p class="font-bold text-indigo-900 break-words leading-snug" x-text="term"></p>
+                <div class="flex items-start gap-1.5">
+                    <p class="font-bold text-indigo-900 break-words leading-snug" x-text="term"></p>
+                    {{-- Nghe đoạn đã bôi — có ngay cả khi đang tải nghĩa --}}
+                    <button x-show="canSpeak" @click="say('term', term)" type="button" title="Nghe phát âm"
+                            class="shrink-0 -my-0.5 p-1 rounded-full transition"
+                            :class="speakingKey === 'term' ? 'text-indigo-700 bg-indigo-100' : 'text-indigo-400 hover:text-indigo-700 hover:bg-indigo-100'">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H3v6h3l5 4V5z" />
+                </svg>
+                    </button>
+                </div>
                 <p class="text-xs text-indigo-600 mt-0.5"
                    x-show="result && result.phonetic"
                    x-text="result?.phonetic"></p>
@@ -104,7 +114,16 @@
 
                     <template x-if="result.example">
                         <div class="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
-                            <p class="text-sm text-gray-700 italic leading-relaxed" x-text="result.example"></p>
+                            <div class="flex items-start gap-1.5">
+                                <p class="flex-1 text-sm text-gray-700 italic leading-relaxed" x-text="result.example"></p>
+                                <button x-show="canSpeak" @click="say('example', result.example)" type="button" title="Nghe câu ví dụ"
+                                        class="shrink-0 p-1 -m-1 rounded-full transition"
+                                        :class="speakingKey === 'example' ? 'text-indigo-700 bg-indigo-100' : 'text-gray-400 hover:text-indigo-700 hover:bg-indigo-50'">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H3v6h3l5 4V5z" />
+                </svg>
+                                </button>
+                            </div>
                             <p class="text-xs text-gray-500 mt-1 leading-relaxed"
                                x-show="result.example_vi"
                                x-text="result.example_vi"></p>
