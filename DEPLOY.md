@@ -18,7 +18,6 @@
 - [ ] **B7.** `php artisan config:cache route:cache view:cache`
 - [ ] **B8.** Cron `* * * * * php artisan schedule:run`
 - [ ] **B9.** Smoke test theo §3
-- [ ] **B10.** (Sau) Rotate OpenAI key vì đã lộ trong chat
 
 ---
 
@@ -87,7 +86,7 @@ MAIL_FROM_ADDRESS=milaedu.hn@gmail.com
 MAIL_FROM_NAME="${APP_NAME}"
 
 # ─── OpenAI (chấm AI Writing) ─────────────────────────────
-OPENAI_API_KEY=<OPENAI_API_KEY MỚI SAU KHI ROTATE>
+OPENAI_API_KEY=<OPENAI_API_KEY>
 
 # ─── SEO (tùy chọn, nên điền bio thật của cô) ─────────────
 # SEO_INSTRUCTOR_BIO="..."
