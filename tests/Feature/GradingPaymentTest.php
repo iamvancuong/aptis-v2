@@ -14,6 +14,30 @@ class GradingPaymentTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Tính năng đang tắt trên production; các ca dưới kiểm luồng khi BẬT
+        // lại. Ca "đang tắt" ở cuối file tự tắt cờ.
+        Config::set('aptis.teacher_grading_enabled', true);
+    }
+
+    public function test_dang_tat_thi_khong_tao_don_cham_phi(): void
+    {
+        Config::set('aptis.teacher_grading_enabled', false);
+        $user    = $this->user();
+        $attempt = $this->attempt($user);
+
+        $this->actingAs($user)
+            ->post(route('attempts.request-grading', $attempt))
+            ->assertRedirect()
+            ->assertSessionHas('info');
+
+        $this->assertSame(0, Order::count());
+        $this->assertFalse((bool) $attempt->fresh()->is_grading_requested);
+    }
+
     private function user(string $role = 'user'): User
     {
         return User::create([

@@ -1336,7 +1336,8 @@ Không có migration, không đổi Tailwind/JS → **không cần `migrate` hay
 Chỉ `git reset --hard origin/main` rồi `optimize:clear && config:cache && route:cache && view:cache`.
 
 ### 🔴 Việc còn lại (KHÔNG thuộc phiên này, phát hiện khi chạy test)
-`GradingPaymentTest` **fail 4/5 ca** — đã fail sẵn TRƯỚC thay đổi này (kiểm chứng bằng `git stash`).
+✅ ĐÃ SỬA 06/10: thay `return` cứng bằng cờ `aptis.teacher_grading_enabled` (mặc định tắt); test bật cờ để giữ kiểm luồng cũ + thêm ca "đang tắt thì không tạo đơn". Bộ test xanh 381/381.
+~~`GradingPaymentTest` **fail 4/5 ca** — đã fail sẵn TRƯỚC thay đổi này (kiểm chứng bằng `git stash`).~~
 Là tồn dư của commit `f33a978` "Tắt hoàn toàn chức năng gửi giáo viên chấm bài": chức năng đã tắt
 nhưng test cũ vẫn kỳ vọng luồng cũ. Cần sửa hoặc bỏ test cho khớp thực tế.
 

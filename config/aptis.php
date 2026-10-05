@@ -19,6 +19,13 @@ return [
     'classes_enabled' => (bool) env('CLASSES_ENABLED', false),
 
     /*
+    | "Gửi giáo viên chấm bài" (đơn chấm phí cho Mock Test Writing/Speaking).
+    | Mặc định TẮT — nút đã ẩn ở giao diện, backend cũng chặn. Bật lại: đặt
+    | `TEACHER_GRADING_ENABLED=true` rồi `config:cache`.
+    */
+    'teacher_grading_enabled' => (bool) env('TEACHER_GRADING_ENABLED', false),
+
+    /*
     |--------------------------------------------------------------------------
     | Tra từ bằng AI + Sổ tay từ vựng
     |--------------------------------------------------------------------------
