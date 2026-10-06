@@ -23,7 +23,7 @@
                     </svg>
                 </div>
 
-                <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex items-center gap-2">
+                <div x-data="{ exp: @js((string) request('expiration')) }" class="flex items-center gap-2">
                     <x-select name="expiration" x-model="exp">
                         <option value="">Lọc ngày thi</option>
                         <option value="expired">Đã quá hạn</option>

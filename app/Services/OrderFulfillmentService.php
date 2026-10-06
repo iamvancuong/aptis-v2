@@ -17,9 +17,6 @@ use Illuminate\Support\Facades\Mail;
  */
 class OrderFulfillmentService
 {
-    /** Mật khẩu mặc định cho tài khoản mới; buộc đổi ở lần đăng nhập đầu. */
-    public const DEFAULT_PASSWORD = '12345678';
-
     public function fulfill(Order $order): void
     {
         if ($order->type === Order::TYPE_REGISTRATION) {
@@ -94,10 +91,14 @@ class OrderFulfillmentService
 
                 $result = [$user, false, null];
             } else {
+                // Mật khẩu ngẫu nhiên riêng từng tài khoản (gửi qua email), KHÔNG
+                // dùng chung 12345678 — xem App\Support\InitialPassword.
+                $plainPassword = \App\Support\InitialPassword::make();
+
                 $user = User::create([
                     'name'                 => strtok($order->email, '@'),
                     'email'                => $order->email,
-                    'password'             => Hash::make(self::DEFAULT_PASSWORD),
+                    'password'             => Hash::make($plainPassword),
                     'role'                 => 'user',
                     // Tài khoản sinh ra từ một đơn đã thanh toán.
                     // ⚠️ Nhánh GIA HẠN ở trên cố ý KHÔNG đụng tới `source`: tài
@@ -112,7 +113,7 @@ class OrderFulfillmentService
                     'expires_at'           => now()->addDays($days),
                 ]);
 
-                $result = [$user, true, self::DEFAULT_PASSWORD];
+                $result = [$user, true, $plainPassword];
             }
 
             $order->update([

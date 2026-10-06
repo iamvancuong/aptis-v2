@@ -138,17 +138,23 @@ class UserSourceTest extends TestCase
         $this->assertSame(User::SOURCE_MANUAL, User::firstWhere('email', 'moi@example.test')->source);
     }
 
-    public function test_tao_tay_dung_mat_khau_mac_dinh_12345678(): void
+    public function test_tao_tay_dung_mat_khau_ngau_nhien_va_buoc_doi(): void
     {
         $admin = $this->user(['role' => 'admin']);
 
-        $this->actingAs($admin)->post(route('admin.users.store'), [
+        $res = $this->actingAs($admin)->post(route('admin.users.store'), [
             'name' => 'Học viên', 'email' => 'macdinh@example.test',
             'role' => 'user', 'status' => 'active',
         ])->assertSessionHasNoErrors();
 
         $u = User::firstWhere('email', 'macdinh@example.test');
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('12345678', $u->password));
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check('12345678', $u->password));
+        $this->assertTrue((bool) $u->must_change_password);
+
+        // Mật khẩu hiện cho admin đúng một lần trong thông báo, và khớp tài khoản.
+        preg_match('/Mật khẩu: ([a-z0-9]+)/', session('success'), $m);
+        $this->assertNotEmpty($m[1] ?? null);
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check($m[1], $u->password));
     }
 
     public function test_khong_tao_duoc_admin_qua_man_tao_tay(): void

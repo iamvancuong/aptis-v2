@@ -201,7 +201,9 @@ class MockTestController extends Controller
                         'id' => $q->id,
                         'skill' => $q->skill,
                         'part' => $q->part,
-                        'stem' => $q->stem,
+                        // Reading: stem Part 4 chứa mẹo nhớ tiếng Việt (gợi ý đáp án) →
+                        // trong giờ thi chỉ gửi title, không để lộ qua F12.
+                        'stem' => $q->skill === 'reading' ? ($q->title ?: $q->stem) : $q->stem,
                         'audio_path' => $q->audio_path,
                         'audio_url' => $this->sanitizer->audioUrl($q),
                         'audio_urls' => $this->sanitizer->audioUrls($q),
@@ -294,7 +296,11 @@ class MockTestController extends Controller
                         $files = is_array($speakingAudio[$q->id]) ? $speakingAudio[$q->id] : [$speakingAudio[$q->id]];
                         
                         foreach ($files as $file) {
-                            $path = $file->store('speaking_attempts', 'public');
+                            // Kiểm tra định dạng + ép đuôi file — xem SpeakingAudio::storeUpload.
+                            $path = \App\Support\SpeakingAudio::storeUpload($file);
+                            if ($path === null) {
+                                continue;
+                            }
                             $savedPaths[] = $path;
                             Log::info("--- Speaking MockTest: Saved audio for Q{$q->id} ---", ['path' => $path]);
                         }

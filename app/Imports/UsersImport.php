@@ -47,8 +47,12 @@ class UsersImport implements ToCollection, WithHeadingRow, WithChunkReading
             $batch[] = [
                 'name'            => $row['name'] ?? '',
                 'email'           => $email,
-                'password'        => Hash::make($row['password'] ?? 'password123'),
-                'role'            => $row['role'] ?? 'user',
+                // Ô mật khẩu trống → mật khẩu ngẫu nhiên (KHÔNG dùng 'password123' chung);
+                // admin đặt lại ở trang sửa user nếu cần. Luôn buộc đổi ở lần đăng nhập đầu.
+                'password'        => Hash::make(! empty($row['password']) ? (string) $row['password'] : \App\Support\InitialPassword::make()),
+                'must_change_password' => true,
+                // Import chỉ tạo học viên — không cho file Excel tạo admin.
+                'role'            => 'user',
                 'status'          => 'active',
                 'max_devices'     => isset($row['max_devices']) && is_numeric($row['max_devices'])
                                         ? (int) $row['max_devices']

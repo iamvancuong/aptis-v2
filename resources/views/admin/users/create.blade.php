@@ -31,10 +31,10 @@
         />
 
         {{-- Màn này chỉ tạo học viên (role user); role được ép ở server.
-             Không có ô mật khẩu: mọi tài khoản tạo tay dùng mặc định 12345678. --}}
+             Không có ô mật khẩu: server sinh mật khẩu ngẫu nhiên, hiện một lần sau khi tạo. --}}
         <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
             <p class="text-sm text-blue-700">
-                Mật khẩu mặc định: <span class="font-semibold">12345678</span> — học viên đổi ở lần đăng nhập đầu.
+                Mật khẩu được <span class="font-semibold">tạo ngẫu nhiên</span> và hiện một lần sau khi bấm tạo — gửi cho học viên, học viên đổi ở lần đăng nhập đầu.
             </p>
         </div>
 

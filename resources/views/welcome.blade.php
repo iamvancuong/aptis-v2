@@ -120,7 +120,7 @@
         <a href="{{ route('about') }}" class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left group">
             {{-- Có ảnh thật thì dùng ảnh; chưa có thì vẽ ô chữ cái đầu (SEO_INSTRUCTOR_PHOTO). --}}
             @if(config('seo.instructor.photo'))
-                <img src="{{ config('seo.instructor.photo') }}" alt="{{ config('seo.instructor.name') }}"
+                <img src="{{ config('seo.instructor.photo') }}" alt="Giảng viên Milaedu"
                      width="80" height="80" loading="lazy"
                      class="w-20 h-20 rounded-2xl object-cover shrink-0">
             @else

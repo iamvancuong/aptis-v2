@@ -40,6 +40,39 @@ class MockTest extends Model
     }
 
     /**
+     * Học viên có đang trong giờ thi một bài thi thử chứa bộ đề này không.
+     *
+     * Dùng để khoá API xem đáp án của chế độ luyện tập (`practice.check`): thi
+     * thử và luyện tập dùng chung bộ đề, nên nếu không khoá thì trong lúc thi
+     * chỉ cần gọi `/practice/{set}/check` từ console là lấy được đáp án cả đề.
+     *
+     * "Đang trong giờ thi" = status in_progress VÀ chưa quá thời lượng + 15 phút
+     * dự phòng — bài bỏ dở cả tuần trước không được khoá luyện tập mãi mãi.
+     */
+    public static function userIsTakingSet(int $userId, int $setId): bool
+    {
+        return static::where('user_id', $userId)
+            ->where('status', 'in_progress')
+            ->where('started_at', '>=', now()->subMinutes(24 * 60))
+            ->get(['id', 'sections', 'started_at', 'duration_minutes'])
+            ->contains(function (self $m) use ($setId) {
+                $deadline = $m->started_at?->copy()->addMinutes((int) $m->duration_minutes + 15);
+                if (! $deadline || $deadline->isPast()) {
+                    return false;
+                }
+
+                foreach ((array) $m->sections as $section) {
+                    $ids = $section['set_ids'] ?? (isset($section['set_id']) ? [$section['set_id']] : []);
+                    if (in_array($setId, array_map('intval', (array) $ids), true)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+    }
+
+    /**
      * Get the sets for each section, eager loaded with questions.
      */
     public function getSectionsWithSets()

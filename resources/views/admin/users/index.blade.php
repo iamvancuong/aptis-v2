@@ -55,7 +55,7 @@
             </div>
 
             {{-- Mới thêm trong N ngày — theo NGÀY TẠO tài khoản. --}}
-            <div x-data="{ moi: '{{ request('joined') }}' }">
+            <div x-data="{ moi: @js((string) request('joined')) }">
                 <label class="block text-xs font-medium text-gray-600 mb-1">Mới thêm trong</label>
                 <div class="flex gap-2">
                     <x-select name="joined" x-model="moi">
@@ -76,7 +76,7 @@
 
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Ngày thi</label>
-                <div x-data="{ exp: '{{ request('expiration') }}' }" class="flex gap-2">
+                <div x-data="{ exp: @js((string) request('expiration')) }" class="flex gap-2">
                     <x-select name="expiration" x-model="exp">
                         {{-- Số đếm hiện thẳng trong lựa chọn (cùng kiểu với ô
                              "Nguồn"): nhìn phát biết ngay có bao nhiêu tài khoản

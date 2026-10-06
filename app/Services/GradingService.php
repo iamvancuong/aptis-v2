@@ -195,7 +195,7 @@ class GradingService
 
                     $correctCount = 0;
                     foreach ($correctAnswers as $idx => $correct) {
-                        if (isset($userAnswer[$idx]) && $userAnswer[$idx] == $correct) {
+                        if (isset($userAnswer[$idx]) && self::sameChoice($userAnswer[$idx], $correct)) {
                             $correctCount++;
                         }
                     }
@@ -238,7 +238,7 @@ class GradingService
             switch ($part) {
                 case 1: // Single MCQ
                     $correctAnswer = $metadata['correct_answer'] ?? null;
-                    if ($correctAnswer !== null && $userAnswer == $correctAnswer) {
+                    if ($correctAnswer !== null && self::sameChoice($userAnswer, $correctAnswer)) {
                         return $maxPoints;
                     }
                     return 0;
@@ -254,7 +254,7 @@ class GradingService
 
                     $correctCount = 0;
                     foreach ($correctAnswers as $idx => $correct) {
-                        if (isset($userAnswer[$idx]) && $userAnswer[$idx] == $correct) {
+                        if (isset($userAnswer[$idx]) && self::sameChoice($userAnswer[$idx], $correct)) {
                             $correctCount++;
                         }
                     }
@@ -267,5 +267,28 @@ class GradingService
         }
 
         return 0;
+    }
+
+    /**
+     * So khớp một lựa chọn của học viên với đáp án — so CHẶT.
+     *
+     * BẢO MẬT: bản cũ dùng `==`. Đáp án lưu dạng chỉ số (0, 1, 2…) mà trong PHP
+     * `true == 1`, `true == 2` đều đúng → sửa payload cho mọi câu thành `true`
+     * (F12 → sửa request) là ăn điểm mọi câu có đáp án khác 0, không cần làm bài.
+     * Giờ chỉ nhận số/chuỗi (không nhận bool, mảng, null) và so dạng chuỗi, nên
+     * 1 và "1" vẫn khớp nhau như trước.
+     */
+    private static function sameChoice(mixed $given, mixed $correct): bool
+    {
+        if (! self::isChoiceValue($given) || ! self::isChoiceValue($correct)) {
+            return false;
+        }
+
+        return trim((string) $given) === trim((string) $correct);
+    }
+
+    private static function isChoiceValue(mixed $v): bool
+    {
+        return is_int($v) || (is_string($v) && trim($v) !== '') || (is_float($v) && floor($v) === $v);
     }
 }

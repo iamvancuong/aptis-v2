@@ -66,6 +66,14 @@ class PracticeController extends Controller
             return response()->json(['message' => 'Question not found in this set.'], 404);
         }
 
+        // Đang thi thử một đề chứa bộ này → không trả đáp án (chống gọi API lấy
+        // đáp án trong giờ thi). Xem MockTest::userIsTakingSet.
+        if (\App\Models\MockTest::userIsTakingSet((int) auth()->id(), (int) $set->id)) {
+            return response()->json([
+                'message' => 'Bạn đang trong giờ thi thử có bộ đề này. Đáp án sẽ mở sau khi nộp bài thi.',
+            ], 423);
+        }
+
         $payload = ['answer_key' => $this->sanitizer->answerKeyFor($question)];
 
         if (array_key_exists('answer', $data) && $data['answer'] !== null) {
@@ -178,8 +186,12 @@ class PracticeController extends Controller
                 Log::info('--- Speaking: Received audio files in PracticeController ---', ['count' => count($audioFiles)]);
                 foreach ($audioFiles as $qId => $files) {
                     $savedPaths = [];
-                    foreach ($files as $idx => $file) {
-                        $path = $file->store('speaking_attempts', 'public');
+                    foreach ((is_array($files) ? $files : [$files]) as $idx => $file) {
+                        // Kiểm tra định dạng + ép đuôi file — xem SpeakingAudio::storeUpload.
+                        $path = \App\Support\SpeakingAudio::storeUpload($file);
+                        if ($path === null) {
+                            continue;
+                        }
                         $savedPaths[] = $path;
                         Log::info("--- Speaking: Saved audio file for Q{$qId} ---", ['path' => $path]);
                     }

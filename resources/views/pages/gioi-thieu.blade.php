@@ -1,12 +1,12 @@
 @extends('layouts.marketing')
 
-{{-- Tên giảng viên KHÔNG hiện trên giao diện nữa, chỉ còn trong <title>, meta và
-     JSON-LD Person để tìm "aptis cô Dung" vẫn ra trang này. --}}
+{{-- Tên giảng viên KHÔNG xuất hiện ở bất cứ đâu trên trang (giao diện, title, meta,
+     JSON-LD) — chủ đích từ 10/2026. --}}
 @php $gv = config('seo.instructor'); @endphp
 
-@section('title', 'Giới thiệu — Luyện thi Aptis cùng ' . $gv['name'])
-@section('meta_description', 'Tìm hiểu về Milaedu và ' . $gv['name'] . ' — ' . $gv['job_title'] . '. Luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing chi tiết.')
-@section('meta_keywords', $gv['name'] . ' Aptis, luyện thi Aptis cùng ' . $gv['name'] . ', giảng viên Aptis, luyện thi Aptis online, Milaedu')
+@section('title', 'Giới thiệu Milaedu — Luyện thi Aptis online có chấm chữa')
+@section('meta_description', 'Tìm hiểu về Milaedu — nền tảng luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing chi tiết.')
+@section('meta_keywords', 'giới thiệu Milaedu, giảng viên Aptis, luyện thi Aptis online, Milaedu')
 @section('og_type', 'article')
 
 @push('head')
@@ -16,13 +16,7 @@
     '@type'    => 'AboutPage',
     'name'     => 'Giới thiệu Milaedu',
     'url'      => rtrim(config('app.url'), '/') . '/gioi-thieu',
-    'about'    => [
-        '@type'       => 'Person',
-        'name'        => $gv['name'],
-        'jobTitle'    => $gv['job_title'],
-        'description' => $gv['bio'],
-        'knowsAbout'  => ['Aptis', 'Aptis Speaking', 'Aptis Writing', 'Luyện thi Aptis'],
-    ],
+    'about'    => ['@id' => rtrim(config('app.url'), '/') . '/#org'],
     'breadcrumb' => [
         '@type' => 'BreadcrumbList',
         'itemListElement' => [
@@ -55,7 +49,7 @@
         <div class="md:col-span-1">
             {{-- Ảnh thật nếu đã khai SEO_INSTRUCTOR_PHOTO, chưa có thì ô chữ cái đầu. --}}
             @if(!empty($gv['photo']))
-                <img src="{{ $gv['photo'] }}" alt="{{ $gv['name'] }} — {{ $gv['job_title'] }}"
+                <img src="{{ $gv['photo'] }}" alt="{{ $gv['job_title'] }} Milaedu"
                      loading="lazy" class="aspect-square w-full rounded-2xl object-cover shadow-lg">
             @else
                 <div class="aspect-square rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white flex items-center justify-center text-6xl font-extrabold shadow-lg">

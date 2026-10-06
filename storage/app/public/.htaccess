@@ -1,0 +1,12 @@
+# Thư mục upload (phục vụ qua /storage). KHÔNG BAO GIỜ được chạy code hay hiển thị
+# trang web từ đây — chặn cả file lỡ bị gài vào trước khi vá lỗi upload (10/2026).
+<FilesMatch "\.(php[0-9]?|phtml|phar|pht|cgi|pl|py|sh|html?|xhtml|shtml|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # Trình duyệt không được "đoán" một file audio thành HTML/JS.
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+Options -Indexes

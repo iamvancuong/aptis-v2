@@ -94,11 +94,12 @@ class UserController extends Controller
         // bằng cách thêm field vào POST. Nguồn tài khoản không phải input.
         $data['source'] = \App\Models\User::SOURCE_MANUAL;
         
-        // Hash password if provided
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        }
-        
+        // Mật khẩu ngẫu nhiên riêng từng tài khoản (không dùng chung 12345678 nữa)
+        // và buộc học viên đổi ở lần đăng nhập đầu.
+        $plainPassword = \App\Support\InitialPassword::make();
+        $data['password'] = bcrypt($plainPassword);
+        $data['must_change_password'] = true;
+
         // Assign Default Max Devices
         if (!isset($data['max_devices'])) {
             $data['max_devices'] = (int)(\App\Models\Setting::where('key', 'default_max_devices')->value('value') ?? 2);
@@ -107,7 +108,7 @@ class UserController extends Controller
         $user = User::create($data);
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User created successfully. Default password: 12345678');
+            ->with('success', "Đã tạo tài khoản {$user->email}. Mật khẩu: {$plainPassword} — hãy gửi cho học viên ngay, mật khẩu chỉ hiện một lần này. Học viên sẽ phải đổi ở lần đăng nhập đầu.");
     }
 
     public function edit(User $user)
