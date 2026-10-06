@@ -70,6 +70,11 @@
                         <div class="h-6 w-px bg-gray-300 mx-2"></div>
                     @endif
                     <span class="text-sm font-medium text-slate-700 hidden sm:inline">{{ auth()->user()->name }}</span>
+                    <a href="{{ route('password.change') }}" title="Đổi mật khẩu"
+                       class="inline-flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100 hover:text-blue-700 whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                        <span class="hidden md:inline">Đổi mật khẩu</span>
+                    </a>
                     <form method="POST" action="{{ route('logout') }}" class="whitespace-nowrap flex">
                         @csrf
                         <x-button type="submit" variant="secondary" class="text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2">Đăng xuất</x-button>

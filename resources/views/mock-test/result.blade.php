@@ -81,6 +81,19 @@
                     $scoreColor = $score >= 80 ? 'text-green-600' : ($score >= 50 ? 'text-amber-600' : 'text-red-600');
                     $scoreBg = $score >= 80 ? 'from-green-50 to-emerald-50' : ($score >= 50 ? 'from-amber-50 to-yellow-50' : 'from-red-50 to-orange-50');
                 @endphp
+                @if($mockTest->skill === 'writing')
+                    {{-- Writing: hiện theo thang Aptis (bậc CEFR + điểm /50), % chỉ để tham khảo. --}}
+                    @php $aptis = \App\Support\AptisScale::writing($score); @endphp
+                    <div class="inline-flex flex-col items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br {{ $aptis['color']['bg'] }} mb-4 ring-4 ring-white shadow-md">
+                        <span class="text-4xl font-black {{ $aptis['color']['text'] }}">{{ $aptis['level'] }}</span>
+                        <span class="text-sm font-bold text-gray-600">{{ $aptis['scale'] }}/50</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-1">Trình độ Writing: {{ $aptis['level'] }}</h2>
+                    <p class="text-sm text-gray-500">
+                        Điểm Aptis ước tính {{ $aptis['scale'] }}/50 · {{ number_format($score, 0) }}%
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">Ngưỡng tham khảo: A2 ≥ 18 · B1 ≥ 26 · B2 ≥ 40 · C ≥ 48</p>
+                @else
                 <div class="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br {{ $scoreBg }} mb-4 ring-4 ring-white shadow-md">
                     <span class="text-4xl font-black {{ $scoreColor }}">{{ number_format($score, 0) }}%</span>
                 </div>
@@ -91,6 +104,7 @@
                     @else Cần ôn tập thêm 💪
                     @endif
                 </h2>
+                @endif
             @endif
             @if($mockTest->skill !== 'writing' && $mockTest->skill !== 'speaking')
                 @php

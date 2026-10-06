@@ -125,11 +125,11 @@
                      class="w-20 h-20 rounded-2xl object-cover shrink-0">
             @else
                 <span class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white text-3xl font-extrabold flex items-center justify-center shrink-0">
-                    {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim(config('seo.instructor.name')), ' '), 0, 1)) }}
+                    M
                 </span>
             @endif
             <div class="flex-1">
-                <h2 class="text-xl font-extrabold text-slate-900">Luyện thi Aptis cùng {{ config('seo.instructor.name') }}</h2>
+                <h2 class="text-xl font-extrabold text-slate-900">Luyện thi Aptis cùng giảng viên Milaedu</h2>
                 <p class="text-slate-600 mt-1">{{ config('seo.instructor.bio') }}</p>
                 <span class="inline-block mt-2 text-sm font-semibold text-blue-700 group-hover:underline">Tìm hiểu thêm về giảng viên →</span>
             </div>

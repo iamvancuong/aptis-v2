@@ -69,6 +69,57 @@ class ForcePasswordChangeTest extends TestCase
             ->assertOk();
     }
 
+    public function test_normal_user_can_open_change_password_from_navbar(): void
+    {
+        $this->actingAs($this->user(false))
+            ->get(route('dashboard'))
+            ->assertSee(route('password.change'), false);
+    }
+
+    public function test_voluntary_change_requires_current_password(): void
+    {
+        $user = $this->user(false);
+
+        $this->actingAs($user)
+            ->post(route('password.update'), [
+                'password' => 'new-strong-pass', 'password_confirmation' => 'new-strong-pass',
+            ])
+            ->assertSessionHasErrors('current_password');
+
+        $this->actingAs($user)
+            ->post(route('password.update'), [
+                'current_password' => 'wrong-pass',
+                'password' => 'new-strong-pass', 'password_confirmation' => 'new-strong-pass',
+            ])
+            ->assertSessionHasErrors('current_password');
+
+        $this->assertTrue(Hash::check('12345678', $user->fresh()->password));
+    }
+
+    public function test_voluntary_change_with_correct_current_password(): void
+    {
+        $user = $this->user(false);
+
+        $this->actingAs($user)
+            ->post(route('password.update'), [
+                'current_password' => '12345678',
+                'password' => 'new-strong-pass', 'password_confirmation' => 'new-strong-pass',
+            ])
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertTrue(Hash::check('new-strong-pass', $user->fresh()->password));
+    }
+
+    public function test_new_password_must_differ_from_current(): void
+    {
+        $this->actingAs($this->user(false))
+            ->post(route('password.update'), [
+                'current_password' => '12345678',
+                'password' => '12345678', 'password_confirmation' => '12345678',
+            ])
+            ->assertSessionHasErrors('password');
+    }
+
     public function test_refund_policy_page_is_public(): void
     {
         $this->get(route('policy.refund'))

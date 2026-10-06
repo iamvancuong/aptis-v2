@@ -18,8 +18,16 @@
             </p>
         </div>
         <div class="text-right">
-            <span class="text-4xl font-black text-indigo-600">{{ number_format($attempt->score ?? 0, 1) }}%</span>
-            <p class="text-sm text-gray-500 font-medium">Tổng điểm</p>
+            @if($attempt->skill === 'writing' && ($attempt->score ?? 0) > 0)
+                {{-- Writing: bậc CEFR + điểm Aptis /50 (quy đổi từ %), % để tham khảo. --}}
+                @php $aptis = \App\Support\AptisScale::writing($attempt->score); @endphp
+                <span class="text-4xl font-black {{ $aptis['color']['text'] }}">{{ $aptis['level'] }}</span>
+                <span class="text-xl font-bold text-gray-700 ml-1">{{ $aptis['scale'] }}/50</span>
+                <p class="text-sm text-gray-500 font-medium">Điểm Aptis ước tính · {{ number_format($attempt->score, 0) }}%</p>
+            @else
+                <span class="text-4xl font-black text-indigo-600">{{ number_format($attempt->score ?? 0, 1) }}%</span>
+                <p class="text-sm text-gray-500 font-medium">Tổng điểm</p>
+            @endif
         </div>
     </div>
 

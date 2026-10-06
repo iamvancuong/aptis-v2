@@ -105,6 +105,11 @@
                                     $color = $s >= 80 ? 'text-green-600' : ($s >= 50 ? 'text-amber-600' : 'text-red-600');
                                 @endphp
                                 <span class="font-bold text-lg {{ $color }}">{{ number_format($s, 0) }}%</span>
+                                @if($attempt->skill === 'writing' && $s > 0)
+                                    @php $aptis = \App\Support\AptisScale::writing($s); @endphp
+                                    <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold {{ $aptis['color']['badge'] }}"
+                                          title="Điểm Aptis ước tính {{ $aptis['scale'] }}/50">{{ $aptis['level'] }} · {{ $aptis['scale'] }}/50</span>
+                                @endif
                             @else
                                 <span class="text-gray-400">Chưa chấm</span>
                             @endif

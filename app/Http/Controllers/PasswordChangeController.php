@@ -15,11 +15,23 @@ class PasswordChangeController extends Controller
 
     public function update(Request $request)
     {
-        $data = $request->validate([
-            'password' => ['required', 'confirmed', Password::min(8)],
+        $user = $request->user();
+
+        // Bị ép đổi lần đầu (mật khẩu mặc định sau thanh toán) thì không hỏi mật khẩu
+        // cũ. Tự đổi trong lúc dùng bình thường thì phải nhập đúng mật khẩu hiện tại,
+        // tránh người khác cầm máy đang đăng nhập đổi mất mật khẩu.
+        $rules = ['password' => ['required', 'confirmed', Password::min(8)]];
+        if (! $user->must_change_password) {
+            $rules['current_password'] = ['required', 'current_password'];
+            $rules['password'][] = 'different:current_password';
+        }
+
+        $data = $request->validate($rules, [
+            'current_password.required'         => 'Vui lòng nhập mật khẩu hiện tại.',
+            'current_password.current_password' => 'Mật khẩu hiện tại không đúng.',
+            'password.different'                => 'Mật khẩu mới phải khác mật khẩu hiện tại.',
         ]);
 
-        $user = $request->user();
         $user->update([
             'password'             => Hash::make($data['password']),
             'must_change_password' => false,

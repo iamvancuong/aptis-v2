@@ -181,8 +181,10 @@ class WritingReviewController extends Controller
                 ->filter(fn($a) => $a->grading_status === 'ai_graded');
 
             foreach ($writingAnswers as $answer) {
-                // Use AI overall_score as the score
-                $aiScore = $answer->ai_metadata['feedback']['overall_score'] ?? $answer->score;
+                // Điểm phần thang 10 tính lại từ 4 tiêu chí — KHÔNG lấy overall_score
+                // của AI (thang 0–5, ghi thẳng vào ô /10 làm điểm tụt một nửa).
+                $aiScore = \App\Support\AttemptScore::writingScoreOutOfTen($answer->ai_metadata['feedback'] ?? [])
+                    ?? $answer->score;
                 $answer->update(['grading_status' => 'graded', 'score' => $aiScore]);
             }
 

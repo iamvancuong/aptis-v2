@@ -98,7 +98,10 @@
                                 <span> — Câu <span x-text="currentIndex + 1"></span>/<span x-text="questions.length"></span></span>
                             </template>
                         </div>
-                        <div class="text-base md:text-lg font-medium" x-text="currentQuestion.stem"></div>
+                        {{-- Reading: stem của Part 2 là câu chung chung, của Part 4 có kèm mẹo nhớ
+                             tiếng Việt (lộ gợi ý) → hiển thị title — tên bài thật của từng part. --}}
+                        <div class="text-base md:text-lg font-medium"
+                             x-text="currentQuestion.skill === 'reading' ? (currentQuestion.title || currentQuestion.stem) : currentQuestion.stem"></div>
                     </div>
                 </div>
 
