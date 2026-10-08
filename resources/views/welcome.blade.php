@@ -1,7 +1,9 @@
 @extends('layouts.marketing')
 
-@section('title', 'Luyện thi Aptis online có chấm chữa Writing & Speaking')
-@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng, chấm chữa Writing và Speaking chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.')
+{{-- Tên giảng viên nằm trong title + mô tả trang chủ: đây là 2 dòng Google hiện trên
+     kết quả tìm kiếm, giữ cho từ khoá "aptis cô Dung" trỏ về trang chủ. --}}
+@section('title', 'Luyện thi Aptis cùng ' . config('seo.instructor.name') . ' — chấm chữa Writing & Speaking')
+@section('meta_description', 'Luyện thi Aptis online cùng ' . config('seo.instructor.name') . ' tại Milaedu: đề thi thử sát thật 4 kỹ năng, chấm chữa Writing và Speaking chi tiết, lộ trình bám sát mục tiêu điểm.')
 
 @push('head')
     @include('partials.structured-data')
