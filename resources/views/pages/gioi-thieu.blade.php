@@ -1,7 +1,5 @@
 @extends('layouts.marketing')
 
-{{-- Tên giảng viên KHÔNG hiện trên giao diện nữa, chỉ còn trong <title>, meta và
-     JSON-LD Person để tìm "aptis cô Dung" vẫn ra trang này. --}}
 @php $gv = config('seo.instructor'); @endphp
 
 @section('title', 'Giới thiệu — Luyện thi Aptis cùng ' . $gv['name'])
@@ -40,7 +38,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
         <p class="text-sm font-bold tracking-widest uppercase text-blue-700 mb-3">Về chúng tôi</p>
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
-            Luyện thi Aptis tại Milaedu
+            Luyện thi Aptis cùng {{ $gv['name'] }} tại Milaedu
         </h1>
         <p class="mt-5 text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
             Milaedu là nền tảng luyện thi Aptis online, tập trung vào điều quan trọng nhất với người học:
@@ -59,10 +57,11 @@
                      loading="lazy" class="aspect-square w-full rounded-2xl object-cover shadow-lg">
             @else
                 <div class="aspect-square rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white flex items-center justify-center text-6xl font-extrabold shadow-lg">
-                    M
+                    {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim($gv['name']), ' '), 0, 1)) }}
                 </div>
             @endif
-            <p class="mt-4 text-center font-bold text-slate-900 text-lg">{{ $gv['job_title'] }}</p>
+            <p class="mt-4 text-center font-bold text-slate-900 text-lg">{{ $gv['name'] }}</p>
+            <p class="text-center text-sm text-slate-500">{{ $gv['job_title'] }}</p>
         </div>
         <div class="md:col-span-2">
             <h2 class="text-2xl font-extrabold text-slate-900 mb-4">Về giảng viên</h2>
