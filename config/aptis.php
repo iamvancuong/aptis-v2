@@ -103,6 +103,9 @@ return [
         'listening' => [1, 2, 3, 4],
         'writing'   => [1, 2, 3, 4],
         'speaking'  => [1, 2, 3, 4],
+        // Grammar & Vocabulary: một bộ đề gồm cả 2 phần (25 câu trắc nghiệm + 5 nhóm từ vựng).
+        // Chỉ dùng trong Full Test — không có trang thi thử Grammar riêng.
+        'grammar'   => [1, 2],
     ],
 
     /*
@@ -115,6 +118,7 @@ return [
         'listening' => 35,
         'writing'   => 50,
         'speaking'  => 12,
+        'grammar'   => 25,
     ],
 
     /*
@@ -137,5 +141,33 @@ return [
             3 => 1,
             4 => 1,
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Full Test — thi liên tục 5 phần như kỳ thi Aptis thật
+    |--------------------------------------------------------------------------
+    | `stages`: thứ tự các phần. `default_quota`: số lượt mỗi tài khoản mới
+    | (admin tăng riêng từng người ở /admin/full-tests).
+    */
+    'full_test' => [
+        'stages'        => ['speaking', 'listening', 'grammar', 'reading', 'writing'],
+        'default_quota' => 3,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ngưỡng CEFR theo thang điểm Aptis (0–50) của từng kỹ năng
+    |--------------------------------------------------------------------------
+    | Điểm Aptis TỐI THIỂU để đạt từng bậc. Đây là ngưỡng THAM KHẢO phổ biến của
+    | Aptis General (British Council có thể điều chỉnh theo kỳ) — kết quả trên web
+    | là ước tính. Grammar & Vocabulary không xếp bậc CEFR (giống phiếu điểm thật).
+    | Bậc tổng (Overall) tính từ tổng điểm 4 kỹ năng (/200) so với tổng ngưỡng.
+    */
+    'cefr_bands' => [
+        'listening' => ['C' => 42, 'B2' => 34, 'B1' => 24, 'A2' => 16, 'A1' => 8,  'A0' => 0],
+        'reading'   => ['C' => 46, 'B2' => 38, 'B1' => 26, 'A2' => 16, 'A1' => 8,  'A0' => 0],
+        'speaking'  => ['C' => 48, 'B2' => 41, 'B1' => 26, 'A2' => 16, 'A1' => 4,  'A0' => 0],
+        'writing'   => ['C' => 48, 'B2' => 40, 'B1' => 26, 'A2' => 18, 'A1' => 6,  'A0' => 0],
     ],
 ];

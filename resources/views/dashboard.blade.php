@@ -192,6 +192,17 @@
 </div>
 
 
+{{-- Full Test: thi liên tục 5 phần như kỳ thi thật --}}
+<a href="{{ route('full-test.index') }}"
+   class="flex flex-col sm:flex-row sm:items-center gap-3 mb-8 p-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg hover:shadow-xl transition-shadow">
+    <div class="text-3xl">🏁</div>
+    <div class="flex-1">
+        <div class="text-lg font-bold">Full Test Aptis — thi liên tục 5 phần như thi thật</div>
+        <div class="text-sm text-indigo-100">Speaking → Listening → Grammar → Reading → Writing · nhận bảng điểm thang Aptis và trình độ CEFR</div>
+    </div>
+    <span class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-white text-indigo-700 font-semibold text-sm">Vào thi →</span>
+</a>
+
 <small><i>Thứ tự luyện thi theo chuẩn Aptis</i></small>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
     <!-- Speaking -->

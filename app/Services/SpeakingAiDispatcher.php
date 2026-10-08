@@ -21,7 +21,11 @@ use Illuminate\Support\Facades\Log;
  */
 class SpeakingAiDispatcher
 {
-    public function dispatchFor(Attempt $attempt, ?User $user): void
+    /**
+     * @param  bool  $chargeCredits  false = không kiểm/không trừ lượt AI Nói của học
+     *                               viên (Full Test: số lượt Full Test đã giới hạn chi phí).
+     */
+    public function dispatchFor(Attempt $attempt, ?User $user, bool $chargeCredits = true): void
     {
         try {
             if (!$user) {
@@ -71,7 +75,7 @@ class SpeakingAiDispatcher
                 ->where('reset_version', $user->speaking_ai_reset_version ?? 0)
                 ->exists();
 
-            if (! $daTraLuot && $user->getRemainingSpeakingAiCredits() <= 0) {
+            if ($chargeCredits && ! $daTraLuot && $user->getRemainingSpeakingAiCredits() <= 0) {
                 foreach ($canCham as $answer) {
                     $answer->update(['grading_status' => 'limit_reached']);
                 }
@@ -84,7 +88,9 @@ class SpeakingAiDispatcher
             // chạy đồng bộ job có thể hỏng và HOÀN lượt ngay lúc đó — xong dòng dưới
             // mới trừ, thành ra học viên bị tính tiền cho một lần chấm hỏng. Đã dính
             // thật khi viết test. Trừ trước thì tệ nhất là hoàn lại, không mất của ai.
-            $user->recordSpeakingAiUsageForAttempt($attempt->id);
+            if ($chargeCredits) {
+                $user->recordSpeakingAiUsageForAttempt($attempt->id);
+            }
 
             foreach ($canCham as $answer) {
                 // Chuẩn hoá trạng thái trước khi đẩy job.

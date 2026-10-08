@@ -147,6 +147,14 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     Route::post('/mock-test/{mockTest}/submit', [App\Http\Controllers\MockTestController::class, 'submit'])->name('mock-test.submit');
     Route::get('/mock-test/{mockTest}/result', [App\Http\Controllers\MockTestController::class, 'result'])->name('mock-test.result');
 
+    // Full Test — thi liên tục 5 phần (Speaking → Listening → Grammar → Reading → Writing)
+    Route::get('/full-test', [App\Http\Controllers\FullTestController::class, 'index'])->name('full-test.index');
+    Route::post('/full-test', [App\Http\Controllers\FullTestController::class, 'start'])->middleware('throttle:10,1')->name('full-test.start');
+    Route::get('/full-test/{fullTest}', [App\Http\Controllers\FullTestController::class, 'show'])->name('full-test.show');
+    Route::post('/full-test/{fullTest}/next', [App\Http\Controllers\FullTestController::class, 'next'])->middleware('throttle:20,1')->name('full-test.next');
+    Route::get('/full-test/{fullTest}/ket-qua', [App\Http\Controllers\FullTestController::class, 'result'])->name('full-test.result');
+    Route::get('/full-test/{fullTest}/bang-diem.pdf', [App\Http\Controllers\FullTestController::class, 'pdf'])->middleware('throttle:10,1')->name('full-test.pdf');
+
     // Unified Student History
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
     Route::get('/history/{attempt}', [HistoryController::class, 'show'])->name('history.show');
@@ -239,6 +247,14 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::resource('speaking-sets', \App\Http\Controllers\Admin\SpeakingSetController::class);
     Route::get('mock-tests/export', [\App\Http\Controllers\Admin\MockTestController::class, 'export'])->name('mock-tests.export');
     Route::get('mock-tests', [\App\Http\Controllers\Admin\MockTestController::class, 'index'])->name('mock-tests.index');
+
+    // Full Test
+    Route::get('full-tests', [\App\Http\Controllers\Admin\FullTestController::class, 'index'])->name('full-tests.index');
+    Route::get('full-tests/quotas', [\App\Http\Controllers\Admin\FullTestController::class, 'quotas'])->name('full-tests.quotas');
+    Route::put('full-tests/quotas/{user}', [\App\Http\Controllers\Admin\FullTestController::class, 'updateQuota'])->name('full-tests.quotas.update');
+    Route::get('full-tests/{fullTest}', [\App\Http\Controllers\Admin\FullTestController::class, 'show'])->name('full-tests.show');
+    Route::get('full-tests/{fullTest}/pdf', [\App\Http\Controllers\Admin\FullTestController::class, 'pdf'])->name('full-tests.pdf');
+    Route::post('full-tests/{fullTest}/regrade', [\App\Http\Controllers\Admin\FullTestController::class, 'regrade'])->name('full-tests.regrade');
     
     // Reports
     Route::get('reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('reports.export');

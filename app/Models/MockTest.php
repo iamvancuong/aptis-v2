@@ -10,6 +10,7 @@ class MockTest extends Model
 {
     protected $fillable = [
         'user_id',
+        'full_test_id',
         'skill',
         'sections',
         'duration_minutes',
@@ -32,6 +33,11 @@ class MockTest extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function fullTest(): BelongsTo
+    {
+        return $this->belongsTo(FullTest::class);
     }
 
     public function attempts(): HasMany

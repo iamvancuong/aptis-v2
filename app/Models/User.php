@@ -460,6 +460,11 @@ class User extends Authenticatable
         return $this->hasMany(SpeakingAiUsage::class);
     }
 
+    public function fullTests()
+    {
+        return $this->hasMany(FullTest::class);
+    }
+
     public function getSpeakingAiLimit(): int
     {
         $limit = \App\Models\Setting::where('key', 'speaking_ai_limit')->value('value');

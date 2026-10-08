@@ -18,7 +18,9 @@ class MockTestController extends Controller
     public function __construct(
         private GradingService $gradingService,
         private QuestionSanitizer $sanitizer,
-        private SpeakingAiDispatcher $speakingAiDispatcher
+        private SpeakingAiDispatcher $speakingAiDispatcher,
+        private \App\Services\MockTestBuilder $builder,
+        private \App\Services\FullTestService $fullTests
     ) {}
 
     /**
@@ -85,17 +87,15 @@ class MockTestController extends Controller
         ]);
 
         $skill = $request->skill;
-        $sectionConfig = config("aptis.exam_sections.{$skill}");
         $duration = config("aptis.exam_duration.{$skill}");
 
-        // Pick random sets for each section, ensuring no duplicates for repeated parts
-        // For Writing & Speaking, we MUST use a single cohesive Set across all parts to maintain the scenario context.
+        // Writing & Speaking: học viên chọn MỘT bộ đề liền mạch cho mọi phần.
+        $cohesiveSet = null;
         if ($skill === 'writing' || $skill === 'speaking') {
             $request->validate([
                 'set_id' => 'required|exists:sets,id',
             ]);
 
-            // Pick the selected cohesive Set
             $cohesiveSet = Set::where('id', $request->set_id)
                 ->where('is_public', true)
                 ->first();
@@ -103,50 +103,11 @@ class MockTestController extends Controller
             if (!$cohesiveSet) {
                 return back()->with('error', "Không đủ bộ đề hoàn chỉnh. Vui lòng liên hệ admin.");
             }
+        }
 
-            foreach ($sectionConfig as $part) {
-                $sections[] = [
-                    'part' => $part,
-                    'set_id' => $cohesiveSet->id,
-                ];
-            }
-        } else {
-            // For Reading and Listening, pick random sets for each section.
-            // NOTE: exam_part_counts defines how many QUESTIONS to show per part (not sets).
-            //       getSectionsWithSets() handles the per-part question limit via crc32 deterministic slice.
-            //       So we always pick exactly 1 set per part; only Reading Part 2 uses set_ids (multiple sets).
-            $usedSetIds = [];
-            foreach ($sectionConfig as $part) {
-                // Number of SETS to pick: Reading P2 uses 2 sets; everything else = 1 set
-                $setCount = ($skill === 'reading' && $part == 2) ? 2 : 1;
-
-                $sets = Set::whereHas('quiz', function ($q) use ($skill, $part) {
-                    $q->where('skill', $skill)->where('part', $part);
-                })
-                    ->where('is_public', true)
-                    ->whereNotIn('id', $usedSetIds)
-                    ->inRandomOrder()
-                    ->limit($setCount)
-                    ->get();
-
-                if ($sets->isEmpty()) {
-                    return back()->with('error', "Không đủ bộ đề cho Part {$part}. Vui lòng liên hệ admin.");
-                }
-
-                $usedSetIds = array_merge($usedSetIds, $sets->pluck('id')->toArray());
-
-                if ($setCount > 1) {
-                    $sections[] = [
-                        'part' => $part,
-                        'set_ids' => $sets->pluck('id')->toArray(),
-                    ];
-                } else {
-                    $sections[] = [
-                        'part' => $part,
-                        'set_id' => $sets->first()->id,
-                    ];
-                }
-            }
+        $sections = $this->builder->sectionsFor($skill, $cohesiveSet);
+        if (is_string($sections)) {
+            return back()->with('error', $sections);
         }
 
         $mockTest = MockTest::create([
@@ -176,12 +137,19 @@ class MockTestController extends Controller
             return redirect()->route('mock-test.result', $mockTest);
         }
 
+        // Phần thi của Full Test: giờ do server giữ (tính từ lúc vào phần), tải lại
+        // trang không được cộng thêm giờ. Bài thường giữ cách cũ (đủ giờ + localStorage).
+        $fullTest = $mockTest->fullTest;
+        $remainingSeconds = $fullTest
+            ? $this->fullTests->remainingSeconds($mockTest)
+            : (int) $mockTest->duration_minutes * 60;
+
         $sectionsWithSets = $mockTest->getSectionsWithSets();
 
         // Pre-build JSON-safe data for Alpine.js (can't use closures in @json)
         $sectionsJson = $sectionsWithSets->map(function ($s) use ($mockTest) {
             $questions = $s['set']->questions;
-            if ($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') {
+            if (in_array($mockTest->skill, \App\Services\MockTestBuilder::COHESIVE_SKILLS, true)) {
                 $questions = $questions->filter(fn($q) => $q->part === (int)$s['part']);
             }
 
@@ -196,7 +164,16 @@ class MockTestController extends Controller
                 // Answer keys are stripped here: this is a graded, timed exam,
                 // so nothing the learner could score from may reach the browser.
                 // Answers are revealed by the result page after submission.
-                'questions' => $questions->map(function ($q) {
+                'questions' => $questions->map(function ($q) use ($mockTest) {
+                    $metadata = $this->sanitizer->metadataForClient($q);
+
+                    // Grammar Part 2: xáo danh sách từ (thứ tự gốc có thể trùng thứ tự
+                    // đáp án). Xáo cố định theo bài thi để tải lại trang không đổi chỗ.
+                    if ($q->skill === 'grammar' && is_array($metadata['dropdown_pool'] ?? null)) {
+                        $metadata['dropdown_pool'] = (new \Random\Randomizer(new \Random\Engine\Mt19937(crc32($mockTest->id . '|' . $q->id))))
+                            ->shuffleArray(array_values($metadata['dropdown_pool']));
+                    }
+
                     return [
                         'id' => $q->id,
                         'skill' => $q->skill,
@@ -208,7 +185,7 @@ class MockTestController extends Controller
                         'audio_url' => $this->sanitizer->audioUrl($q),
                         'audio_urls' => $this->sanitizer->audioUrls($q),
                         'image_path' => $q->image_path,
-                        'metadata' => $this->sanitizer->metadataForClient($q),
+                        'metadata' => $metadata,
                         'point' => $q->point,
                         'title' => $q->title,
                     ];
@@ -216,13 +193,43 @@ class MockTestController extends Controller
             ];
         })->values();
 
-        return view('mock-test.show', compact('mockTest', 'sectionsWithSets', 'sectionsJson'));
+        $stageIndex = $fullTest ? array_search($mockTest->skill, \App\Models\FullTest::stages(), true) : null;
+
+        return view('mock-test.show', compact('mockTest', 'sectionsWithSets', 'sectionsJson', 'fullTest', 'remainingSeconds', 'stageIndex'));
     }
 
     /**
      * Submit all sections at once.
+     *
+     * Khoá theo bài thi: bấm nộp liên tục, hai tab, hay hết giờ tự nộp trùng lúc
+     * bấm nộp — chỉ request đầu tiên được chấm. Không khoá thì hai request đến cùng
+     * lúc đều thấy `in_progress`, tạo HAI bài làm và đẩy chấm AI HAI lần.
      */
     public function submit(Request $request, MockTest $mockTest)
+    {
+        if ($mockTest->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Giữ khoá tối đa 5 phút (nộp Speaking tải file lên có thể lâu).
+        $lock = \Illuminate\Support\Facades\Cache::lock("mock-test-submit:{$mockTest->id}", 300);
+
+        if (! $lock->get()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bài thi đang được nộp, vui lòng chờ…',
+            ], 409);
+        }
+
+        try {
+            // Đọc lại trạng thái SAU khi có khoá: request trước có thể vừa nộp xong.
+            return $this->handleSubmit($request, $mockTest->fresh());
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function handleSubmit(Request $request, MockTest $mockTest)
     {
         // Security: only owner
         if ($mockTest->user_id !== auth()->id()) {
@@ -233,7 +240,9 @@ class MockTestController extends Controller
         if ($mockTest->status === 'completed') {
             return response()->json([
                 'success' => true,
-                'redirect' => route('mock-test.result', $mockTest),
+                'redirect' => $mockTest->full_test_id
+                    ? route('full-test.show', $mockTest->full_test_id)
+                    : route('mock-test.result', $mockTest),
                 'message' => 'Bài thi đã được nộp trước đó.',
             ]);
         }
@@ -281,7 +290,7 @@ class MockTestController extends Controller
             if (!$firstSetId) $firstSetId = $set->id;
             
             $questions = $set->questions;
-            if ($mockTest->skill === 'writing' || $mockTest->skill === 'speaking') {
+            if (in_array($mockTest->skill, \App\Services\MockTestBuilder::COHESIVE_SKILLS, true)) {
                 $questions = $questions->filter(fn($q) => $q->part === (int)$section['part']);
             }
             $sectionAnswers = $request->input("answers.{$sectionIndex}") ?? [];
@@ -354,7 +363,9 @@ class MockTestController extends Controller
         // For writing mock test: dispatch AI grading jobs asynchronously
         if ($mockTest->skill === 'writing') {
             $user = auth()->user();
-            $remainingCredits = $user->getRemainingWritingAiCredits();
+            // Full Test: chấm AI không trừ lượt AI thường (số lượt Full Test đã giới hạn).
+            $isFullTest = (bool) $mockTest->full_test_id;
+            $remainingCredits = $isFullTest ? PHP_INT_MAX : $user->getRemainingWritingAiCredits();
             
             $attempt->load(['attemptAnswers.question']);
             foreach ($attempt->attemptAnswers as $aa) {
@@ -367,8 +378,10 @@ class MockTestController extends Controller
                         ]);
                         
                         // Record usage and decrement local counter
-                        $user->recordWritingAiUsage($aa->question->part);
-                        $remainingCredits--;
+                        if (! $isFullTest) {
+                            $user->recordWritingAiUsage($aa->question->part);
+                            $remainingCredits--;
+                        }
                     } else {
                         Log::info('AI Limit reached during Mock Test submission', [
                             'user_id' => $user->id,
@@ -391,7 +404,7 @@ class MockTestController extends Controller
             //   if (!$attempt->is_grading_requested) {
             //       $attempt->update(['is_grading_requested' => true, 'grading_requested_at' => now()]);
             //   }
-            $this->speakingAiDispatcher->dispatchFor($attempt, auth()->user());
+            $this->speakingAiDispatcher->dispatchFor($attempt, auth()->user(), chargeCredits: ! $mockTest->full_test_id);
         }
 
         // Update mock test
@@ -402,6 +415,17 @@ class MockTestController extends Controller
             'section_scores' => $sectionScores,
             'status' => 'completed',
         ]);
+
+        // Full Test: sang phần kế (hoặc kết thúc) — không mở trang kết quả từng phần.
+        if ($mockTest->full_test_id) {
+            $this->fullTests->stageSubmitted($mockTest);
+
+            return response()->json([
+                'success' => true,
+                'redirect' => route('full-test.show', $mockTest->full_test_id),
+                'message' => 'Đã nộp phần thi!',
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -423,6 +447,11 @@ class MockTestController extends Controller
 
         if ($mockTest->status !== 'completed') {
             return redirect()->route('mock-test.show', $mockTest);
+        }
+
+        // Phần của Full Test chưa thi xong cả lượt: không xem đáp án từng phần giữa chừng.
+        if ($mockTest->full_test_id && ! $mockTest->fullTest?->isCompleted()) {
+            return redirect()->route('full-test.show', $mockTest->full_test_id);
         }
 
         $sectionsWithSets = $mockTest->getSectionsWithSets();

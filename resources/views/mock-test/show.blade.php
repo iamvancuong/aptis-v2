@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
-@section('title', ucfirst($mockTest->skill) . ' - Thi thử')
+@section('title', $fullTest
+    ? 'Full Test · Phần ' . ($stageIndex + 1) . '/' . count(\App\Models\FullTest::stages()) . ' - ' . \App\Services\FullTestService::SKILL_LABELS[$mockTest->skill]
+    : ucfirst($mockTest->skill) . ' - Thi thử')
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -12,7 +14,13 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-14">
                 <h1 class="text-lg font-bold text-gray-800">
-                    {{ ucfirst($mockTest->skill) }} — Thi thử
+                    @if($fullTest)
+                        <span class="text-indigo-600">Full Test</span>
+                        <span class="text-gray-400 font-medium text-sm">· Phần {{ $stageIndex + 1 }}/{{ count(\App\Models\FullTest::stages()) }}</span>
+                        — {{ \App\Services\FullTestService::SKILL_LABELS[$mockTest->skill] }}
+                    @else
+                        {{ ucfirst($mockTest->skill) }} — Thi thử
+                    @endif
                 </h1>
                 <div class="flex items-center gap-4">
                     {{-- Auto-save indicator --}}
@@ -123,6 +131,8 @@
                     @include('practice.parts.speaking-part2')
                     @include('practice.parts.speaking-part3')
                     @include('practice.parts.speaking-part4')
+                    @include('practice.parts.grammar-part1')
+                    @include('practice.parts.grammar-part2')
                 </div>
             </div>
         </template>
@@ -187,12 +197,25 @@
                     Quay lại
                 </button>
                 <button @click="submitTest()"
-                    class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
+                    class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-60 disabled:cursor-wait"
                     :disabled="submitting">
                     <span x-show="!submitting">Nộp bài</span>
                     <span x-show="submitting">Đang nộp...</span>
                 </button>
             </div>
+        </div>
+    </div>
+
+    {{-- Màn chờ khi đang nộp: phủ toàn trang, chặn mọi thao tác (bấm lại, chuyển phần…).
+         Nộp Speaking phải tải file ghi âm lên nên có thể mất vài chục giây. --}}
+    <div x-show="submitting" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 backdrop-blur-sm">
+        <div class="text-center px-6">
+            <svg class="animate-spin w-12 h-12 mx-auto text-green-600" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <p class="mt-4 text-lg font-bold text-gray-800">Đang nộp bài…</p>
+            <p class="mt-1 text-sm text-gray-500">Vui lòng không tắt hoặc tải lại trang.</p>
         </div>
     </div>
 </div>
@@ -207,7 +230,9 @@ function mockTestExam() {
         sections: sectionsData,
         isFullTest: true,
         currentSectionIndex: 0,
-        timeRemaining: {{ $mockTest->duration_minutes }} * 60,
+        // Full Test: số giây còn lại do server tính từ lúc vào phần.
+        timeRemaining: {{ (int) $remainingSeconds }},
+        serverTimed: {{ $fullTest ? 'true' : 'false' }},
         timerInterval: null,
         autoSaveInterval: null,
         showConfirmModal: false,
@@ -240,6 +265,10 @@ function mockTestExam() {
         listeningPart2Answers: [],
         listeningPart3Answers: [],
         listeningPart4Answers: [],
+
+        // Grammar state
+        grammarAnswers: {},
+        vocabAnswers: {},
 
         // Writing state
         writingPart1Answers: [],
@@ -390,7 +419,7 @@ function mockTestExam() {
                     return;
                 }
                 if (state.sectionAnswers) this.sectionAnswers = state.sectionAnswers;
-                if (typeof state.timeRemaining === 'number' && state.timeRemaining > 0) {
+                if (!this.serverTimed && typeof state.timeRemaining === 'number' && state.timeRemaining > 0) {
                     this.timeRemaining = state.timeRemaining;
                 }
                 if (typeof state.currentSectionIndex === 'number') {
@@ -466,6 +495,17 @@ function mockTestExam() {
             } else if (q.skill === 'speaking') {
                 if (this.speakingAnswers[q.id]) {
                     this.answers[q.id] = this.speakingAnswers[q.id];
+                }
+            } else if (q.skill === 'grammar') {
+                if (q.part === 1) {
+                    const v = this.grammarAnswers[q.id];
+                    if (v !== undefined && v !== null && v !== '') this.answers[q.id] = v;
+                } else if (q.part === 2) {
+                    const picked = Object.fromEntries(
+                        Object.entries(this.vocabAnswers[q.id] || {}).filter(([, w]) => w !== '' && w !== null)
+                    );
+                    if (Object.keys(picked).length > 0) this.answers[q.id] = picked;
+                    else delete this.answers[q.id];
                 }
             }
         },
@@ -572,6 +612,16 @@ function mockTestExam() {
                     ? [...saved] : new Array(q.metadata.questions?.length || 0).fill('');
                 if (q.part === 4) this.writingPart4Answers = saved && Array.isArray(saved)
                     ? [...saved] : new Array(2).fill('');
+            }
+
+            if (q.skill === 'grammar') {
+                if (q.part === 1 && saved !== undefined && this.grammarAnswers[q.id] === undefined) {
+                    this.grammarAnswers = { ...this.grammarAnswers, [q.id]: saved };
+                }
+                if (q.part === 2) {
+                    this.vocabAnswers[q.id] = this.vocabAnswers[q.id]
+                        || ((saved && typeof saved === 'object') ? { ...saved } : {});
+                }
             }
 
             if (q.skill === 'speaking') {
@@ -727,6 +777,14 @@ function mockTestExam() {
         getLP4RadioClass(qIdx, cIdx) {
             const isSelected = this.listeningPart4Answers[qIdx] === cIdx;
             return isSelected ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:bg-gray-50';
+        },
+
+        // Grammar (partials dùng chung với trang luyện tập)
+        setVocabAnswer(qId, pairId, word) {
+            this.vocabAnswers[qId] = { ...(this.vocabAnswers[qId] || {}), [pairId]: word };
+        },
+        isBlank(value) {
+            return value === undefined || value === null || value === '';
         },
 
         // Writing
@@ -993,18 +1051,23 @@ function mockTestExam() {
 
         // --- Submit ---
         confirmSubmit() {
+            if (this.submitting) return;
             this.saveSectionState();
             this.showConfirmModal = true;
         },
 
         autoSubmit() {
             if (this.timerInterval) clearInterval(this.timerInterval);
+            if (this.submitting) return; // đang nộp tay thì hết giờ không nộp thêm lần nữa
             this.saveSectionState();
             this.submitTest();
         },
 
         async submitTest() {
+            // Chặn bấm liên tục / hết giờ trùng lúc bấm: chỉ một lần nộp được chạy.
+            if (this.submitting) return;
             this.submitting = true;
+            this.showConfirmModal = false;
 
             // Build answers per section: { sectionIndex: { questionId: answer } }
             // For speaking audio files, we need FormData
@@ -1093,6 +1156,11 @@ function mockTestExam() {
             if (data.success && data.redirect) {
                 this.clearStorage();
                 window.location.href = data.redirect;
+                // Giữ màn chờ (submitting = true) cho tới khi trang mới mở.
+            } else if (response.status === 409) {
+                // Một lần nộp khác (tab khác / mạng gửi lại) đang chạy trên server.
+                // Chờ rồi tải lại: server sẽ chuyển sang trang kết quả khi nộp xong.
+                setTimeout(() => window.location.reload(), 3000);
             } else if (!response.ok && data.errors) {
                 // Validation errors (422)
                 const messages = Object.values(data.errors).flat().join('\n');
