@@ -1,6 +1,7 @@
 @extends('layouts.marketing')
 
 @php
+    $gv = config('seo.instructor');
     $faqs = [
         ['Aptis gồm những kỹ năng nào?', 'Aptis đánh giá 4 kỹ năng Nghe, Đọc, Viết, Nói cùng phần Ngữ pháp & Từ vựng, quy đổi theo khung CEFR (A1–C).'],
         ['Luyện thi Aptis online có hiệu quả không?', 'Có, nếu bạn luyện đúng format và được chấm chữa. Milaedu cung cấp đề thi thử sát thật và chấm chữa Writing chi tiết để bạn biết cần cải thiện gì.'],
@@ -11,7 +12,7 @@
 
 @section('title', 'Luyện thi Aptis online — Đề thi thử & chấm chữa 4 kỹ năng')
 @section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng Nghe, Đọc, Viết, Nói và chấm chữa Writing chi tiết. Lộ trình bám sát mục tiêu điểm.')
-@section('meta_keywords', 'luyện thi Aptis, luyện thi Aptis online, ôn thi Aptis, thi thử Aptis, Aptis Speaking, Aptis Writing')
+@section('meta_keywords', 'luyện thi Aptis, luyện thi Aptis online, ôn thi Aptis, thi thử Aptis, Aptis Speaking, Aptis Writing, luyện thi Aptis cùng ' . $gv['name'])
 @section('og_type', 'article')
 
 @push('head')

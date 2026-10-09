@@ -72,6 +72,7 @@
                 </div>
                 <p class="text-sm leading-relaxed max-w-md text-slate-400">
                     Nền tảng luyện thi Aptis online: đề thi thử sát thật, chấm chữa Writing chi tiết.
+                    Đồng hành cùng {{ config('seo.instructor.name') }} — {{ config('seo.instructor.job_title') }}.
                 </p>
             </div>
             <div>
@@ -87,8 +88,25 @@
                 <h3 class="text-white font-semibold mb-3 text-sm">Hỗ trợ</h3>
                 <ul class="space-y-2 text-sm text-slate-400">
                     <li><a href="{{ route('policy.refund') }}" class="hover:text-white">Chính sách hoàn tiền</a></li>
+                    @php
+                        // SĐT liên hệ lấy từ Cài đặt admin: ưu tiên "Hotline hỗ trợ", chưa điền
+                        // thì dùng "Số Zalo (chính)". Lỗi DB không được làm vỡ footer.
+                        try {
+                            $footerPhone = \App\Models\Setting::where('key', 'contact_hotline')->value('value')
+                                ?: \App\Models\Setting::where('key', 'zalo_contact_number')->value('value');
+                        } catch (\Throwable $e) {
+                            $footerPhone = null;
+                        }
+                        $footerPhoneDigits = preg_replace('/[^0-9+]/', '', (string) $footerPhone);
+                    @endphp
                     @if(config('seo.contact.email'))
                         <li><a href="mailto:{{ config('seo.contact.email') }}" class="hover:text-white">{{ config('seo.contact.email') }}</a></li>
+                    @endif
+                    @if($footerPhoneDigits)
+                        <li>
+                            <a href="tel:{{ $footerPhoneDigits }}" class="hover:text-white">📞 {{ $footerPhone }}</a>
+                            <a href="https://zalo.me/{{ ltrim($footerPhoneDigits, '+') }}" target="_blank" rel="noopener" class="ml-2 text-blue-400 hover:text-white">Zalo</a>
+                        </li>
                     @endif
                 </ul>
             </div>

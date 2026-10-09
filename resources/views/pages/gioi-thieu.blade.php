@@ -1,12 +1,10 @@
 @extends('layouts.marketing')
 
-{{-- Tên giảng viên KHÔNG xuất hiện ở bất cứ đâu trên trang (giao diện, title, meta,
-     JSON-LD) — chủ đích từ 10/2026. --}}
 @php $gv = config('seo.instructor'); @endphp
 
-@section('title', 'Giới thiệu Milaedu — Luyện thi Aptis online có chấm chữa')
-@section('meta_description', 'Tìm hiểu về Milaedu — nền tảng luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing chi tiết.')
-@section('meta_keywords', 'giới thiệu Milaedu, giảng viên Aptis, luyện thi Aptis online, Milaedu')
+@section('title', 'Giới thiệu — Luyện thi Aptis cùng ' . $gv['name'])
+@section('meta_description', 'Tìm hiểu về Milaedu và ' . $gv['name'] . ' — ' . $gv['job_title'] . '. Luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing chi tiết.')
+@section('meta_keywords', $gv['name'] . ' Aptis, luyện thi Aptis cùng ' . $gv['name'] . ', giảng viên Aptis, luyện thi Aptis online, Milaedu')
 @section('og_type', 'article')
 
 @push('head')
@@ -16,7 +14,13 @@
     '@type'    => 'AboutPage',
     'name'     => 'Giới thiệu Milaedu',
     'url'      => rtrim(config('app.url'), '/') . '/gioi-thieu',
-    'about'    => ['@id' => rtrim(config('app.url'), '/') . '/#org'],
+    'about'    => [
+        '@type'       => 'Person',
+        'name'        => $gv['name'],
+        'jobTitle'    => $gv['job_title'],
+        'description' => $gv['bio'],
+        'knowsAbout'  => ['Aptis', 'Aptis Speaking', 'Aptis Writing', 'Luyện thi Aptis'],
+    ],
     'breadcrumb' => [
         '@type' => 'BreadcrumbList',
         'itemListElement' => [
@@ -34,7 +38,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
         <p class="text-sm font-bold tracking-widest uppercase text-blue-700 mb-3">Về chúng tôi</p>
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
-            Luyện thi Aptis tại Milaedu
+            Luyện thi Aptis cùng {{ $gv['name'] }} tại Milaedu
         </h1>
         <p class="mt-5 text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
             Milaedu là nền tảng luyện thi Aptis online, tập trung vào điều quan trọng nhất với người học:
@@ -49,14 +53,15 @@
         <div class="md:col-span-1">
             {{-- Ảnh thật nếu đã khai SEO_INSTRUCTOR_PHOTO, chưa có thì ô chữ cái đầu. --}}
             @if(!empty($gv['photo']))
-                <img src="{{ $gv['photo'] }}" alt="{{ $gv['job_title'] }} Milaedu"
+                <img src="{{ $gv['photo'] }}" alt="{{ $gv['name'] }} — {{ $gv['job_title'] }}"
                      loading="lazy" class="aspect-square w-full rounded-2xl object-cover shadow-lg">
             @else
                 <div class="aspect-square rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white flex items-center justify-center text-6xl font-extrabold shadow-lg">
-                    M
+                    {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim($gv['name']), ' '), 0, 1)) }}
                 </div>
             @endif
-            <p class="mt-4 text-center font-bold text-slate-900 text-lg">{{ $gv['job_title'] }}</p>
+            <p class="mt-4 text-center font-bold text-slate-900 text-lg">{{ $gv['name'] }}</p>
+            <p class="text-center text-sm text-slate-500">{{ $gv['job_title'] }}</p>
         </div>
         <div class="md:col-span-2">
             <h2 class="text-2xl font-extrabold text-slate-900 mb-4">Về giảng viên</h2>

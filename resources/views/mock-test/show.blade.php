@@ -1146,6 +1146,14 @@ function mockTestExam() {
             // Handle non-JSON responses (e.g. 500 HTML error pages)
             const contentType = response.headers.get('content-type') || '';
             if (!contentType.includes('application/json')) {
+                // fetch tự đi theo redirect: bị middleware đá ra (hết phiên, bị đăng xuất
+                // do vượt số thiết bị, tài khoản hết hạn) → về trang HTML với mã 200.
+                // Bài vẫn nằm trong localStorage (chỉ xoá khi nộp thành công).
+                if (response.redirected || response.status === 200 || response.status === 419) {
+                    alert('Phiên đăng nhập của bạn đã hết hoặc tài khoản vừa bị đăng xuất (có thể do đăng nhập trên thiết bị khác).\n\nBài làm vẫn được lưu trên máy này. Hãy mở milaedu.com ở TAB MỚI, đăng nhập lại, rồi quay về tab này và tải lại trang (F5) — đáp án sẽ được khôi phục để nộp lại.');
+                    this.submitting = false;
+                    return;
+                }
                 alert('Có lỗi máy chủ xảy ra (HTTP ' + response.status + '). Vui lòng thử lại hoặc liên hệ quản trị viên.');
                 this.submitting = false;
                 return;

@@ -1,7 +1,9 @@
 @extends('layouts.marketing')
 
-@section('title', 'Luyện thi Aptis online có chấm chữa Writing & Speaking')
-@section('meta_description', 'Luyện thi Aptis online cùng Milaedu: đề thi thử sát thật 4 kỹ năng, chấm chữa Writing và Speaking chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.')
+{{-- Tên giảng viên nằm trong title + mô tả trang chủ: đây là 2 dòng Google hiện trên
+     kết quả tìm kiếm, giữ cho từ khoá "aptis cô Dung" trỏ về trang chủ. --}}
+@section('title', 'Luyện thi Aptis cùng ' . config('seo.instructor.name') . ' — chấm chữa Writing & Speaking')
+@section('meta_description', 'Luyện thi Aptis online cùng ' . config('seo.instructor.name') . ' tại Milaedu: đề thi thử sát thật 4 kỹ năng, chấm chữa Writing và Speaking chi tiết, lộ trình bám sát mục tiêu điểm.')
 
 @push('head')
     @include('partials.structured-data')
@@ -120,16 +122,16 @@
         <a href="{{ route('about') }}" class="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left group">
             {{-- Có ảnh thật thì dùng ảnh; chưa có thì vẽ ô chữ cái đầu (SEO_INSTRUCTOR_PHOTO). --}}
             @if(config('seo.instructor.photo'))
-                <img src="{{ config('seo.instructor.photo') }}" alt="Giảng viên Milaedu"
+                <img src="{{ config('seo.instructor.photo') }}" alt="{{ config('seo.instructor.name') }}"
                      width="80" height="80" loading="lazy"
                      class="w-20 h-20 rounded-2xl object-cover shrink-0">
             @else
                 <span class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white text-3xl font-extrabold flex items-center justify-center shrink-0">
-                    M
+                    {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim(config('seo.instructor.name')), ' '), 0, 1)) }}
                 </span>
             @endif
             <div class="flex-1">
-                <h2 class="text-xl font-extrabold text-slate-900">Luyện thi Aptis cùng giảng viên Milaedu</h2>
+                <h2 class="text-xl font-extrabold text-slate-900">Luyện thi Aptis cùng {{ config('seo.instructor.name') }}</h2>
                 <p class="text-slate-600 mt-1">{{ config('seo.instructor.bio') }}</p>
                 <span class="inline-block mt-2 text-sm font-semibold text-blue-700 group-hover:underline">Tìm hiểu thêm về giảng viên →</span>
             </div>
