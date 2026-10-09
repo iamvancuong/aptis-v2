@@ -93,7 +93,7 @@ class ProcessWritingGrading implements ShouldQueue
             AttemptScore::refresh($attemptAnswer->attempt_id);
 
             Log::info("ProcessWritingGrading: AttemptAnswer #{$this->attemptAnswerId} graded successfully.");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("ProcessWritingGrading: Failed for #{$this->attemptAnswerId}: " . $e->getMessage());
             // Re-throw so queue retries
             throw $e;
@@ -121,7 +121,14 @@ class ProcessWritingGrading implements ShouldQueue
 
         foreach ($feedback['part_responses'] as &$response) {
             $sample = $response['improved_sample'] ?? '';
-            if (empty($sample)) continue;
+            // AI thỉnh thoảng trả `improved_sample` dạng MẢNG (vd. nhiều câu mẫu)
+            // → trim() ném TypeError, job hỏng cả 3 lượt và bài kẹt "đang chấm"
+            // mãi (log production 08/10/2026). Gộp về chuỗi trước khi xử lý.
+            if (is_array($sample)) {
+                $sample = implode(' ', array_filter(\Illuminate\Support\Arr::flatten($sample), 'is_string'));
+                $response['improved_sample'] = $sample;
+            }
+            if (!is_string($sample) || trim($sample) === '') continue;
 
             if ($part === 1) {
                 // Hard limit: max 5 words for Part 1
