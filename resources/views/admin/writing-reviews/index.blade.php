@@ -7,7 +7,7 @@
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">📝 Bài cần chấm</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Bài cần chấm</h1>
             <p class="text-sm text-gray-500 mt-1">Xem và chấm bài Writing của học sinh</p>
         </div>
 
@@ -49,11 +49,11 @@
             <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
                 <a href="{{ route('admin.writing-reviews.index', ['filter' => 'pending', 'search' => $search]) }}"
                    class="px-4 py-2 text-sm font-medium {{ $filter === 'pending' ? 'bg-amber-500 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-                    ⏳ Chờ chấm
+                    Chờ chấm
                 </a>
                 <a href="{{ route('admin.writing-reviews.index', ['filter' => 'graded', 'search' => $search]) }}"
                    class="px-4 py-2 text-sm font-medium border-l border-gray-200 {{ $filter === 'graded' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-                    ✅ Đã chấm
+                    Đã chấm
                 </a>
             </div>
         </div>
@@ -68,7 +68,7 @@
             <span class="text-sm text-gray-500"><span id="selectedCount">0</span> bài được chọn</span>
             <button type="submit"
                     class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-                🤖 Duyệt AI grade hàng loạt
+                Duyệt AI grade hàng loạt
             </button>
         </div>
 
@@ -121,18 +121,18 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($paidAttemptIds->has($attempt->id))
-                                <x-badge variant="success">💰 Có phí</x-badge>
+                                <x-badge variant="success">Có phí</x-badge>
                             @else
                                 <x-badge variant="default">Miễn phí</x-badge>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($allGraded)
-                                <x-badge variant="success">✅ Đã chốt điểm</x-badge>
+                                <x-badge variant="success">Đã chốt điểm</x-badge>
                             @elseif($allAiGraded)
-                                <x-badge variant="warning">🤖 AI đã chấm (Chờ review)</x-badge>
+                                <x-badge variant="warning">AI đã chấm (Chờ review)</x-badge>
                             @else
-                                <x-badge variant="warning">⏳ Chờ chấm</x-badge>
+                                <x-badge variant="warning">Chờ chấm</x-badge>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">

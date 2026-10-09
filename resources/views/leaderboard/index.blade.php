@@ -4,13 +4,13 @@
 
 @section('content')
 <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">🏆 Bảng xếp hạng</h1>
+    <h1 class="text-3xl font-bold text-gray-900">Bảng xếp hạng</h1>
     <p class="mt-2 text-gray-600">Top 20 điểm thi thử cao nhất theo kỹ năng</p>
 </div>
 
 {{-- Skill filter --}}
 <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm mb-6 w-fit">
-    @foreach(['reading' => '📖 Reading', 'listening' => '🎧 Listening', 'writing' => '✍️ Writing'] as $val => $label)
+    @foreach(['reading' => 'Reading', 'listening' => 'Listening', 'writing' => 'Writing'] as $val => $label)
         <a href="{{ route('leaderboard.index', ['skill' => $val]) }}"
            class="px-4 py-2 text-sm font-medium {{ $skill === $val ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50' }} {{ !$loop->first ? 'border-l border-gray-200' : '' }}">
             {{ $label }}
@@ -61,12 +61,11 @@
                                 2 => 'bg-orange-400 text-white',
                                 default => 'bg-gray-100 text-gray-600',
                             };
-                            $medal = match($rank) { 0 => '🥇', 1 => '🥈', 2 => '🥉', default => '' };
                         @endphp
                         <tr class="{{ $isMe ? 'bg-indigo-50/50 ring-1 ring-inset ring-indigo-200' : 'hover:bg-gray-50' }} transition-colors">
                             <td class="px-5 py-4">
                                 <div class="w-8 h-8 rounded-full {{ $medalClass }} flex items-center justify-center text-sm font-bold">
-                                    {{ $medal ?: $rank + 1 }}
+                                    {{ $rank + 1 }}
                                 </div>
                             </td>
                             <td class="px-5 py-4">

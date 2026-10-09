@@ -92,7 +92,7 @@
     $ketThucCu = old('ends_at', $session?->ends_at?->format('Y-m-d\TH:i') ?? '');
 @endphp
 
-{{-- ⚠️ MÚI GIỜ — cái bẫy đã cắn thật, đọc trước khi sửa file này.
+{{-- MÚI GIỜ — cái bẫy đã cắn thật, đọc trước khi sửa file này.
      `<input type="datetime-local">` KHÔNG mang múi giờ. Trình duyệt hiển thị và
      gợi ý theo giờ MÁY CỦA ADMIN, còn server lưu nguyên chuỗi rồi hiểu là giờ
      Việt Nam. Admin ngồi ở Nhật (UTC+9) gõ "bây giờ" = 23:30 thì hệ thống hiểu
@@ -172,7 +172,7 @@
          theo đồng hồ máy mình và buổi học lệch đúng bằng khoảng chênh, im lặng. --}}
     <div x-cloak x-show="lechNhieu"
          class="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
-        <p class="font-semibold mb-1">⚠️ Máy bạn đang lệch múi giờ với hệ thống</p>
+        <p class="font-semibold mb-1">Máy bạn đang lệch múi giờ với hệ thống</p>
         <p>
             Đồng hồ máy bạn đang <strong x-text="lechChu"></strong> đồng hồ hệ thống.
             Ô chọn giờ bên dưới hiển thị theo <strong>giờ máy bạn</strong>, nhưng hệ thống
@@ -281,7 +281,7 @@
         Giữ Ctrl (hoặc Cmd) để chọn nhiều người. Chỉ có tác dụng khi buổi đã gắn lớp.
     </p>
     <p class="mt-1 text-xs text-amber-700">
-        ⚠️ Web sẽ cho họ lấy link, nhưng Google <strong>vẫn bắt họ xin duyệt</strong> nếu chưa có tên
+        Web sẽ cho họ lấy link, nhưng Google <strong>vẫn bắt họ xin duyệt</strong> nếu chưa có tên
         trong lời mời Calendar của lớp. Nhớ duyệt cho họ vào khi bắt đầu buổi.
     </p>
 </div>

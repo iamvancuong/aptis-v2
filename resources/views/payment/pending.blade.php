@@ -6,8 +6,7 @@
 @section('content')
 <x-card>
     <div class="text-center mb-6">
-        <div class="text-5xl mb-3">🧾</div>
-        <h2 class="text-2xl font-bold text-gray-900">Thanh toán đơn hàng</h2>
+                <h2 class="text-2xl font-bold text-gray-900">Thanh toán đơn hàng</h2>
         <p class="text-gray-500 text-sm mt-1">Mã đơn: {{ $order->order_code }}</p>
     </div>
 
@@ -41,17 +40,17 @@
     @php($state = $state ?? 'unconfigured')
 
     @if($state === 'fake')
-        {{-- 🧪 Chế độ giả lập (chỉ hiện khi PAYOS_FAKE=true) --}}
+        {{-- Chế độ giả lập (chỉ hiện khi PAYOS_FAKE=true) --}}
         <div class="mt-6 rounded-xl bg-purple-50 border border-purple-200 p-4 text-sm text-purple-800">
-            <strong>🧪 Chế độ giả lập (không mất tiền).</strong> Bấm nút dưới để mô phỏng
+            <strong>Chế độ giả lập (không mất tiền).</strong> Bấm nút dưới để mô phỏng
             thanh toán thành công — hệ thống sẽ tạo tài khoản và gửi email y như thật.
         </div>
         <a href="{{ route('payment.dev-fulfill', $order) }}"
            class="mt-4 block text-center py-3 px-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors">
-            Giả lập đã thanh toán ✓
+            Giả lập đã thanh toán 
         </a>
     @elseif($state === 'error')
-        {{-- ⚠️ Lỗi tạm thời khi tạo liên kết PayOS (chậm/timeout/lỗi mạng). --}}
+        {{-- Lỗi tạm thời khi tạo liên kết PayOS (chậm/timeout/lỗi mạng). --}}
         <div class="mt-6 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
             <strong>Chưa kết nối được cổng thanh toán.</strong> Có thể do mạng chập chờn.
             Vui lòng bấm <em>Thử lại</em>; nếu vẫn lỗi, liên hệ hỗ trợ để được hướng dẫn chuyển khoản.

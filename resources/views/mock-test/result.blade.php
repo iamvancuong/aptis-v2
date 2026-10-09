@@ -98,10 +98,10 @@
                     <span class="text-4xl font-black {{ $scoreColor }}">{{ number_format($score, 0) }}%</span>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-800 mb-1">
-                    @if($score >= 80) Xuất sắc! 🎉
-                    @elseif($score >= 60) Tốt! 👍
-                    @elseif($score >= 40) Cần cải thiện 📚
-                    @else Cần ôn tập thêm 💪
+                    @if($score >= 80) Xuất sắc! 
+                    @elseif($score >= 60) Tốt! 
+                    @elseif($score >= 40) Cần cải thiện 
+                    @else Cần ôn tập thêm 
                     @endif
                 </h2>
                 @endif
@@ -118,15 +118,15 @@
                 <div class="grid grid-cols-3 gap-3 mt-5 max-w-xs mx-auto">
                     <div class="bg-green-50 rounded-xl p-3 text-center border border-green-100">
                         <div class="text-2xl font-black text-green-600">{{ $correctQ }}</div>
-                        <div class="text-xs font-semibold text-green-700 mt-0.5">✅ Đúng</div>
+                        <div class="text-xs font-semibold text-green-700 mt-0.5">Đúng</div>
                     </div>
                     <div class="bg-red-50 rounded-xl p-3 text-center border border-red-100">
                         <div class="text-2xl font-black text-red-500">{{ $wrongQ }}</div>
-                        <div class="text-xs font-semibold text-red-600 mt-0.5">❌ Sai</div>
+                        <div class="text-xs font-semibold text-red-600 mt-0.5">Sai</div>
                     </div>
                     <div class="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
                         <div class="text-2xl font-black text-gray-500">{{ $skippedQ }}</div>
-                        <div class="text-xs font-semibold text-gray-500 mt-0.5">⬜ Bỏ</div>
+                        <div class="text-xs font-semibold text-gray-500 mt-0.5">Bỏ trống</div>
                     </div>
                 </div>
             {{-- Trạng thái "đang chấm" phải xét TRƯỚC các nhánh có điểm: bài 4 phần
@@ -311,7 +311,7 @@
                             @endphp
                             <div class="px-5 py-4 {{ $rowBg }}">
                                 <div class="flex items-start gap-3">
-                                    <span class="text-base shrink-0 mt-0.5">{{ $isCorrect ? '✅' : ($isCorrect === false ? '❌' : '⬜') }}</span>
+                                    <x-ui.answer-mark :correct="$isCorrect === null ? null : (bool) $isCorrect" class="mt-0.5" />
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 mb-2">
                                             <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">{{ \App\Support\PartLabel::text($mockTest->skill, $q->part) }} — Câu {{ $qi + 1 }}</span>
@@ -482,7 +482,7 @@
                                                             <span>{{ $cText }}</span>
                                                             @if($isUser && $isCor) <svg class="w-3.5 h-3.5 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                             @elseif($isUser) <svg class="w-3.5 h-3.5 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                            @elseif($isCor) <span class="ml-auto text-[10px] text-green-600 font-bold">✓ Đúng</span>
+                                                            @elseif($isCor) <span class="ml-auto text-[10px] text-green-600 font-bold">Đúng</span>
                                                             @endif
                                                         </div>
                                                     @endforeach
@@ -521,7 +521,7 @@
                                                                 <span class="font-bold {{ $isOk ? 'text-green-700' : 'text-red-600' }}">{{ $uTxt }}</span>
                                                                 @if(!$isOk)
                                                                     <span class="text-gray-300">|</span>
-                                                                    <span class="text-green-600 font-bold">✓ {{ $cTxt }}</span>
+                                                                    <span class="text-green-600 font-bold">Đáp án: {{ $cTxt }}</span>
                                                                 @endif
                                                             </div>
                                                         </div>
@@ -553,7 +553,7 @@
                                                             <div class="shrink-0 text-right">
                                                                 <span class="font-bold {{ $isOk ? 'text-green-600' : 'text-red-600' }}">{{ $uLbl }}</span>
                                                                 @if(!$isOk)
-                                                                    <p class="text-[10px] text-green-600 font-bold">✓ {{ $cLbl }}</p>
+                                                                    <p class="text-[10px] text-green-600 font-bold">Đáp án: {{ $cLbl }}</p>
                                                                 @endif
                                                             </div>
                                                         </div>

@@ -38,7 +38,7 @@
                 @endphp
                 @if($allGraded)
                     <div class="inline-flex items-center gap-2 bg-green-50 border border-green-200 px-4 py-2 rounded-lg">
-                        <span class="text-green-600">✅</span>
+                        <x-ui.icon name="check" class="w-4 h-4 text-green-600 inline" />
                         <span class="text-sm font-semibold text-green-700">Đã chấm xong</span>
                     </div>
                 @else

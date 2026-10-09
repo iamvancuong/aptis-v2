@@ -1,66 +1,76 @@
 @extends('layouts.app')
 
-@section('title', ucfirst($skill) . ' - Milaedu')
+@php
+    $meta = \App\Support\SkillMeta::get($skill);
+    $chiThiThu = \App\Support\SkillMeta::mockOnly($skill);
+@endphp
+
+@section('title', $meta['name'] . ' - Milaedu')
 
 @section('content')
-<div class="mb-8">
-    <a href="{{ route('dashboard') }}" class="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-        ← Quay lại Dashboard
-    </a>
-    <h1 class="text-3xl font-bold text-gray-900 capitalize">{{ $skill }}</h1>
-    <p class="mt-2 text-gray-600">Chọn Part để luyện tập hoặc thi thử toàn bộ kỹ năng</p>
-</div>
+<x-ui.page-header
+    :skill="$skill"
+    :title="$meta['name']"
+    :subtitle="$meta['desc'] . ($chiThiThu ? ' · luyện dưới dạng thi thử toàn bộ 4 Part' : ' · chọn Part để luyện hoặc thi thử cả kỹ năng')"
+    :crumbs="[['label' => 'Luyện tập', 'url' => route('dashboard')], ['label' => $meta['name']]]">
+    <x-slot:aside>
+        <x-ui.chip><span class="font-semibold text-gray-900">{{ $skillStats['attempts'] }}</span> bài đã làm</x-ui.chip>
+        <x-ui.chip>Thi thử gần nhất <span class="font-semibold text-gray-900">{{ $skillStats['last_mock'] !== null ? round((float) $skillStats['last_mock']) . '%' : '—' }}</span></x-ui.chip>
+    </x-slot:aside>
+</x-ui.page-header>
 
-<!-- Mock Test Button -->
-<div class="mb-8">
-    <x-card>
-        <div class="flex items-center justify-between">
-            <div>
-                <h3 class="text-lg font-semibold">Thi thử {{ ucfirst($skill) }}</h3>
-                <p class="text-gray-600 text-sm mt-1">Thi thử toàn bộ kỹ năng với timer và chấm điểm</p>
-            </div>
-            <x-button href="{{ route('mock-test.create', $skill) }}" variant="primary">
-                Bắt đầu thi thử
-            </x-button>
-        </div>
-    </x-card>
-</div>
+<x-ui.cta-card :href="route('mock-test.create', $skill)" icon="clock" :title="'Thi thử ' . $meta['name']" action="Bắt đầu thi thử">
+    Làm trọn bộ các Part có tính giờ và chấm điểm như thi thật
+</x-ui.cta-card>
 
-@if($skill !== 'writing' && $skill !== 'speaking')
-    <!-- Parts List -->
-    <h2 class="text-2xl font-semibold mb-4">Danh sách Part</h2>
+@if(! $chiThiThu)
+    <x-ui.section-title title="Luyện theo Part" :meta="$quizzes->count() . ' Part'" />
 
     @if($quizzes->isEmpty())
-        <x-alert type="info">
-            Chưa có Part nào được công bố cho kỹ năng này.
-        </x-alert>
+        <x-ui.empty-state title="Chưa có Part nào được công bố" icon="list">
+            Bạn có thể luyện bằng thi thử toàn bộ kỹ năng ở trên.
+        </x-ui.empty-state>
     @else
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             @foreach($quizzes as $quiz)
-                <x-card>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            {{-- Nhãn theo đề thật (Reading: 2→"2-3", 3→"4", 4→"5").
-                                 Link bên dưới vẫn dùng số nội bộ $quiz->part. --}}
-                            <h3 class="text-lg font-semibold">{{ \App\Support\PartLabel::text($skill, $quiz->part) }}</h3>
-                            <p class="text-gray-600 text-sm">{{ $quiz->title }}</p>
-                            @if($quiz->duration_minutes)
-                                <p class="text-gray-500 text-xs mt-1">⏱ {{ $quiz->duration_minutes }} phút</p>
-                            @endif
-                        </div>
-                        <x-button href="{{ route('sets.index', [$skill, $quiz->part]) }}">
-                            Luyện tập
-                        </x-button>
-                    </div>
-                </x-card>
+                @php
+                    $tienDo = $partProgress[$quiz->id] ?? null;
+                    $tong = $quiz->public_sets_count;
+                    $daLam = min($tienDo->done ?? 0, $tong);
+                @endphp
+                {{-- Nhãn theo đề thật (Reading: 2→"2-3", 3→"4", 4→"5"); link vẫn dùng số nội bộ $quiz->part. --}}
+                <x-ui.tile :href="route('sets.index', [$skill, $quiz->part])">
+                    <span class="self-start inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold {{ $meta['tone'] }}">
+                        {{ \App\Support\PartLabel::text($skill, $quiz->part) }}
+                    </span>
+                    <span class="block mt-3 text-base font-semibold text-gray-900">{{ $quiz->title }}</span>
+                    <span class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-500">
+                        <span>{{ $tong }} đề</span>
+                        @if($quiz->duration_minutes)<span>{{ $quiz->duration_minutes }} phút</span>@endif
+                        @if($tienDo && $tienDo->avg_score !== null)<span>Điểm TB {{ round((float) $tienDo->avg_score) }}%</span>@endif
+                    </span>
+                    <x-ui.progress class="mt-auto pt-4"
+                        :value="$tong > 0 ? $daLam / $tong * 100 : 0"
+                        :label="$daLam > 0 ? 'Đã làm ' . $daLam . '/' . $tong . ' đề' : 'Chưa làm'"
+                        :hint="$daLam > 0 ? round($daLam / $tong * 100) . '%' : null" />
+                </x-ui.tile>
             @endforeach
         </div>
     @endif
 @else
-    <div class="mt-8">
-        <x-alert type="info">
-            Kỹ năng {{ ucfirst($skill) }} đòi hỏi sự liên kết ngữ cảnh chặt chẽ giữa các Phần (Part 1 đến Part 4). Vì vậy, bạn chỉ có thể luyện tập dưới dạng <strong>Thi thử toàn bộ kỹ năng</strong>.
-        </x-alert>
-    </div>
+    <x-ui.panel>
+        <div class="flex gap-4">
+            <x-ui.icon-badge icon="info" tone="bg-blue-50 text-blue-600" size="sm" />
+            <div class="text-sm">
+                <p class="font-medium text-gray-900">Vì sao chỉ có thi thử?</p>
+                <p class="text-gray-500 mt-1">
+                    {{ $meta['name'] }} đòi hỏi các Part (1 đến 4) liên kết ngữ cảnh chặt chẽ với nhau,
+                    nên bạn luyện bằng <span class="font-medium text-gray-700">thi thử toàn bộ kỹ năng</span> để sát đề thật nhất.
+                </p>
+                <a href="{{ route($skill === 'writing' ? 'writingHistory.index' : 'speakingHistory.index') }}"
+                   class="inline-block mt-3 text-blue-600 hover:text-blue-700 font-medium">Xem bài đã làm →</a>
+            </div>
+        </div>
+    </x-ui.panel>
 @endif
 @endsection

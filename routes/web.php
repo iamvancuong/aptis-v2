@@ -117,7 +117,6 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
 
     // Sets
     Route::get('/skills/{skill}/part/{part}/sets', [SetController::class, 'index'])->name('sets.index');
-    Route::get('/sets/{set}', [SetController::class, 'show'])->name('sets.show');
 
     // Instructions
     Route::get('/instructions', [\App\Http\Controllers\InstructionController::class, 'index'])->name('instructions.index');

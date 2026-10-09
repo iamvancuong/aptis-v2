@@ -151,7 +151,7 @@
                                         
                                         <!-- Audio Preview -->
                                         <div x-show="audioFileName" class="pt-3">
-                                            <p class="text-sm font-medium text-gray-700 mb-2" x-text="'📁 ' + audioFileName"></p>
+                                            <p class="text-sm font-medium text-gray-700 mb-2" x-text="audioFileName"></p>
                                             <audio x-show="audioPreviewUrl" :src="audioPreviewUrl" controls class="mx-auto max-w-full"></audio>
                                         </div>
                                     </div>

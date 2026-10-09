@@ -218,7 +218,7 @@
 
             {{-- DevTools guard master switch --}}
             <div class="pt-6 mt-2 border-t border-gray-100">
-                <h3 class="text-sm font-bold text-gray-800 mb-1">🛡️ Chống mở Developer Tools</h3>
+                <h3 class="text-sm font-bold text-gray-800 mb-1">Chống mở Developer Tools</h3>
                 <p class="text-xs text-gray-500 mb-3 leading-snug">
                     Khi bật: học viên (không phải admin) mở DevTools sẽ bị cảnh báo và
                     đăng xuất sau 10 giây, đồng thời được ghi vào trang Cảnh báo bảo mật.

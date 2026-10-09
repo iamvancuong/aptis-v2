@@ -50,12 +50,12 @@ class WritingReviewPaidBadgeTest extends TestCase
         $html = $this->actingAs($admin)
             ->get(route('admin.writing-reviews.index', ['filter' => 'all']))
             ->assertOk()
-            ->assertSee('💰 Có phí')     // đơn paid được nhận diện (whereIn meta->attempt_id chạy)
+            ->assertSee('Có phí')     // đơn paid được nhận diện (whereIn meta->attempt_id chạy)
             ->assertSee('Miễn phí')
             ->getContent();
 
         // Đúng 1 bài có phí, 1 bài miễn phí.
-        $this->assertSame(1, substr_count($html, '💰 Có phí'));
+        $this->assertSame(1, substr_count($html, 'Có phí'));
         $this->assertSame(1, substr_count($html, 'Miễn phí'));
     }
 
@@ -76,6 +76,6 @@ class WritingReviewPaidBadgeTest extends TestCase
             ->get(route('admin.writing-reviews.index', ['filter' => 'all']))
             ->assertOk()
             ->assertSee('Miễn phí')
-            ->assertDontSee('💰 Có phí');
+            ->assertDontSee('Có phí');
     }
 }

@@ -170,7 +170,7 @@
                 <template x-if="currentSectionIndex >= sections.length - 1">
                     <button @click="confirmSubmit()"
                         class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-colors text-sm">
-                        🏁 Nộp bài
+                        Nộp bài
                     </button>
                 </template>
             </div>

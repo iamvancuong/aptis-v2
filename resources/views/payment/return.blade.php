@@ -6,8 +6,7 @@
 @section('content')
 <x-card>
     <div class="text-center">
-        <div class="text-5xl mb-3">✅</div>
-        <h2 class="text-2xl font-bold text-gray-900">Cảm ơn bạn!</h2>
+                <h2 class="text-2xl font-bold text-gray-900">Cảm ơn bạn!</h2>
         @if($order->type === \App\Models\Order::TYPE_GRADING)
             <p class="text-gray-600 mt-3 text-sm leading-relaxed">
                 Chúng tôi đang xác nhận thanh toán cho đơn <strong>{{ $order->order_code }}</strong>.

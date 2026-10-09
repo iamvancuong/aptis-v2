@@ -79,7 +79,7 @@ class ClassGroupController extends Controller
         // Bảng thành viên phân trang RIÊNG (tên trang `tv`) để lật trang ở khung
         // này không kéo theo khung ứng viên bên dưới nhảy trang.
         //
-        // ⚠️ Danh sách mời Calendar vẫn dựng từ `$classGroup->members` ĐẦY ĐỦ,
+        // Danh sách mời Calendar vẫn dựng từ `$classGroup->members` ĐẦY ĐỦ,
         // không phải từ trang đang xem. Nút copy mà chỉ lấy 25 địa chỉ của một
         // trang trong khi lớp có 710 người là hỏng IM LẶNG: admin dán vào
         // Calendar, thấy có email nên tin là xong, và chỉ phát hiện khi 685 học
@@ -143,7 +143,7 @@ class ClassGroupController extends Controller
     /**
      * NGUỒN SỰ THẬT DUY NHẤT cho "ứng viên khớp bộ lọc hiện tại".
      *
-     * ⚠️ Màn hiển thị và nút "thêm tất cả kết quả lọc" PHẢI đọc cùng một truy vấn.
+     * Màn hiển thị và nút "thêm tất cả kết quả lọc" PHẢI đọc cùng một truy vấn.
      * Trước đây hai chỗ chép logic của nhau và đã lệch thật: `addAllMatching`
      * không lấy `source` mặc định của lớp, nên với lớp có `source_filter`, màn
      * hiển thị lọc còn nút "thêm tất cả" thì thêm CẢ TRƯỜNG. Thêm một bộ lọc mới

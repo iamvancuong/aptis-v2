@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\URL;
 /**
  * Flow đăng ký-trả tiền.
  *
- * ⚠️ P1 (hiện tại): chỉ dựng trang chọn gói + nhập email. Bước tạo đơn PayOS,
+ * P1 (hiện tại): chỉ dựng trang chọn gói + nhập email. Bước tạo đơn PayOS,
  * QR và webhook fulfill sẽ làm ở P2 — chỗ đó đã đánh dấu TODO bên dưới.
  */
 class RegistrationController extends Controller

@@ -2,487 +2,218 @@
 
 @section('title', 'Dashboard - Milaedu')
 
+@use('App\Support\SkillMeta')
+
+@php
+    $tenGoi = collect(preg_split('/\s+/', trim(auth()->user()->name)))->filter()->last() ?: auth()->user()->name;
+
+    // Chip tóm tắt: màu chỉ bật lên khi cần chú ý.
+    $isAiUnlimited = $totalAiLimit === -1;
+    $aiTone = $isAiUnlimited || $aiRemaining > $totalAiLimit * 0.5 ? 'green' : ($aiRemaining > 0 ? 'amber' : 'red');
+    $expiryTone = match($expirationStatus) { 'expired' => 'red', 'warning' => 'amber', default => 'gray' };
+
+    // Khối "Việc hôm nay": gom các thông báo trước đây là 4 thanh màu riêng.
+    $viecHomNay = [];
+    if (($unseenWriting ?? 0) > 0) {
+        $viecHomNay[] = ['icon' => 'check', 'tone' => 'bg-emerald-50 text-emerald-600', 'text' => $unseenWriting . ' bài Writing vừa có điểm', 'sub' => 'Xem điểm và nhận xét chi tiết', 'cta' => 'Xem kết quả', 'url' => route('writingHistory.index')];
+    }
+    if (($unseenSpeaking ?? 0) > 0) {
+        $viecHomNay[] = ['icon' => 'mic', 'tone' => 'bg-emerald-50 text-emerald-600', 'text' => $unseenSpeaking . ' bài Speaking vừa có điểm', 'sub' => 'Xem điểm và nhận xét chi tiết', 'cta' => 'Xem kết quả', 'url' => route('speakingHistory.index')];
+    }
+    if ($vocabToday ?? null) {
+        $chuoi = $vocabToday['streak'] > 0 ? 'Chuỗi ' . $vocabToday['streak'] . ' ngày' . ($vocabToday['reviewed'] === 0 ? ' — ôn 1 từ để giữ chuỗi' : '') : 'Ôn mỗi ngày để bắt đầu chuỗi';
+        $sub = $chuoi . ' · ' . $vocabToday['total'] . ' từ trong sổ tay';
+        $viecHomNay[] = $vocabToday['due'] > 0
+            ? ['icon' => 'flame', 'tone' => 'bg-amber-50 text-amber-600', 'text' => 'Hôm nay có ' . $vocabToday['due'] . ' từ cần ôn', 'sub' => $sub, 'cta' => 'Ôn ngay', 'url' => route('vocab.review')]
+            : ['icon' => 'flame', 'tone' => 'bg-gray-100 text-gray-500', 'text' => 'Đã ôn xong từ vựng hôm nay', 'sub' => $sub, 'cta' => 'Xem sổ tay', 'url' => route('vocab.index')];
+    }
+    if ($nextClass ?? null) {
+        $dangHoc = $nextClass->isJoinable();
+        $viecHomNay[] = ['icon' => 'video', 'tone' => $dangHoc ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600', 'text' => ($dangHoc ? 'Lớp đang diễn ra: ' : 'Lớp sắp tới: ') . $nextClass->title, 'sub' => $nextClass->timeLabel(), 'cta' => $dangHoc ? 'Vào lớp' : 'Xem lịch', 'url' => $dangHoc ? route('classes.join', $nextClass) : route('classes.index')];
+    }
+
+    $statusTone = ['amber' => 'text-amber-600', 'gray' => 'text-gray-500', 'muted' => 'text-gray-400'];
+
+    // Nhãn + màu đường biểu đồ lấy từ SkillMeta để khớp màu icon kỹ năng.
+    $chartMeta = collect(SkillMeta::ORDER)
+        ->mapWithKeys(fn ($k) => [$k => ['label' => SkillMeta::get($k)['name'], 'color' => SkillMeta::get($k)['color']]])
+        ->put('mock_test', ['label' => 'Thi thử', 'color' => '#94a3b8']);
+@endphp
+
 @section('content')
-<div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">Chọn kỹ năng luyện tập</h1>
-    <p class="mt-2 text-gray-600">Chọn các kỹ năng để bắt đầu luyện tập</p>
-</div>
-
-{{-- Writing Graded Notification Banner --}}
-@if(($unseenWriting ?? 0) > 0)
-<div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-    <div class="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-        <span class="relative flex h-3 w-3 absolute -top-1 -right-1">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-        </span>
-        <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-    </div>
-    <div class="flex-1">
-        <p class="text-sm font-semibold text-green-800">
-            🎉 Bạn có {{ $unseenWriting }} bài Writing vừa có điểm!
-        </p>
-        <p class="text-xs text-green-600">Xem ngay kết quả và nhận xét từ giảng viên</p>
-    </div>
-    <a href="{{ route('writingHistory.index') }}"
-       class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-        Xem ngay →
-    </a>
-</div>
-@endif
-
-{{-- Speaking Graded Notification Banner --}}
-@if(($unseenSpeaking ?? 0) > 0)
-<div class="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
-    <div class="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
-        <span class="relative flex h-3 w-3 absolute -top-1 -right-1">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
-        </span>
-        <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-    </div>
-    <div class="flex-1">
-        <p class="text-sm font-semibold text-orange-800">
-            🎉 Bạn có {{ $unseenSpeaking }} bài Speaking vừa có điểm!
-        </p>
-        <p class="text-xs text-orange-600">Xem ngay kết quả và nhận xét từ giảng viên</p>
-    </div>
-    <a href="{{ route('speakingHistory.index') }}"
-       class="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors">
-        Xem ngay →
-    </a>
-</div>
-@endif
-
-{{-- Ôn từ vựng hôm nay: nhắc đúng hạn + giữ chuỗi ngày học --}}
-@if($vocabToday ?? null)
-<div class="mb-6 p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center gap-3
-            {{ $vocabToday['due'] > 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-emerald-50 border-emerald-200' }}">
-    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-lg
-                {{ $vocabToday['due'] > 0 ? 'bg-indigo-100' : 'bg-emerald-100' }}">
-        {{ $vocabToday['streak'] > 0 ? '🔥' : '📒' }}
-    </div>
-    <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold {{ $vocabToday['due'] > 0 ? 'text-indigo-900' : 'text-emerald-800' }}">
-            @if($vocabToday['due'] > 0)
-                Hôm nay có {{ $vocabToday['due'] }} từ cần ôn
-            @else
-                Đã ôn xong từ vựng hôm nay
-            @endif
-        </p>
-        <p class="text-xs {{ $vocabToday['due'] > 0 ? 'text-indigo-600' : 'text-emerald-600' }}">
-            @if($vocabToday['streak'] > 0)
-                Chuỗi {{ $vocabToday['streak'] }} ngày liên tiếp
-                @if($vocabToday['reviewed'] === 0) — ôn ít nhất 1 từ hôm nay để giữ chuỗi @endif
-            @else
-                Ôn mỗi ngày một ít để bắt đầu chuỗi ngày học
-            @endif
-            · đã ôn {{ $vocabToday['reviewed'] }} lượt hôm nay · {{ $vocabToday['total'] }} từ trong sổ tay
-        </p>
-    </div>
-    @if($vocabToday['due'] > 0)
-        <a href="{{ route('vocab.review') }}"
-           class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors text-center">
-            Ôn ngay →
-        </a>
-    @else
-        <a href="{{ route('vocab.index') }}"
-           class="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-100 rounded-lg transition-colors text-center">
-            Xem sổ tay
-        </a>
-    @endif
-</div>
-@endif
-
-{{-- Lớp học online sắp tới / đang diễn ra --}}
-@if($nextClass ?? null)
-<div class="mb-6 p-4 {{ $nextClass->isJoinable() ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200' }} border rounded-xl flex flex-col sm:flex-row sm:items-center gap-3">
-    <div class="w-9 h-9 {{ $nextClass->isJoinable() ? 'bg-green-100' : 'bg-blue-100' }} rounded-full flex items-center justify-center shrink-0">
-        <svg class="w-5 h-5 {{ $nextClass->isJoinable() ? 'text-green-600' : 'text-blue-600' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-    </div>
-    <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold {{ $nextClass->isJoinable() ? 'text-green-800' : 'text-blue-800' }}">
-            {{ $nextClass->isJoinable() ? '🔴 Lớp đang diễn ra: ' : '📅 Lớp sắp tới: ' }}{{ $nextClass->title }}
-        </p>
-        <p class="text-xs {{ $nextClass->isJoinable() ? 'text-green-600' : 'text-blue-600' }}">
-            {{ $nextClass->timeLabel() }}
-        </p>
-    </div>
-    @if($nextClass->isJoinable())
-        <a href="{{ route('classes.join', $nextClass) }}" class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-center">Vào lớp →</a>
-    @else
-        <a href="{{ route('classes.index') }}" class="px-3 py-1.5 text-sm font-medium text-blue-700 bg-white border border-blue-200 hover:bg-blue-50 rounded-lg transition-colors text-center">Xem lịch</a>
-    @endif
-</div>
-@endif
-
-{{-- Quick Stats Row --}}
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    {{-- Total Attempts --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
-        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <div>
-            <div class="text-xl font-black text-gray-800">{{ $totalAttempts }}</div>
-            <div class="text-xs text-gray-500 font-medium">Bài đã làm</div>
-        </div>
-    </div>
-
-    {{-- Avg Score --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
-        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-        </div>
-        <div>
-            <div class="text-xl font-black text-gray-800">
-                {{ $avgScore !== null ? $avgScore . '%' : '—' }}
-            </div>
-            <div class="text-xs text-gray-500 font-medium">Điểm trung bình</div>
-        </div>
-    </div>
-
-    {{-- AI Remaining --}}
-    @php
-        $isAiUnlimited = $totalAiLimit === -1;
-        $aiPct = ($totalAiLimit > 0 && !$isAiUnlimited) ? round($aiRemaining / $totalAiLimit * 100) : ($isAiUnlimited ? 100 : 0);
-        $aiColor = $isAiUnlimited ? 'text-green-600 bg-green-100' : ($aiRemaining > $totalAiLimit * 0.5 ? 'text-green-600 bg-green-100' : ($aiRemaining > 0 ? 'text-amber-600 bg-amber-100' : 'text-red-600 bg-red-100'));
-    @endphp
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
-        <div class="w-10 h-10 {{ $aiColor }} rounded-lg flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        </div>
-        <div>
-            @if ($isAiUnlimited)
-                <div class="text-xl font-black text-gray-800">∞<span class="text-sm font-medium text-gray-400">/∞</span></div>
-                <div class="text-xs text-gray-500 font-medium">AI Writing không giới hạn</div>
-            @else
-                <div class="text-xl font-black text-gray-800">{{ $aiRemaining }}<span class="text-sm font-medium text-gray-400">/{{ $totalAiLimit }}</span></div>
-                <div class="text-xs text-gray-500 font-medium">AI Writing còn lại</div>
-            @endif
-        </div>
-    </div>
-
-    {{-- Account Expiry --}}
-    @php
-        $expiryColor = match($expirationStatus) {
-            'expired' => 'text-red-600 bg-red-100',
-            'warning' => 'text-amber-600 bg-amber-100',
-            'active'  => 'text-green-600 bg-green-100',
-            default   => 'text-gray-500 bg-gray-100',
-        };
-    @endphp
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-3">
-        <div class="w-10 h-10 {{ $expiryColor }} rounded-lg flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        </div>
-        <div>
+<x-ui.page-header :title="'Chào ' . $tenGoi" subtitle="Hôm nay bạn muốn luyện kỹ năng nào?" class="lg:items-end">
+    <x-slot:aside>
+        <x-ui.chip><span class="font-semibold text-gray-900">{{ $totalAttempts }}</span> bài đã làm</x-ui.chip>
+        <x-ui.chip>Điểm TB <span class="font-semibold text-gray-900">{{ $avgScore !== null ? $avgScore . '%' : '—' }}</span></x-ui.chip>
+        <x-ui.chip :tone="$aiTone" title="Số lượt AI chấm Writing còn lại">
+            AI Writing <span class="font-semibold">{{ $isAiUnlimited ? '∞' : $aiRemaining . '/' . $totalAiLimit }}</span>
+        </x-ui.chip>
+        <x-ui.chip :tone="$expiryTone">
             @if($expirationStatus === 'never')
-                <div class="text-xl font-black text-gray-600">∞</div>
-                <div class="text-xs text-gray-500 font-medium">Không giới hạn</div>
+                Hạn dùng <span class="font-semibold">không giới hạn</span>
             @elseif($expirationStatus === 'expired')
-                <div class="text-base font-black text-red-600">Đã hết hạn</div>
-                <div class="text-xs text-gray-500 font-medium">{{ $expiresAt->format('d/m/Y') }}</div>
+                <span class="font-semibold">Đã hết hạn</span> {{ $expiresAt->format('d/m/Y') }}
             @else
-                <div class="text-xl font-black text-gray-800">{{ $daysUntilExpiry }}d</div>
-                <div class="text-xs text-gray-500 font-medium">Còn {{ $expiresAt->format('d/m/Y') }}</div>
+                Còn <span class="font-semibold">{{ $daysUntilExpiry }} ngày</span> · {{ $expiresAt->format('d/m/Y') }}
             @endif
+        </x-ui.chip>
+    </x-slot:aside>
+</x-ui.page-header>
+
+@if(count($viecHomNay) > 0)
+    <x-ui.panel title="Việc hôm nay" :padded="false" class="mb-6">
+        <x-slot:actions><span class="text-xs text-gray-400">{{ count($viecHomNay) }} mục</span></x-slot:actions>
+        <div class="divide-y divide-gray-100">
+            @foreach($viecHomNay as $viec)
+                <a href="{{ $viec['url'] }}" class="group flex items-center gap-3 sm:gap-4 px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <x-ui.icon-badge :icon="$viec['icon']" :tone="$viec['tone']" size="sm" />
+                    <span class="flex-1 min-w-0">
+                        <span class="block text-sm font-medium text-gray-900 truncate">{{ $viec['text'] }}</span>
+                        <span class="block text-xs text-gray-500 truncate">{{ $viec['sub'] }}</span>
+                    </span>
+                    <span class="shrink-0 text-sm font-medium text-blue-600 group-hover:text-blue-700">{{ $viec['cta'] }} <span aria-hidden="true">→</span></span>
+                </a>
+            @endforeach
         </div>
-    </div>
+    </x-ui.panel>
+@endif
+
+<x-ui.cta-card :href="route('full-test.index')" icon="flag" title="Full Test Aptis" :badge="'Còn ' . $fullTestRemaining . ' lượt'" action="Vào thi">
+    Thi liên tục 5 phần như thi thật · nhận bảng điểm thang Aptis và trình độ CEFR
+</x-ui.cta-card>
+
+<x-ui.section-title title="Luyện từng kỹ năng" meta="Theo thứ tự đề thi Aptis" />
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
+    @foreach(SkillMeta::ORDER as $skill)
+        @php $meta = SkillMeta::get($skill); @endphp
+        <x-ui.tile :href="$skill === 'grammar' ? route('grammar.index') : route('skills.show', $skill)">
+            <x-ui.icon-badge :skill="$skill" />
+            <span class="block mt-4 text-base font-semibold text-gray-900">{{ $meta['name'] }}</span>
+            <span class="block text-xs text-gray-500">{{ $meta['desc'] }}</span>
+            <span class="block mt-3 pt-3 border-t border-gray-100 text-xs font-medium {{ $statusTone[$skillStatus[$skill]['tone']] }}">
+                {{ $skillStatus[$skill]['text'] }}
+            </span>
+        </x-ui.tile>
+    @endforeach
 </div>
 
-
-{{-- Full Test: thi liên tục 5 phần như kỳ thi thật --}}
-<a href="{{ route('full-test.index') }}"
-   class="flex flex-col sm:flex-row sm:items-center gap-3 mb-8 p-5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg hover:shadow-xl transition-shadow">
-    <div class="text-3xl">🏁</div>
-    <div class="flex-1">
-        <div class="text-lg font-bold">Full Test Aptis — thi liên tục 5 phần như thi thật</div>
-        <div class="text-sm text-indigo-100">Speaking → Listening → Grammar → Reading → Writing · nhận bảng điểm thang Aptis và trình độ CEFR</div>
-    </div>
-    <span class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-white text-indigo-700 font-semibold text-sm">Vào thi →</span>
-</a>
-
-<small><i>Thứ tự luyện thi theo chuẩn Aptis</i></small>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-    <!-- Speaking -->
-    <x-card>
-        <div class="text-center">
-            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Speaking</h3>
-            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng nói</p>
-            <x-button href="{{ route('skills.show', 'speaking') }}" class="w-full">Bắt đầu</x-button>
-        </div>
-    </x-card>
-
-    <!-- Listening -->
-    <x-card>
-        <div class="text-center">
-            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Listening</h3>
-            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng nghe</p>
-            <x-button href="{{ route('skills.show', 'listening') }}" class="w-full">Bắt đầu</x-button>
-        </div>
-    </x-card>
-    
-    <!-- Grammar & Vocabulary -->
-    <x-card>
-        <div class="text-center">
-            <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Grammar</h3>
-            <p class="text-gray-600 text-sm mb-4">Ngữ pháp & Từ vựng</p>
-            <x-button href="{{ route('grammar.index') }}" class="w-full">Bắt đầu</x-button>
-        </div>
-    </x-card>
-
-    <!-- Reading -->
-    <x-card>
-        <div class="text-center">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Reading</h3>
-            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng đọc hiểu</p>
-            <x-button href="{{ route('skills.show', 'reading') }}" class="w-full">Bắt đầu</x-button>
-        </div>
-    </x-card>
-
-    <!-- Writing -->
-    <x-card>
-        <div class="text-center">
-            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">Writing</h3>
-            <p class="text-gray-600 text-sm mb-4">Luyện tập kỹ năng viết</p>
-            <x-button href="{{ route('skills.show', 'writing') }}" class="w-full">Bắt đầu</x-button>
-        </div>
-    </x-card>
-
-</div>
-
-<div class="mt-8 mb-8">
-    <x-card title="Thống kê tiến độ luyện tập">
-        <p class="text-gray-600 mb-6">Theo dõi sự tiến bộ điểm số của bạn qua các lần luyện tập và thi thử</p>
-        <div class="relative h-80 w-full">
+<x-ui.panel title="Tiến độ luyện tập" subtitle="Điểm trung bình mỗi tuần · 6 tháng gần nhất" :padded="false">
+    <x-slot:actions><div id="chartLegend" class="flex flex-wrap gap-1.5"></div></x-slot:actions>
+    <div class="px-3 sm:px-5 pt-4 pb-2">
+        <div class="relative h-56 sm:h-64 w-full">
             <canvas id="progressChart"></canvas>
         </div>
-    </x-card>
-</div>
-
-<div class="mt-8">
-    <x-card title="Lịch sử làm bài">
-        <p class="text-gray-600 mb-4">Xem lịch sử các bài thi và luyện tập của bạn theo từng kỹ năng</p>
-        <div class="flex flex-col sm:flex-row gap-3">
-            <x-button href="{{ route('history.index') }}" variant="secondary" class="flex-1 justify-center flex items-center gap-2">
-                <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Trắc nghiệm & Ngữ pháp
-            </x-button>
-            <x-button href="{{ route('writingHistory.index') }}" variant="secondary" class="flex-1 justify-center flex items-center gap-2">
-                <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                Tự luận (Writing)
-            </x-button>
-            <x-button href="{{ route('speakingHistory.index') }}" variant="secondary" class="flex-1 justify-center flex items-center gap-2">
-                <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-                Nói (Speaking)
-            </x-button>
-            <x-button href="{{ route('leaderboard.index') }}" variant="secondary" class="flex-1 justify-center flex items-center gap-2">
-                <svg class="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                🏆 Leaderboard
-            </x-button>
-        </div>
-    </x-card>
-</div>
+    </div>
+    <x-slot:footer>
+        <span class="text-gray-400">Lịch sử:</span>
+        <a href="{{ route('history.index') }}" class="text-gray-600 hover:text-blue-600">Trắc nghiệm</a>
+        <a href="{{ route('writingHistory.index') }}" class="text-gray-600 hover:text-blue-600">Writing</a>
+        <a href="{{ route('speakingHistory.index') }}" class="text-gray-600 hover:text-blue-600">Speaking</a>
+        <a href="{{ route('leaderboard.index') }}" class="text-gray-600 hover:text-blue-600">Bảng xếp hạng</a>
+    </x-slot:footer>
+</x-ui.panel>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Use injected statistics data directly
-        const result = @json($statisticsData);
-        
-        try {
+    document.addEventListener('DOMContentLoaded', function () {
+        const data = @json($statisticsData);
+        const canvas = document.getElementById('progressChart');
+        const legend = document.getElementById('chartLegend');
 
-            // Extract all unique dates for the X-axis labels to align the different datasets
-            const allDates = new Set();
-            ['reading', 'listening', 'writing', 'grammar', 'speaking', 'mock_test'].forEach(skill => {
-                if (result[skill]) {
-                    result[skill].forEach(dataPoint => allDates.add(dataPoint.date));
-                }
-            });
+        // Nhãn + màu từ SkillMeta (server) → khớp màu icon kỹ năng phía trên.
+        const meta = @json($chartMeta);
 
-            // Sort dates chronologically (assuming DD/MM format)
-            const sortedDates = Array.from(allDates).sort((a, b) => {
-                // a and b are like '23/02'
-                try {
-                    const [dayA, monthA] = a.split('/');
-                    const [dayB, monthB] = b.split('/');
-                    
-                    const valA = new Date(`2024-${monthA}-${dayA}T00:00:00`);
-                    const valB = new Date(`2024-${monthB}-${dayB}T00:00:00`);
-                    return valA - valB;
-                } catch (e) {
-                    return 0; // fallback if parsing fails
-                }
-            });
-
-            if (sortedDates.length === 0) {
-                document.getElementById('progressChart').parentNode.innerHTML = '<p class="text-center text-gray-500 mt-20">Chưa có dữ liệu thống kê. Hãy bắt đầu luyện tập!</p>';
-                return;
-            }
-
-            // Helper to map sparse data to aligned dates
-            const mapDataToDates = (skillData) => {
-                if (!skillData) return sortedDates.map(() => null);
-                return sortedDates.map(date => {
-                    const found = skillData.find(d => d.date === date);
-                    return found ? found.score : null; // null keeps the line continuous in Chart.js using spanGaps
-                });
-            };
-
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: sortedDates,
-                    datasets: [
-                        {
-                            label: 'Reading Practice',
-                            data: mapDataToDates(result.reading),
-                            borderColor: '#3b82f6', // blue-500
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            spanGaps: true
-                        },
-                        {
-                            label: 'Listening Practice',
-                            data: mapDataToDates(result.listening),
-                            borderColor: '#10b981', // green-500
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            spanGaps: true
-                        },
-                        {
-                            label: 'Writing Practice',
-                            data: mapDataToDates(result.writing),
-                            borderColor: '#8b5cf6', // purple-500
-                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            spanGaps: true
-                        },
-                        {
-                            label: 'Grammar Practice',
-                            data: mapDataToDates(result.grammar),
-                            borderColor: '#ec4899', // pink-500
-                            backgroundColor: 'rgba(236, 72, 153, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            spanGaps: true
-                        },
-                        {
-                            label: 'Speaking Practice',
-                            data: mapDataToDates(result.speaking),
-                            borderColor: '#f97316', // orange-500
-                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            spanGaps: true
-                        },
-                        {
-                            label: 'Mock Test (Full)',
-                            data: mapDataToDates(result.mock_test),
-                            borderColor: '#f59e0b', // amber-500
-                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                            borderWidth: 3,
-                            borderDash: [5, 5],
-                            tension: 0.3,
-                            spanGaps: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            min: 0,
-                            max: 100,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += Math.round(context.parsed.y) + '%';
-                                    }
-                                    return label;
-                                },
-                                afterLabel: function(context) {
-                                    // Find the raw data object to get the parts information
-                                    const datasetIndex = context.datasetIndex;
-                                    const dataIndex = context.dataIndex;
-                                    const dateLabel = context.chart.data.labels[dataIndex];
-                                    
-                                    // Determine which skill array to look up
-                                    let skillKey = '';
-                                    if (datasetIndex === 0) skillKey = 'reading';
-                                    else if (datasetIndex === 1) skillKey = 'listening';
-                                    else if (datasetIndex === 2) skillKey = 'writing';
-                                    else if (datasetIndex === 3) skillKey = 'grammar';
-                                    else if (datasetIndex === 4) skillKey = 'speaking';
-                                    else if (datasetIndex === 5) skillKey = 'mock_test';
-                                    
-                                    const skillData = result[skillKey] || [];
-                                    const originalPoint = skillData.find(d => d.date === dateLabel);
-                                    
-                                    if (originalPoint && originalPoint.parts && Object.keys(originalPoint.parts).length > 0) {
-                                        let partsText = [];
-                                        partsText.push('--- Chi tiết ---');
-                                        for (const [part, score] of Object.entries(originalPoint.parts)) {
-                                            partsText.push(`Part ${part}: ${score}% đúng`);
-                                        }
-                                        return partsText;
-                                    }
-                                    return '';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Failed to load statistics:', error);
+        const keys = Object.keys(meta).filter(k => data.series && data.series[k]);
+        if (!data.labels || data.labels.length === 0 || keys.length === 0) {
+            canvas.parentNode.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-center text-sm text-gray-400">'
+                + '<span class="text-gray-500 font-medium">Chưa có dữ liệu trong 6 tháng gần đây</span>'
+                + '<span>Làm bài luyện tập để thấy tiến độ của bạn ở đây.</span></div>';
+            return;
         }
+
+        const chart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: keys.map(k => ({
+                    key: k,
+                    label: meta[k].label,
+                    data: data.series[k],
+                    borderColor: meta[k].color,
+                    backgroundColor: meta[k].color,
+                    borderWidth: 2.5,
+                    borderDash: k === 'mock_test' ? [6, 4] : [],
+                    tension: 0.4,
+                    cubicInterpolationMode: 'monotone',
+                    // Ẩn chấm cho gọn, TRỪ mốc đứng một mình (không có mốc kề để
+                    // nối thành đường) — không có chấm thì mốc đó biến mất hẳn.
+                    pointRadius: ctx => {
+                        const d = ctx.dataset.data, i = ctx.dataIndex;
+                        const prev = d.slice(0, i).some(v => v !== null);
+                        const next = d.slice(i + 1).some(v => v !== null);
+                        return (!prev && !next) ? 4 : 0;
+                    },
+                    pointHoverRadius: 5,
+                    pointHoverBorderWidth: 2,
+                    pointHoverBorderColor: '#fff',
+                    spanGaps: true,
+                })),
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                layout: { padding: { top: 6 } },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: '#9ca3af', font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+                    },
+                    y: {
+                        min: 0, max: 100,
+                        border: { display: false },
+                        grid: { color: '#f1f5f9' },
+                        ticks: { color: '#9ca3af', font: { size: 11 }, stepSize: 25, callback: v => v + '%' },
+                    },
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#fff',
+                        titleColor: '#111827',
+                        bodyColor: '#4b5563',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        padding: 10,
+                        boxWidth: 8, boxHeight: 8, boxPadding: 4,
+                        usePointStyle: true,
+                        callbacks: {
+                            title: items => 'Tuần ' + items[0].label,
+                            label: ctx => ' ' + ctx.dataset.label + ': ' + Math.round(ctx.parsed.y) + '%',
+                        },
+                        filter: item => item.parsed.y !== null,
+                    },
+                },
+            },
+        });
+
+        // Chú thích: chip bấm được để ẩn/hiện từng đường.
+        keys.forEach((k, i) => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-opacity';
+            chip.innerHTML = '<span class="w-2 h-2 rounded-full" style="background:' + meta[k].color + '"></span>' + meta[k].label;
+            chip.addEventListener('click', () => {
+                const visible = chart.isDatasetVisible(i);
+                chart.setDatasetVisibility(i, !visible);
+                chip.classList.toggle('opacity-40', visible);
+                chart.update();
+            });
+            legend.appendChild(chip);
+        });
     });
 </script>
 @endpush

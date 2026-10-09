@@ -104,7 +104,7 @@
                     @endif
                     @if($footerPhoneDigits)
                         <li>
-                            <a href="tel:{{ $footerPhoneDigits }}" class="hover:text-white">📞 {{ $footerPhone }}</a>
+                            <a href="tel:{{ $footerPhoneDigits }}" class="hover:text-white">{{ $footerPhone }}</a>
                             <a href="https://zalo.me/{{ ltrim($footerPhoneDigits, '+') }}" target="_blank" rel="noopener" class="ml-2 text-blue-400 hover:text-white">Zalo</a>
                         </li>
                     @endif

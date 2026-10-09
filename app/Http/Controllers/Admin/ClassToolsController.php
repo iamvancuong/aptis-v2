@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 /**
  * Chạy các lệnh KIỂM TRA lớp online ngay trên web, thay cho cPanel Terminal.
  *
- * ⚠️ ĐỌC TRƯỚC KHI THÊM LỆNH MỚI VÀO ĐÂY.
+ * ĐỌC TRƯỚC KHI THÊM LỆNH MỚI VÀO ĐÂY.
  *
  * Chạy lệnh từ trình duyệt là con đường ngắn nhất tới một cửa hậu, nên trang này
  * dựng theo ba luật cứng — phá luật nào cũng biến nó thành lỗ hổng:

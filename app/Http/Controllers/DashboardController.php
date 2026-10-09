@@ -21,85 +21,45 @@ class DashboardController extends Controller
         $totalAttempts = (clone $baseQuery)->count();
         $avgScore      = $totalAttempts > 0 ? round((clone $baseQuery)->avg('score'), 1) : null;
 
-        // Biểu đồ tiến độ chỉ hiển thị tối đa 20 mốc gần nhất mỗi kỹ năng, nên chỉ
+        // Biểu đồ tiến độ chỉ cần 6 tháng gần nhất, nên chỉ
         // cần dữ liệu gần đây + đúng các cột dùng tới (tránh nạp cả nghìn dòng/đủ cột).
         $attempts = (clone $baseQuery)
             ->where('finished_at', '>=', now()->subMonths(6))
             ->orderBy('finished_at', 'asc')
-            ->get(['skill', 'mode', 'score', 'finished_at', 'metadata']);
+            ->get(['skill', 'mode', 'score', 'finished_at']);
 
-        $groupedStats = [
-            'reading'   => [],
-            'listening' => [],
-            'writing'   => [],
-            'grammar'   => [],
-            'mock_test' => [],
-        ];
-
+        // Biểu đồ tiến độ: GOM THEO TUẦN (điểm trung bình mỗi tuần mỗi kỹ năng).
+        // Bản cũ vẽ từng ngày → 60+ mốc, đường giật lên xuống và nhãn trục X chồng
+        // nhau, học viên nhìn không ra xu hướng. Theo tuần thì tối đa ~26 mốc / 6 tháng.
+        // Server trả sẵn nhãn đã sắp xếp + dãy điểm thẳng hàng, JS chỉ việc vẽ
+        // (bản cũ sắp ngày "dd/mm" trong JS với năm cố định nên sai khi qua năm mới).
+        $seriesKeys = ['speaking', 'listening', 'grammar', 'reading', 'writing', 'mock_test'];
+        $weeks = [];
         foreach ($attempts as $attempt) {
             if (!$attempt->finished_at) continue;
 
-            $dateLabel = $attempt->finished_at->format('d/m');
-            $score     = (float) $attempt->score;
-
-            $partsProgress = [];
-            $metadata      = $attempt->metadata ?? [];
-            if (!empty($metadata['part_stats'])) {
-                foreach ($metadata['part_stats'] as $part => $stats) {
-                    $total   = $stats['total'] ?? 0;
-                    $correct = $stats['correct'] ?? 0;
-                    $partsProgress[$part] = $total > 0 ? round(($correct / $total) * 100) : 0;
-                }
-            }
-
+            $weekKey  = $attempt->finished_at->copy()->startOfWeek()->format('Y-m-d');
             $skillKey = in_array($attempt->mode, ['mock', 'mock_test']) ? 'mock_test' : $attempt->skill;
+            if (!in_array($skillKey, $seriesKeys, true)) continue;
 
-            if (isset($groupedStats[$skillKey])) {
-                if (!isset($groupedStats[$skillKey][$dateLabel])) {
-                    $groupedStats[$skillKey][$dateLabel] = [
-                        'count'       => 0,
-                        'total_score' => 0,
-                        'parts'       => [],
-                    ];
-                }
+            $weeks[$weekKey][$skillKey][] = (float) $attempt->score;
+        }
+        ksort($weeks);
 
-                $g = &$groupedStats[$skillKey][$dateLabel];
-                $g['count']++;
-                $g['total_score'] += $score;
-
-                foreach ($partsProgress as $part => $pct) {
-                    if (!isset($g['parts'][$part])) {
-                        $g['parts'][$part] = ['count' => 0, 'total_pct' => 0];
-                    }
-                    $g['parts'][$part]['count']++;
-                    $g['parts'][$part]['total_pct'] += $pct;
-                }
+        $statisticsData = ['labels' => [], 'series' => array_fill_keys($seriesKeys, [])];
+        foreach ($weeks as $weekKey => $bySkill) {
+            $statisticsData['labels'][] = \Carbon\Carbon::parse($weekKey)->format('d/m');
+            foreach ($seriesKeys as $key) {
+                $statisticsData['series'][$key][] = isset($bySkill[$key])
+                    ? round(array_sum($bySkill[$key]) / count($bySkill[$key]), 1)
+                    : null;
             }
         }
-
-        $statisticsData = ['reading' => [], 'listening' => [], 'writing' => [], 'grammar' => [], 'mock_test' => []];
-
-        foreach ($groupedStats as $skillKey => $dates) {
-            foreach ($dates as $dateLabel => $aggregate) {
-                $avgScore = round($aggregate['total_score'] / $aggregate['count'], 2);
-                $avgParts = [];
-                foreach ($aggregate['parts'] as $part => $pData) {
-                    $avgParts[$part] = round($pData['total_pct'] / $pData['count']);
-                }
-
-                $statisticsData[$skillKey][] = [
-                    'date'  => $dateLabel,
-                    'score' => $avgScore,
-                    'parts' => $avgParts,
-                ];
-            }
-        }
-
-        foreach ($statisticsData as $key => $series) {
-            if (count($series) > 20) {
-                $statisticsData[$key] = array_slice($series, -20);
-            }
-        }
+        // Bỏ dãy rỗng để chú thích không hiện kỹ năng chưa làm lần nào.
+        $statisticsData['series'] = array_filter(
+            $statisticsData['series'],
+            fn ($points) => count(array_filter($points, fn ($p) => $p !== null)) > 0
+        );
 
         // Quick Stats ($totalAttempts, $avgScore) đã tính bằng aggregate query ở đầu.
 
@@ -155,7 +115,42 @@ class DashboardController extends Controller
             }
         }
 
+        // Dòng trạng thái dưới mỗi ô kỹ năng: điểm lần làm gần nhất + số bài đang
+        // chờ chấm (Writing/Speaking). 2 câu gom nhóm, không N+1.
+        $lastIds = \App\Models\Attempt::where('user_id', $user->id)
+            ->whereNotNull('finished_at')
+            ->selectRaw('skill, max(id) as last_id')
+            ->groupBy('skill')
+            ->pluck('last_id', 'skill');
+        $lastScores = \App\Models\Attempt::whereIn('id', $lastIds->values())
+            ->pluck('score', 'skill');
+        $dangCham = \App\Models\Attempt::where('user_id', $user->id)
+            ->whereIn('skill', ['writing', 'speaking'])
+            ->whereHas('attemptAnswers', fn ($q) => $q->where('grading_status', 'pending'))
+            ->selectRaw('skill, count(*) as n')
+            ->groupBy('skill')
+            ->pluck('n', 'skill');
+
+        $skillStatus = [];
+        foreach (\App\Support\SkillMeta::ORDER as $skill) {
+            if (($dangCham[$skill] ?? 0) > 0) {
+                $skillStatus[$skill] = ['text' => 'Đang chấm ' . $dangCham[$skill] . ' bài', 'tone' => 'amber'];
+            } elseif ($lastIds->has($skill)) {
+                $diem = $lastScores[$skill] ?? null;
+                $skillStatus[$skill] = [
+                    'text' => $diem !== null ? 'Lần gần nhất ' . round((float) $diem) . '%' : 'Đã làm, chờ điểm',
+                    'tone' => 'gray',
+                ];
+            } else {
+                $skillStatus[$skill] = ['text' => 'Chưa làm', 'tone' => 'muted'];
+            }
+        }
+
+        $fullTestRemaining = app(\App\Services\FullTestService::class)->remainingFor($user);
+
         return view('dashboard', compact(
+            'skillStatus',
+            'fullTestRemaining',
             'vocabToday',
             'nextClass',
             'statisticsData',

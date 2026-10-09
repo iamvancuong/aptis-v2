@@ -149,7 +149,7 @@
                         class="flex-1 min-w-0 text-xs py-1.5 pl-2 pr-7 border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-indigo-500">
                     <option value="">Chỉ xếp theo loại từ</option>
                     <template x-for="f in folders" :key="f.id">
-                        <option :value="String(f.id)" x-text="'📁 ' + f.name"></option>
+                        <option :value="String(f.id)" x-text="f.name"></option>
                     </template>
                     <option value="__new">+ Thư mục mới…</option>
                 </select>

@@ -9,7 +9,7 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-slate-50 text-gray-900 antialiased">
     <div x-data="{ 
         isMobileOpen: false,
         isDesktopCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
@@ -48,11 +48,11 @@
                    x-cloak>
                 
                 <!-- Sidebar Header -->
-                <div class="flex items-center justify-between h-16 px-4 shadow-[0_1px_0_rgba(0,0,0,0.08)]">
-                    <h2 class="text-xl font-bold text-blue-600 overflow-hidden whitespace-nowrap transition-all duration-300"
-                        :class="{'w-0 opacity-0': (isDesktopCollapsed && !isMobile), 'w-auto opacity-100': !(isDesktopCollapsed && !isMobile)}">
-                        Admin Panel
-                    </h2>
+                <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+                    <div class="overflow-hidden transition-all duration-300"
+                         :class="{'w-0 opacity-0': (isDesktopCollapsed && !isMobile), 'w-auto opacity-100': !(isDesktopCollapsed && !isMobile)}">
+                        <x-ui.brand :href="route('admin.dashboard')" tag="Admin" />
+                    </div>
                     <!-- Desktop collapse button -->
                     <button type="button" @click="toggleDesktop()" class="hidden md:block p-2 rounded hover:bg-gray-100 focus:outline-none">
                         <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,31 +248,27 @@
      
             <!-- Main Content -->
             <div class="flex-1 flex flex-col overflow-hidden transition-all duration-300">
-                <header class="bg-white shadow-sm z-30">
-                    <div class="flex justify-between items-center px-4 md:px-8 py-4">
-                        <div class="flex items-center space-x-4">
-                            <!-- Mobile hamburger menu -->
-                            <button @click="isMobileOpen = !isMobileOpen" class="md:hidden p-2 rounded hover:bg-gray-100 focus:outline-none">
-                                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                                </svg>
-                            </button>
-                            <h1 class="text-xl md:text-2xl font-semibold">@yield('header', 'Dashboard')</h1>
+                {{-- Header admin: cùng ngôn ngữ với header học viên (logo/menu tài khoản dùng chung x-ui.*). --}}
+                <header class="bg-white border-b border-gray-200 z-30">
+                    <div class="flex items-center gap-3 h-16 px-4 md:px-8">
+                        <button type="button" @click="isMobileOpen = !isMobileOpen" aria-label="Mở menu"
+                                class="md:hidden w-10 h-10 -ml-2 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100">
+                            <x-ui.icon name="menu" class="w-6 h-6" />
+                        </button>
+                        <div class="min-w-0">
+                            <p class="text-xs text-gray-400 leading-none mb-1">Quản trị</p>
+                            <h1 class="text-lg font-semibold text-gray-900 truncate leading-tight">@yield('header', 'Dashboard')</h1>
                         </div>
-                        <div class="flex items-center space-x-2 md:space-x-4">
-                            <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 hover:text-emerald-800 transition-colors border border-emerald-200">
-                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                                </svg>
-                                Về Giao diện Học viên
+                        <div class="ml-auto flex items-center gap-2">
+                            <a href="{{ route('dashboard') }}"
+                               class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                                <x-ui.icon name="arrow-left" class="w-4 h-4" />
+                                Giao diện học viên
                             </a>
-                            <div class="hidden sm:block h-5 w-px bg-gray-300 mx-2"></div>
-                            
-                            <span class="text-xs md:text-sm text-gray-700 font-medium">{{ auth()->user()->name }}</span>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <x-button type="submit" variant="secondary" class="text-xs md:text-sm">Đăng xuất</x-button>
-                            </form>
+                            <x-ui.user-menu>
+                                <a href="{{ route('dashboard') }}">Giao diện học viên</a>
+                                <a href="{{ route('admin.settings.index') }}">Cài đặt hệ thống</a>
+                            </x-ui.user-menu>
                         </div>
                     </div>
                 </header>

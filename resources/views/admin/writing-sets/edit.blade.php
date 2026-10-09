@@ -68,7 +68,7 @@
     
     @if($writing_set->questions->count() < 4)
         <div class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded">
-            ⚠️ Chú ý: Bộ đề này hiện không đủ 4 phần (chỉ có {{ $writing_set->questions->count() }}).
+            Chú ý: Bộ đề này hiện không đủ 4 phần (chỉ có {{ $writing_set->questions->count() }}).
         </div>
     @endif
 </div>

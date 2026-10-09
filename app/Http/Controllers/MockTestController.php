@@ -397,7 +397,7 @@ class MockTestController extends Controller
         // Bài Nói: chấm AI tự động (phiên âm → chấm transcript). Điểm AI là nháp
         // tham khảo, giáo viên chấm tay vẫn ghi đè được.
         if ($mockTest->skill === 'speaking') {
-            // ⏸️ TẮT tự gửi giáo viên chấm bài Nói: hiện chỉ để AI chấm nháp, KHÔNG
+            // TẮT tự gửi giáo viên chấm bài Nói: hiện chỉ để AI chấm nháp, KHÔNG
             // tự bật `is_grading_requested` nên bài không vào hàng chờ giáo viên
             // (`/admin/speaking-reviews` lọc theo cờ này → hàng chờ sẽ trống).
             // Bật lại = mở lại khối cập nhật cờ dưới đây:

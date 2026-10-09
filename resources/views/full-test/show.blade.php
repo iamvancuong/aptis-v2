@@ -20,7 +20,7 @@
                 <li class="text-center">
                     <div class="mx-auto w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
                         {{ $done ? 'bg-green-500 text-white' : ($current ? 'bg-indigo-600 text-white ring-4 ring-indigo-100' : 'bg-gray-100 text-gray-400') }}">
-                        {{ $done ? '✓' : $i + 1 }}
+                        @if($done)<x-ui.icon name="check" class="w-5 h-5" />@else{{ $i + 1 }}@endif
                     </div>
                     <p class="mt-2 text-xs font-medium {{ $current ? 'text-indigo-700' : 'text-gray-500' }}">{{ \Illuminate\Support\Str::before($labels[$skill], ' and') }}</p>
                 </li>
@@ -32,7 +32,7 @@
     <x-card>
         <div class="text-center py-4">
             @if($fullTest->current_stage > 0 && ! $currentMock)
-                <p class="text-green-600 font-semibold mb-2">✓ Đã nộp phần {{ $labels[$stages[$fullTest->current_stage - 1]] }}</p>
+                <p class="text-green-600 font-semibold mb-2">Đã nộp phần {{ $labels[$stages[$fullTest->current_stage - 1]] }}</p>
             @endif
 
             <p class="text-sm text-gray-500 uppercase tracking-wider">Phần {{ $fullTest->current_stage + 1 }}/{{ count($stages) }}</p>
@@ -41,7 +41,7 @@
 
             @if($currentSkill === 'speaking')
                 <p class="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-4 py-2 inline-block">
-                    🎙️ Phần nói cần micro — trình duyệt sẽ hỏi quyền, hãy bấm “Cho phép”.
+                    Phần nói cần micro — trình duyệt sẽ hỏi quyền, hãy bấm “Cho phép”.
                 </p>
             @endif
 

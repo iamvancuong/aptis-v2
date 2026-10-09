@@ -34,8 +34,7 @@
                 flex-direction:column; align-items:center; justify-content:center;
                 text-align:center; font-family:system-ui,-apple-system,sans-serif;">
         <div style="max-width:520px;">
-            <div style="font-size:56px; line-height:1; margin-bottom:16px;">⚠️</div>
-            <h2 style="font-size:24px; font-weight:700; margin:0 0 12px;">
+                        <h2 style="font-size:24px; font-weight:700; margin:0 0 12px;">
                 Vui lòng đóng Developer Tools
             </h2>
             <p style="font-size:15px; line-height:1.6; color:#e2e8f0; margin:0 0 20px;">

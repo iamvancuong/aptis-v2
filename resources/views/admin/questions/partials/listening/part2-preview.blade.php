@@ -3,7 +3,7 @@
     
     <!-- Audio Players Grid -->
     <div class="mb-6">
-        <p class="text-sm font-medium text-gray-600 mb-3">🎧 Speaker Audio Files</p>
+        <p class="text-sm font-medium text-gray-600 mb-3">Speaker Audio Files</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <template x-for="(item, index) in items" :key="index">
                 <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
@@ -16,7 +16,7 @@
 
     <!-- Matching Results -->
     <div>
-        <p class="text-sm font-medium text-gray-600 mb-3">✅ Correct Matching</p>
+        <p class="text-sm font-medium text-gray-600 mb-3">Correct Matching</p>
         <div class="space-y-2">
             <template x-for="(item, index) in items" :key="index">
                 <div class="bg-white p-3 rounded-lg border-l-4 border-green-500 flex items-center justify-between">

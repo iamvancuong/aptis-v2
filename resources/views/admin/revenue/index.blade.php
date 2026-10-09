@@ -10,7 +10,7 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">💰 Doanh số</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Doanh số</h1>
             <p class="text-sm text-gray-500 mt-1">Tính từ các đơn đã thanh toán. Không bao gồm thuế.</p>
             {{-- Nhãn phạm vi luôn hiện. Không có nó thì "12.400.000đ" là con số
                  không đọc được — của tháng này hay của cả năm? --}}
@@ -70,7 +70,7 @@
     @if(! is_null($ownerStats))
         <div class="rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 shadow-lg">
             <div class="flex items-center gap-2 mb-1">
-                <span class="text-lg">🔒</span>
+                <x-ui.icon name="lock" class="w-5 h-5 text-gray-400" />
                 <h2 class="text-lg font-bold text-amber-900">Doanh thu tổng thật (chỉ chủ sở hữu)</h2>
             </div>
             <p class="text-xs text-amber-700 mb-4">
@@ -172,7 +172,7 @@
         {{-- Link giới thiệu để admin copy gửi cho sale --}}
         @if(!empty($sales['links']))
             <div class="px-5 py-4 border-t border-gray-100 bg-slate-50" x-data="{ copied: '' }">
-                <div class="text-sm font-semibold text-gray-700 mb-3">🔗 Link gửi cho sale <span class="font-normal text-gray-400 text-xs">(bấm để copy)</span></div>
+                <div class="text-sm font-semibold text-gray-700 mb-3">Link gửi cho sale <span class="font-normal text-gray-400 text-xs">(bấm để copy)</span></div>
                 <div class="space-y-3">
                     @foreach($sales['links'] as $lk)
                         <div class="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -185,7 +185,7 @@
                                     <span class="truncate text-xs text-gray-500 font-mono">{{ $lk[$key] }}</span>
                                     <span class="shrink-0 ml-auto text-xs font-medium"
                                           :class="copied === '{{ $lk['code'].$key }}' ? 'text-emerald-600' : 'text-gray-400 group-hover:text-blue-600'"
-                                          x-text="copied === '{{ $lk['code'].$key }}' ? '✓ Đã copy' : 'Copy'"></span>
+                                          x-text="copied === '{{ $lk['code'].$key }}' ? 'Đã copy' : 'Copy'"></span>
                                 </button>
                             @endforeach
                         </div>

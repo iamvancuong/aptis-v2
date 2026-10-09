@@ -23,8 +23,7 @@
 
     @if($cards->isEmpty())
         <div class="bg-white rounded-xl border border-dashed border-gray-300 py-16 px-6 text-center">
-            <div class="text-4xl mb-3">{{ $totalItems === 0 ? '📒' : '🎉' }}</div>
-            <h2 class="font-bold text-gray-900 mb-1">
+                        <h2 class="font-bold text-gray-900 mb-1">
                 {{ $totalItems === 0 ? 'Chưa có từ nào để ôn' : 'Chưa có từ nào tới hạn ôn' }}
             </h2>
             <p class="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
@@ -36,7 +35,7 @@
                 @endif
             </p>
             @if($streak > 0)
-                <p class="mt-3 text-sm font-semibold text-orange-600">🔥 Chuỗi {{ $streak }} ngày liên tiếp</p>
+                <p class="mt-3 text-sm font-semibold text-orange-600">Chuỗi {{ $streak }} ngày liên tiếp</p>
             @endif
             <a href="{{ route('vocab.index', $scopeParams) }}" class="inline-block mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
                 Về sổ tay
@@ -52,7 +51,7 @@
                     <button type="button" @click="setMode(m.key)"
                             class="py-2 px-1 rounded-lg transition leading-tight"
                             :class="mode === m.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'">
-                        <span x-text="m.icon"></span> <span x-text="m.label"></span>
+                        <span x-text="m.label"></span>
                     </button>
                 </template>
             </div>
@@ -80,8 +79,7 @@
             {{-- Chờ thẻ đang học tới hạn (bước 1 / 5 / 10 phút) --}}
             <div x-show="!finished && !current && waitingFor" x-cloak
                  class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-12 text-center">
-                <div class="text-4xl mb-3">⏳</div>
-                <h2 class="font-bold text-gray-900 text-lg mb-1">Nghỉ một chút</h2>
+                                <h2 class="font-bold text-gray-900 text-lg mb-1">Nghỉ một chút</h2>
                 <p class="text-sm text-gray-500 mb-1">
                     Thẻ tiếp theo quay lại sau <span class="font-semibold text-gray-900" x-text="countdown"></span>.
                 </p>
@@ -184,7 +182,7 @@
                             <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
                                 <span>Enter để kiểm tra</span>
                                 <button type="button" @click="useHint()" x-show="!hint" class="text-indigo-600 hover:text-indigo-800 font-medium">
-                                    💡 Gợi ý
+                                    Gợi ý
                                 </button>
                                 <span x-show="hint" class="text-amber-600">Đã dùng gợi ý</span>
                             </div>
@@ -200,7 +198,7 @@
                                 'bg-red-50 text-red-800 border border-red-100': checked.verdict === 'wrong',
                              }">
                             <p class="font-semibold"
-                               x-text="{ exact: '✓ Chính xác', close: '≈ Gần đúng — sai chính tả nhẹ', wrong: '✗ Chưa đúng' }[checked.verdict]"></p>
+                               x-text="{ exact: 'Chính xác', close: 'Gần đúng — sai chính tả nhẹ', wrong: 'Chưa đúng' }[checked.verdict]"></p>
                             <p class="mt-0.5" x-show="checked.verdict !== 'exact'">
                                 Bạn gõ: <span class="font-mono line-through decoration-1" x-text="answer || '(bỏ trống)'"></span>
                             </p>
@@ -257,15 +255,14 @@
 
             {{-- Kết thúc phiên --}}
             <div x-show="finished" x-cloak class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-12 text-center">
-                <div class="text-4xl mb-3">🎯</div>
-                <h2 class="font-bold text-gray-900 text-lg mb-1">Xong phiên ôn tập</h2>
+                                <h2 class="font-bold text-gray-900 text-lg mb-1">Xong phiên ôn tập</h2>
                 <p class="text-sm text-gray-500 mb-2">
                     Bạn vừa ôn <span class="font-semibold text-gray-900" x-text="reviewed"></span> lượt ·
                     nhớ <span class="font-semibold text-emerald-600" x-text="goodCount"></span> lượt.
                     <span x-show="laterCount > 0" x-text="`${laterCount} thẻ đang học sẽ quay lại sau 1 giờ.`"></span>
                 </p>
                 <p class="text-sm font-semibold text-orange-600 mb-6" x-show="streak > 0"
-                   x-text="`🔥 Chuỗi ${streak} ngày liên tiếp`"></p>
+                   x-text="`Chuỗi ${streak} ngày liên tiếp`"></p>
                 <div class="mb-6" x-show="streak === 0"></div>
 
                 <div class="flex items-center justify-center gap-2">
@@ -311,10 +308,10 @@
             streak,
 
             modes: [
-                { key: 'mixed', icon: '🔀', label: 'Trộn' },
-                { key: 'flip', icon: '🃏', label: 'Lật thẻ' },
-                { key: 'cloze', icon: '✍️', label: 'Điền từ' },
-                { key: 'listen', icon: '🎧', label: 'Nghe & gõ' },
+                { key: 'mixed', label: 'Trộn' },
+                { key: 'flip', label: 'Lật thẻ' },
+                { key: 'cloze', label: 'Điền từ' },
+                { key: 'listen', label: 'Nghe & gõ' },
             ],
             // Mặc định Trộn: mỗi từ lần lượt gặp cả 3 dạng theo mức thuộc,
             // vẫn chỉ một lịch ôn nên khối lượng ôn mỗi ngày không tăng.

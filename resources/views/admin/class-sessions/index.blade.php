@@ -8,7 +8,7 @@
 <div class="mb-6 flex justify-end">
     <a href="{{ route('admin.class-tools.index') }}"
        class="px-4 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 rounded-lg transition-colors">
-        🔍 Kiểm tra lớp online
+        Kiểm tra lớp online
     </a>
 </div>
 
@@ -17,7 +17,7 @@
      hạn chế. Không mời ai mà tắt "Truy cập nhanh" thì CẢ LỚP phải xin duyệt tay. --}}
 <x-card class="mb-6">
     <div x-data="{ copied: false, list: @js(implode(', ', $guestEmails)) }">
-        {{-- 🔴 Danh sách này gom TOÀN TRƯỜNG. Từ khi có lớp, dán nó vào sự kiện
+        {{-- Danh sách này gom TOÀN TRƯỜNG. Từ khi có lớp, dán nó vào sự kiện
              Calendar của một lớp là mời cả người ngoài lớp đó vào — phá đúng thứ
              việc chia lớp dựng lên, mà Google không báo lỗi gì. Có lớp thì đẩy
              admin sang danh sách riêng của từng lớp trước khi họ kịp bấm Copy. --}}
@@ -62,7 +62,7 @@
                         @click="navigator.clipboard.writeText(list); copied = true; setTimeout(() => copied = false, 2000)"
                         class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shrink-0">
                     <span x-show="!copied">Copy {{ count($guestEmails) }} địa chỉ</span>
-                    <span x-show="copied" x-cloak>✓ Đã copy</span>
+                    <span x-show="copied" x-cloak>Đã copy</span>
                 </button>
             @endif
         </div>
@@ -128,7 +128,7 @@
                             @click="navigator.clipboard.writeText(list); copied = true; setTimeout(() => copied = false, 2000)"
                             class="px-3 py-1.5 text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors shrink-0">
                         <span x-show="!copied">Copy danh sách cần gỡ</span>
-                        <span x-show="copied" x-cloak>✓ Đã copy</span>
+                        <span x-show="copied" x-cloak>Đã copy</span>
                     </button>
                 </div>
 

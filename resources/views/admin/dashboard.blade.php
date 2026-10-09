@@ -10,7 +10,7 @@
     </div>
     <div class="mt-4 md:mt-0 flex gap-3">
         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition shadow-sm">
-            🖥️ View as Student
+            View as Student
         </a>
     </div>
 </div>

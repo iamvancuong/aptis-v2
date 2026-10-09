@@ -10,33 +10,38 @@ class HistoryController extends Controller
 {
     public function index(Request $request)
     {
-        $mode      = $request->get('mode', 'all');
-        $scoreMin  = $request->get('score_min');
-        $dateFrom  = $request->get('date_from');
-        $dateTo    = $request->get('date_to');
+        return $this->listing($request, ['reading', 'listening', 'grammar', 'speaking'], 'quiz', 'Lịch sử Trắc nghiệm & Ngữ pháp');
+    }
+
+    /**
+     * Danh sách bài làm có lọc — dùng chung cho 3 trang lịch sử (trắc nghiệm,
+     * Writing, Speaking). Trước đây là 3 hàm copy y hệt nhau.
+     *
+     * $kind quyết định trang chi tiết + route của bộ lọc: quiz | writing | speaking.
+     */
+    private function listing(Request $request, array $skills, string $kind, string $title)
+    {
+        $mode     = $request->get('mode', 'all');
+        $scoreMin = $request->get('score_min');
+        $dateFrom = $request->get('date_from');
+        $dateTo   = $request->get('date_to');
 
         $query = auth()->user()
             ->attempts()
-            ->whereIn('skill', ['reading', 'listening', 'grammar', 'speaking'])
-            ->with(['set.quiz', 'mockTest']);
+            ->whereIn('skill', $skills)
+            ->with(['set.quiz']);
 
-        if ($mode === 'practice')   $query->where('mode', 'practice');
-        elseif ($mode === 'mock_test') $query->where('mode', 'mock_test');
+        // Bài thi thử lưu mode = 'mock' (MockTestController). Bản cũ lọc theo
+        // 'mock_test' nên tab "Thi thử" luôn rỗng — giữ cả hai cho dữ liệu cũ.
+        if ($mode === 'practice')      $query->where('mode', 'practice');
+        elseif ($mode === 'mock_test') $query->whereIn('mode', ['mock', 'mock_test']);
         if ($scoreMin !== null && $scoreMin !== '') $query->where('score', '>=', (float) $scoreMin);
         if ($dateFrom) $query->where('finished_at', '>=', Carbon::parse($dateFrom)->startOfDay());
         if ($dateTo)   $query->where('finished_at', '<=', Carbon::parse($dateTo)->endOfDay());
 
-        $attempts = $query->latest()->paginate(20)->appends(request()->only('mode','score_min','date_from','date_to'));
+        $attempts = $query->latest()->paginate(20)->appends($request->only('mode', 'score_min', 'date_from', 'date_to'));
 
-        return view('history.index', [
-            'attempts'  => $attempts,
-            'isWriting' => false,
-            'title'     => 'Lịch sử Trắc nghiệm & Ngữ pháp',
-            'mode'      => $mode,
-            'scoreMin'  => $scoreMin,
-            'dateFrom'  => $dateFrom,
-            'dateTo'    => $dateTo,
-        ]);
+        return view('history.index', compact('attempts', 'kind', 'title', 'mode', 'scoreMin', 'dateFrom', 'dateTo'));
     }
 
     public function show(Attempt $attempt)
@@ -70,33 +75,7 @@ class HistoryController extends Controller
 
     public function writingIndex(Request $request)
     {
-        $mode     = $request->get('mode', 'all');
-        $scoreMin = $request->get('score_min');
-        $dateFrom = $request->get('date_from');
-        $dateTo   = $request->get('date_to');
-
-        $query = auth()->user()
-            ->attempts()
-            ->where('skill', 'writing')
-            ->with(['set']);
-
-        if ($mode === 'practice')   $query->where('mode', 'practice');
-        elseif ($mode === 'mock_test') $query->where('mode', 'mock_test');
-        if ($scoreMin !== null && $scoreMin !== '') $query->where('score', '>=', (float) $scoreMin);
-        if ($dateFrom) $query->where('finished_at', '>=', Carbon::parse($dateFrom)->startOfDay());
-        if ($dateTo)   $query->where('finished_at', '<=', Carbon::parse($dateTo)->endOfDay());
-
-        $attempts = $query->latest()->paginate(20)->appends(request()->only('mode','score_min','date_from','date_to'));
-
-        return view('history.index', [
-            'attempts'  => $attempts,
-            'isWriting' => true,
-            'title'     => 'Lịch sử Writing',
-            'mode'      => $mode,
-            'scoreMin'  => $scoreMin,
-            'dateFrom'  => $dateFrom,
-            'dateTo'    => $dateTo,
-        ]);
+        return $this->listing($request, ['writing'], 'writing', 'Lịch sử Writing');
     }
 
     public function writingShow(Attempt $attempt)
@@ -120,33 +99,7 @@ class HistoryController extends Controller
 
     public function speakingIndex(Request $request)
     {
-        $mode     = $request->get('mode', 'all');
-        $scoreMin = $request->get('score_min');
-        $dateFrom = $request->get('date_from');
-        $dateTo   = $request->get('date_to');
-
-        $query = auth()->user()
-            ->attempts()
-            ->where('skill', 'speaking')
-            ->with(['set']);
-
-        if ($mode === 'practice')   $query->where('mode', 'practice');
-        elseif ($mode === 'mock_test') $query->where('mode', 'mock_test');
-        if ($scoreMin !== null && $scoreMin !== '') $query->where('score', '>=', (float) $scoreMin);
-        if ($dateFrom) $query->where('finished_at', '>=', Carbon::parse($dateFrom)->startOfDay());
-        if ($dateTo)   $query->where('finished_at', '<=', Carbon::parse($dateTo)->endOfDay());
-
-        $attempts = $query->latest()->paginate(20)->appends(request()->only('mode','score_min','date_from','date_to'));
-
-        return view('history.index', [
-            'attempts'  => $attempts,
-            'isSpeaking' => true,
-            'title'     => 'Lịch sử Speaking',
-            'mode'      => $mode,
-            'scoreMin'  => $scoreMin,
-            'dateFrom'  => $dateFrom,
-            'dateTo'    => $dateTo,
-        ]);
+        return $this->listing($request, ['speaking'], 'speaking', 'Lịch sử Speaking');
     }
 
     public function speakingShow(Attempt $attempt)
@@ -174,7 +127,7 @@ class HistoryController extends Controller
             abort(403);
         }
 
-        // ⏸️ Tính năng "gửi giáo viên chấm bài" đang TẮT (nút đã ẩn hoàn toàn ở
+        // Tính năng "gửi giáo viên chấm bài" đang TẮT (nút đã ẩn hoàn toàn ở
         // giao diện). Chặn luôn ở backend để không ai gọi thẳng route này tạo đơn
         // chấm phí. Bật lại bằng `aptis.teacher_grading_enabled`.
         if (! config('aptis.teacher_grading_enabled')) {

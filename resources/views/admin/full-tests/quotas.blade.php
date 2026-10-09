@@ -6,7 +6,7 @@
 <div class="space-y-6 max-w-4xl">
     <div>
         <a href="{{ route('admin.full-tests.index') }}" class="text-sm text-indigo-600 hover:underline">← Full Test</a>
-        <h1 class="text-2xl font-bold text-gray-900 mt-1">🎟️ Cấp lượt Full Test</h1>
+        <h1 class="text-2xl font-bold text-gray-900 mt-1">Cấp lượt Full Test</h1>
         <p class="text-sm text-gray-500 mt-1">
             Mỗi tài khoản mặc định {{ config('aptis.full_test.default_quota', 3) }} lượt. Đặt số lượt được cấp cho từng học viên
             (tổng số lượt, đã tính cả lượt đã dùng).

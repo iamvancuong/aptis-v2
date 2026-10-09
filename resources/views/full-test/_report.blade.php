@@ -39,11 +39,11 @@
                         @if(! $row['submitted'])
                             <span class="text-gray-400">Chưa làm</span>
                         @elseif($row['graded'])
-                            <span class="text-green-600 font-medium">✓ Đã chấm</span>
+                            <span class="text-green-600 font-medium">Đã chấm</span>
                         @elseif($row['failed'] > 0)
                             <span class="text-red-600 font-medium">Lỗi chấm {{ $row['failed'] }} phần</span>
                         @else
-                            <span class="text-amber-600 font-medium">⏳ Đang chấm {{ $row['pending'] }} phần</span>
+                            <span class="text-amber-600 font-medium">Đang chấm {{ $row['pending'] }} phần</span>
                         @endif
                     </td>
                 </tr>

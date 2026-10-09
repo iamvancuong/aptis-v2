@@ -7,7 +7,7 @@
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">🧪 Mock Tests</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Mock Tests</h1>
             <p class="text-sm text-gray-500 mt-1">Theo dõi bài thi thử của học sinh</p>
         </div>
         <div class="flex items-center gap-3">
@@ -49,7 +49,7 @@
 
         {{-- Status filter --}}
         <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
-            @foreach(['all' => 'Tất cả trạng thái', 'completed' => '✅ Hoàn thành', 'in_progress' => '⏳ Đang làm'] as $val => $label)
+            @foreach(['all' => 'Tất cả trạng thái', 'completed' => 'Hoàn thành', 'in_progress' => 'Đang làm'] as $val => $label)
                 <a href="{{ route('admin.mock-tests.index', array_merge(request()->only('skill'), ['status' => $val])) }}"
                    class="px-3 py-2 text-xs font-medium {{ $status === $val ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50' }} {{ !$loop->first ? 'border-l border-gray-200' : '' }}">
                     {{ $label }}
@@ -112,9 +112,9 @@
                     </td>
                     <td class="px-6 py-4">
                         @if($mt->status === 'completed')
-                            <x-badge variant="success">✅ Hoàn thành</x-badge>
+                            <x-badge variant="success">Hoàn thành</x-badge>
                         @else
-                            <x-badge variant="warning">⏳ Đang làm</x-badge>
+                            <x-badge variant="warning">Đang làm</x-badge>
                         @endif
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">

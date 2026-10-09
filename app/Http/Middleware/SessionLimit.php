@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
  *   - Đủ `block_after_violations` vi phạm → khoá tài khoản.
  *   - Vi phạm cũ hơn `violation_reset_days` ngày thì bỏ qua, đếm lại từ đầu.
  *
- * ⚠️ HAI LỖI CŨ ĐÃ VÁ Ở ĐÂY — đừng vô tình dựng lại:
+ * HAI LỖI CŨ ĐÃ VÁ Ở ĐÂY — đừng vô tình dựng lại:
  *
  * 1. ĐẾM CẢ LỊCH SỬ. Bản cũ `count()` mọi dòng `login_sessions` của user, mà dòng
  *    chỉ mất khi bấm Đăng xuất. Đóng trình duyệt không xoá gì; tab ẩn danh thì mất

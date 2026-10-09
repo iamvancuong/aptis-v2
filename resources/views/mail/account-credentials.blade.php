@@ -1,5 +1,5 @@
 <x-mail::message>
-# Xin chào 👋
+# Xin chào 
 
 @if($isNew)
 Tài khoản Milaedu của bạn đã được tạo và kích hoạt. Thông tin đăng nhập:

@@ -1,48 +1,65 @@
 @extends('layouts.app')
 
-@section('title', ucfirst($skill) . ' ' . \App\Support\PartLabel::text($skill, $part) . ' - Milaedu')
+@php
+    $meta = \App\Support\SkillMeta::get($skill);
+    $partLabel = \App\Support\PartLabel::text($skill, $part);
+    $daLam = $setStats->count();
+@endphp
+
+@section('title', $meta['name'] . ' ' . $partLabel . ' - Milaedu')
 
 @section('content')
-<div class="mb-8">
-    <a href="{{ route('skills.show', $skill) }}" class="text-blue-600 hover:text-blue-700 mb-4 inline-block">
-        ← Quay lại {{ ucfirst($skill) }}
-    </a>
-    <h1 class="text-3xl font-bold text-gray-900">{{ ucfirst($skill) }} - {{ \App\Support\PartLabel::text($skill, $part) }}</h1>
-    <p class="mt-2 text-gray-600">{{ $quiz->title }}</p>
-    @if($quiz->duration_minutes)
-        <p class="text-sm text-gray-500 mt-1">⏱ Thời gian: {{ $quiz->duration_minutes }} phút</p>
-    @endif
-</div>
+<x-ui.page-header
+    :skill="$skill"
+    :title="$meta['name'] . ' · ' . $partLabel"
+    :subtitle="$quiz->title"
+    :crumbs="[
+        ['label' => 'Luyện tập', 'url' => route('dashboard')],
+        ['label' => $meta['name'], 'url' => route('skills.show', $skill)],
+        ['label' => $partLabel],
+    ]">
+    <x-slot:aside>
+        <x-ui.chip><span class="font-semibold text-gray-900">{{ $sets->count() }}</span> đề</x-ui.chip>
+        @if($quiz->duration_minutes)
+            <x-ui.chip><x-ui.icon name="clock" class="w-4 h-4 text-gray-400" /> {{ $quiz->duration_minutes }} phút</x-ui.chip>
+        @endif
+        <x-ui.chip :tone="$daLam > 0 ? 'blue' : 'gray'">Đã làm <span class="font-semibold">{{ $daLam }}/{{ $sets->count() }}</span></x-ui.chip>
+    </x-slot:aside>
+</x-ui.page-header>
 
 @if($sets->isEmpty())
-    <x-alert type="info">
-        Chưa có Bộ nào được công bố cho Part này.
-    </x-alert>
+    <x-ui.empty-state title="Chưa có đề nào được công bố cho Part này" icon="list">
+        Bạn có thể quay lại luyện các Part khác hoặc thi thử toàn bộ kỹ năng.
+    </x-ui.empty-state>
 @else
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <x-ui.section-title title="Chọn đề để luyện" meta="Đề đã làm hiện điểm cao nhất" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         @foreach($sets as $set)
-            <x-card>
-                <div class="mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">{{ $set->title }}</h3>
-                    <p class="text-sm text-gray-500">Bộ {{ $set->order + 1 }}</p>
+            @php $kq = $setStats[$set->id] ?? null; @endphp
+            <x-ui.tile>
+                <div class="flex items-start justify-between gap-3">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold {{ $meta['tone'] }}">Đề {{ $loop->iteration }}</span>
+                    @if($kq)
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                            <x-ui.icon name="check" class="w-4 h-4" /> Đã làm {{ $kq->times }} lần
+                        </span>
+                    @endif
                 </div>
+                <h3 class="mt-3 text-base font-semibold text-gray-900">{{ $set->title }}</h3>
+                <p class="mt-1 text-xs text-gray-500">{{ $set->questions_count }} câu hỏi</p>
 
-                <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Số câu hỏi:</span>
-                        <span class="text-lg font-bold text-indigo-600">{{ $set->questions_count }}</span>
-                    </div>
-                </div>
+                <x-ui.progress class="mt-4"
+                    :value="$kq?->best ?? 0"
+                    :label="$kq ? 'Điểm cao nhất' : 'Chưa làm'"
+                    :hint="$kq && $kq->best !== null ? round((float) $kq->best) . '%' : null" />
 
-                <div class="space-y-2">
-                    <x-button href="{{ route('sets.show', $set) }}" variant="secondary" class="w-full">
-                        Xem chi tiết
-                    </x-button>
-                    <x-button href="{{ route('practice.show', $set->id) }}" class="w-full">
-                        Bắt đầu luyện tập
-                    </x-button>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <a href="{{ route('practice.show', $set->id) }}"
+                       class="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        {{ $kq ? 'Luyện lại' : 'Bắt đầu luyện' }} →
+                    </a>
                 </div>
-            </x-card>
+            </x-ui.tile>
         @endforeach
     </div>
 @endif

@@ -6,8 +6,7 @@
 <div class="max-w-md mx-auto mt-8">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="text-center mb-6">
-            <div class="text-4xl mb-2">🔐</div>
-            <h2 class="text-xl font-bold text-gray-900">Đổi mật khẩu</h2>
+                        <h2 class="text-xl font-bold text-gray-900">Đổi mật khẩu</h2>
             @if(auth()->user()->must_change_password)
                 <p class="text-sm text-gray-500 mt-1">Vì bảo mật, vui lòng đặt mật khẩu mới trước khi tiếp tục.</p>
             @else

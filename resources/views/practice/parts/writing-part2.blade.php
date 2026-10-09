@@ -3,14 +3,14 @@
     <div class="space-y-6">
         {{-- Scenario --}}
         <div class="bg-blue-50 rounded-lg p-4">
-            <h4 class="font-bold text-blue-800 mb-1">✉️ Viết câu trả lời của bạn vào đây</h4>
+            <h4 class="font-bold text-blue-800 mb-1">Viết câu trả lời của bạn vào đây</h4>
             <p class="text-blue-700" x-text="currentQuestion.metadata?.scenario || currentQuestion.stem"></p>
         </div>
 
         {{-- Hints --}}
         <template x-if="currentQuestion.metadata?.hints">
             <div class="bg-amber-50 rounded-lg p-3 text-sm text-amber-700">
-                <span class="font-medium">💡 Gợi ý:</span>
+                <span class="font-medium">Gợi ý:</span>
                 <span x-text="currentQuestion.metadata.hints"></span>
             </div>
         </template>
@@ -64,7 +64,7 @@
                         {{-- Sample Answer --}}
                         <template x-if="currentQuestion.metadata?.sample_answer">
                             <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                                <h4 class="font-bold text-indigo-800 mb-2">💡 Đáp án gợi ý (Sample Answer)</h4>
+                                <h4 class="font-bold text-indigo-800 mb-2">Đáp án gợi ý (Sample Answer)</h4>
                                 <div class="text-sm text-indigo-900 whitespace-pre-line leading-relaxed" x-text="currentQuestion.metadata.sample_answer"></div>
                             </div>
                         </template>

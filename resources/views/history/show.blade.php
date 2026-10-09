@@ -42,19 +42,19 @@
                 <div>
                     @if($answer->grading_status === 'graded')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
-                            ✅ Điểm: {{ $answer->score ?? ($answer->writingReview->total_score ?? 0) }}/10
+                            Điểm: {{ $answer->score ?? ($answer->writingReview->total_score ?? 0) }}/10
                         </span>
                     @elseif($answer->grading_status === 'ai_graded')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                            🤖 AI Đã Chấm (Đợi duyệt)
+                            AI Đã Chấm (Đợi duyệt)
                         </span>
                     @elseif($answer->grading_status === 'limit_reached')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
-                            🚫 Hết lượt AI
+                            Hết lượt AI
                         </span>
                     @else
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
-                            ⏳ Chờ giảng viên chấm
+                            Chờ giảng viên chấm
                         </span>
                     @endif
                 </div>

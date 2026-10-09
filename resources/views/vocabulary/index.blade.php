@@ -92,7 +92,7 @@
             <div class="space-y-0.5">
                 <a href="{{ route('vocab.index') }}"
                    class="flex items-center justify-between px-3 py-2 rounded-lg text-sm {{ $navClass(! $activeType && ! $activeFolder) }}">
-                    <span>📚 Tất cả</span>
+                    <span>Tất cả</span>
                     <span class="text-xs text-gray-400">{{ $totalAll }}</span>
                 </a>
             </div>
@@ -141,7 +141,7 @@
                     @forelse($folders as $folder)
                         <a href="{{ route('vocab.index', ['folder' => $folder->id]) }}"
                            class="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm {{ $navClass($activeFolder === $folder->id) }}">
-                            <span class="truncate">📁 {{ $folder->name }}</span>
+                            <span class="truncate">{{ $folder->name }}</span>
                             <span class="text-xs text-gray-400 shrink-0 ml-2">{{ $folder->items_count }}</span>
                         </a>
                     @empty
@@ -254,8 +254,7 @@
             {{-- Danh sách --}}
             @if($items->isEmpty())
                 <div class="bg-white rounded-xl border border-dashed border-gray-300 py-16 px-6 text-center">
-                    <div class="text-4xl mb-3">📒</div>
-                    <h2 class="font-bold text-gray-900 mb-1">
+                                        <h2 class="font-bold text-gray-900 mb-1">
                         @if($totalAll === 0)
                             Sổ tay còn trống
                         @elseif($currentFolder && $stats['total'] === 0)
@@ -276,7 +275,7 @@
                     @elseif($currentFolder && $stats['total'] === 0)
                         <p class="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
                             Chọn thư mục này ở mục <strong>Lưu vào</strong> khi tra từ, hoặc chuyển từ có sẵn sang đây
-                            bằng ô <strong>📁</strong> dưới mỗi thẻ.
+                            bằng ô <strong>chọn thư mục</strong> dưới mỗi thẻ.
                         </p>
                     @else
                         <a href="{{ route('vocab.index', $scopeParams) }}" class="inline-block mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800">
@@ -369,9 +368,9 @@
                                     @method('PATCH')
                                     <select name="folder_id" onchange="this.form.submit()" title="Chuyển thư mục"
                                             class="max-w-[160px] text-[11px] py-1 pl-2 pr-6 border border-gray-200 rounded-md text-gray-500 bg-white focus:outline-none focus:border-indigo-500">
-                                        <option value="">📁 Chưa xếp thư mục</option>
+                                        <option value="">Chưa xếp thư mục</option>
                                         @foreach($folders as $folder)
-                                            <option value="{{ $folder->id }}" @selected($item->folder_id === $folder->id)>📁 {{ $folder->name }}</option>
+                                            <option value="{{ $folder->id }}" @selected($item->folder_id === $folder->id)>{{ $folder->name }}</option>
                                         @endforeach
                                     </select>
                                 </form>

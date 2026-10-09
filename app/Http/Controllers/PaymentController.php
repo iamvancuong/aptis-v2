@@ -37,7 +37,7 @@ class PaymentController extends Controller
 
         $package = config("pricing.packages.{$order->package}");
 
-        // 🧪 Chế độ giả lập: hiện nút "giả lập đã thanh toán".
+        // Chế độ giả lập: hiện nút "giả lập đã thanh toán".
         if (config('payos.fake')) {
             return view('payment.pending', ['order' => $order, 'package' => $package, 'state' => 'fake']);
         }
@@ -47,7 +47,7 @@ class PaymentController extends Controller
             return view('payment.pending', ['order' => $order, 'package' => $package, 'state' => 'unconfigured']);
         }
 
-        // ♻️ Đơn PENDING đã có link PayOS → TÁI DÙNG, tuyệt đối không tạo link thứ 2.
+        // Đơn PENDING đã có link PayOS → TÁI DÙNG, tuyệt đối không tạo link thứ 2.
         // PayOS cấm 2 link cùng một orderCode, nên gọi createPaymentLink lần nữa sẽ
         // bị từ chối và rơi vào màn "lỗi" — đây chính là bug khi khách back/mở lại
         // trang thanh toán (dedupe đăng ký dùng lại đúng đơn pending đó).
@@ -72,7 +72,7 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             Log::error('PayOS create link failed', ['order' => $order->id, 'error' => $e->getMessage()]);
 
-            // 🛟 Lưới an toàn: nếu link ĐÃ tạo ở lần trước nhưng response bị mất giữa
+            // Lưới an toàn: nếu link ĐÃ tạo ở lần trước nhưng response bị mất giữa
             // chừng (đơn vẫn chưa lưu payos_link_id), PayOS sẽ báo "orderCode đã tồn
             // tại" ở mọi lần thử lại → kẹt vòng lỗi. Hỏi lại info để lấy paymentLinkId
             // rồi tái dựng checkout URL, thay vì bắt khách chịu lỗi vĩnh viễn.
@@ -93,7 +93,7 @@ class PaymentController extends Controller
 
     /**
      * Nội dung chuyển khoản hiển thị trên PayOS. Có mã sale (nếu đơn đến từ link
-     * giới thiệu) để đối soát bằng mắt. ⚠️ PayOS giới hạn 25 ký tự — mã sale ngắn
+     * giới thiệu) để đối soát bằng mắt. PayOS giới hạn 25 ký tự — mã sale ngắn
      * (VD "Milaedu M1" = 10) nên luôn vừa.
      */
     private function paymentDescription(Order $order): string
@@ -136,7 +136,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * 🧪 Giả lập "đã thanh toán" — CHỈ khi PAYOS_FAKE=true. Chạy đúng luồng
+     * Giả lập "đã thanh toán" — CHỈ khi PAYOS_FAKE=true. Chạy đúng luồng
      * fulfillment như webhook thật (tạo tài khoản / bật cờ chấm + email).
      */
     public function devFulfill(Order $order)

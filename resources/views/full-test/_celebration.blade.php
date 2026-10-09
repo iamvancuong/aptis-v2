@@ -14,8 +14,7 @@
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-white px-6 py-6 shadow-lg"
          x-data="fullTestFireworks('ft-celebrated-{{ $fullTest->id }}')" x-init="autoPlay()">
         <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div class="text-5xl">{{ $aim['exceeded'] ? '🏆' : '🎉' }}</div>
-            <div class="flex-1">
+                        <div class="flex-1">
                 @if($aim['exceeded'])
                     <h2 class="text-2xl font-extrabold">Xuất sắc{{ $name->isNotEmpty() ? ', ' . $name : '' }}! Bạn đã vượt mục tiêu {{ $aim['target'] }}</h2>
                     <p class="mt-1 text-white/90">
@@ -32,15 +31,14 @@
             </div>
             <button type="button" @click="play()"
                     class="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 font-semibold text-sm">
-                🎆 Ăn mừng lại
+                Ăn mừng lại
             </button>
         </div>
     </div>
 @else
     <div class="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-6">
         <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div class="text-5xl">💪</div>
-            <div class="flex-1">
+                        <div class="flex-1">
                 <h2 class="text-xl font-extrabold text-indigo-900">
                     Bạn đang ở {{ $aim['overall'] }} — mục tiêu {{ $aim['target'] }} không còn xa!
                 </h2>

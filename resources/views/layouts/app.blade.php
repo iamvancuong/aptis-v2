@@ -20,67 +20,102 @@
         .ck-content p { margin-bottom: 0.5em; }
     </style>
 </head>
-<body class="bg-gray-50">
-    <nav class="bg-white shadow-sm">
+<body class="bg-slate-50 text-gray-900 antialiased">
+    @php
+        $u = auth()->user();
+        $navItems = [
+            ['label' => 'Luyện tập', 'url' => route('dashboard'), 'active' => request()->routeIs('dashboard', 'skills.*', 'sets.*', 'practice.*', 'mock-test.*', 'full-test.*', 'grammar.*', 'history.*', 'writingHistory.*', 'speakingHistory.*', 'leaderboard.*')],
+        ];
+        if (config('aptis.vocab.enabled')) {
+            $navItems[] = ['label' => 'Từ vựng', 'url' => route('vocab.index'), 'active' => request()->routeIs('vocab.*'), 'badge' => $vocabDueCount ?? 0];
+        }
+        if (config('aptis.classes_enabled')) {
+            $navItems[] = ['label' => 'Lớp học', 'url' => route('classes.index'), 'active' => request()->routeIs('classes.*')];
+        }
+        $navItems[] = ['label' => 'Hướng dẫn', 'url' => route('instructions.index'), 'active' => request()->routeIs('instructions.*')];
+        $thongBao = $headerNotifications ?? [];
+    @endphp
+    {{-- Header học viên: menu dạng tab, gom thông báo vào chuông, gom Đổi mật khẩu /
+         Đăng xuất vào menu tài khoản (trước đây nằm ngang hàng, rối mắt). --}}
+    <nav x-data="{ mobile: false }" class="relative z-40 bg-white border-b border-gray-200">
         <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center space-x-4 sm:space-x-6">
-                    <a href="{{ route('dashboard') }}" class="text-base sm:text-lg md:text-xl font-bold text-blue-600 whitespace-nowrap">Milaedu</a>
-                    
-                    <a href="{{ route('instructions.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('instructions.*') ? 'text-blue-600' : '' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <span class="whitespace-nowrap">Hướng dẫn</span>
-                    </a>
+            <div class="flex items-center h-16 gap-4">
+                <x-ui.brand />
 
-                    @if(config('aptis.vocab.enabled'))
-                    <a href="{{ route('vocab.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('vocab.*') ? 'text-blue-600' : '' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                        </svg>
-                        <span class="whitespace-nowrap">Từ vựng</span>
-                        @if(($vocabDueCount ?? 0) > 0)
-                            <span class="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold leading-5 text-center"
-                                  title="{{ $vocabDueCount }} từ đến hạn ôn">{{ $vocabDueCount > 99 ? '99+' : $vocabDueCount }}</span>
-                        @endif
-                    </a>
-                    @endif
-
-                    {{-- Lớp học online — ẩn khi `aptis.classes_enabled` tắt (tính năng đang hoãn). --}}
-                    @if(config('aptis.classes_enabled'))
-                    <a href="{{ route('classes.index') }}" class="flex items-center gap-1 sm:gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors {{ request()->routeIs('classes.*') ? 'text-blue-600' : '' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        <span class="whitespace-nowrap">Lớp học</span>
-                    </a>
-                    @endif
-                </div>
-                <div class="flex items-center space-x-2 sm:space-x-4">
-                    @if(auth()->user()->isAdmin())
-                        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 hover:text-blue-700 transition-colors border border-transparent hover:border-blue-200 whitespace-nowrap">
-                            <svg class="w-4 h-4 mr-1 sm:mr-2 text-slate-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <span class="hidden sm:inline">Vào trang Quản trị (Admin)</span>
-                            <span class="sm:hidden">Admin</span>
+                {{-- Menu chính (desktop) --}}
+                <div class="hidden md:flex items-center gap-1 ml-4">
+                    @foreach($navItems as $item)
+                        <a href="{{ $item['url'] }}"
+                           class="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                                  {{ $item['active'] ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
+                            {{ $item['label'] }}
+                            @if(($item['badge'] ?? 0) > 0)
+                                <span class="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold leading-5 text-center" title="{{ $item['badge'] }} từ đến hạn ôn">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
+                            @endif
                         </a>
-                        <div class="h-6 w-px bg-gray-300 mx-2"></div>
+                    @endforeach
+                </div>
+
+                <div class="ml-auto flex items-center gap-2">
+                    @if($u->isAdmin())
+                        <a href="{{ route('admin.dashboard') }}" class="hidden sm:inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 rounded-lg border border-gray-200 hover:bg-gray-50">Quản trị</a>
                     @endif
-                    <span class="text-sm font-medium text-slate-700 hidden sm:inline">{{ auth()->user()->name }}</span>
-                    <a href="{{ route('password.change') }}" title="Đổi mật khẩu"
-                       class="inline-flex items-center gap-1 px-2 py-1.5 text-xs sm:text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100 hover:text-blue-700 whitespace-nowrap">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                        <span class="hidden md:inline">Đổi mật khẩu</span>
-                    </a>
-                    <form method="POST" action="{{ route('logout') }}" class="whitespace-nowrap flex">
-                        @csrf
-                        <x-button type="submit" variant="secondary" class="text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2">Đăng xuất</x-button>
-                    </form>
+
+                    {{-- Chuông thông báo --}}
+                    <div x-data="{ open: false }" class="relative" @click.outside="open = false" @keydown.escape.window="open = false">
+                        <button type="button" @click="open = !open" aria-label="Thông báo"
+                                class="relative w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors">
+                            <x-ui.icon name="bell" class="w-5 h-5" />
+                            @if(count($thongBao) > 0)
+                                <span class="absolute top-1 right-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-[1.1rem] text-center ring-2 ring-white">{{ count($thongBao) }}</span>
+                            @endif
+                        </button>
+                        <div x-cloak x-show="open" x-transition.origin.top.right
+                             class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+                            <div class="px-4 py-3 border-b border-gray-100 text-sm font-semibold text-gray-900">Thông báo</div>
+                            @forelse($thongBao as $tb)
+                                <a href="{{ $tb['url'] }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+                                    <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 {{ $tb['tone'] === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600' }}">
+                                        <x-ui.icon :name="$tb['icon'] === 'flame' ? 'flame' : 'check'" class="w-4 h-4" />
+                                    </span>
+                                    <span class="flex-1 text-sm text-gray-700">{{ $tb['text'] }}</span>
+                                    <span class="text-gray-300">&rsaquo;</span>
+                                </a>
+                            @empty
+                                <div class="px-4 py-6 text-center text-sm text-gray-500">Bạn đã xem hết thông báo.</div>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    {{-- Menu tài khoản --}}
+                    <x-ui.user-menu>
+                        @if($u->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}">Quản trị</a>
+                        @endif
+                        <a href="{{ route('history.index') }}">Lịch sử làm bài</a>
+                    </x-ui.user-menu>
+
+                    {{-- Nút menu (mobile) --}}
+                    <button type="button" @click="mobile = !mobile" aria-label="Mở menu"
+                            class="md:hidden w-10 h-10 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100">
+                        <x-ui.icon name="menu" x-show="!mobile" class="w-6 h-6" />
+                        <x-ui.icon name="x" x-cloak x-show="mobile" class="w-6 h-6" />
+                    </button>
                 </div>
             </div>
+        </div>
+
+        {{-- Menu chính (mobile) --}}
+        <div x-cloak x-show="mobile" x-transition class="md:hidden border-t border-gray-100 bg-white px-4 py-2">
+            @foreach($navItems as $item)
+                <a href="{{ $item['url'] }}"
+                   class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium {{ $item['active'] ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }}">
+                    {{ $item['label'] }}
+                    @if(($item['badge'] ?? 0) > 0)
+                        <span class="min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold leading-5 text-center">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
+                    @endif
+                </a>
+            @endforeach
         </div>
     </nav>
 

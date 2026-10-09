@@ -65,9 +65,9 @@
                             $partInfo = $partCounts[$part] ?? null;
                         @endphp
                         @if($partInfo && !$partInfo['enough'])
-                            <span class="ml-auto text-xs text-red-500">⚠ Thiếu bộ đề</span>
+                            <span class="ml-auto text-xs text-red-500">Thiếu bộ đề</span>
                         @else
-                            <span class="ml-auto text-xs text-green-500">✓ Sẵn sàng</span>
+                            <span class="ml-auto text-xs text-green-500">Sẵn sàng</span>
                         @endif
                     </div>
                 @endforeach
@@ -98,7 +98,7 @@
                     @else from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700
                     @endif
                     text-white font-semibold rounded-xl shadow-lg transition-all text-lg">
-                    🚀 Bắt đầu thi thử
+                    Bắt đầu thi thử
                 </button>
             </form>
         @else

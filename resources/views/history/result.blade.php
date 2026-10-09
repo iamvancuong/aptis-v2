@@ -17,7 +17,7 @@
             </h1>
             <p class="text-sm text-gray-500 mt-1">
                 Loại: <x-badge :variant="$attempt->mode === 'mock_test' ? 'warning' : 'default'" class="inline">
-                    {{ $attempt->mode === 'mock_test' ? '📝 Thi thử' : '🎯 Luyện tập' }}
+                    {{ in_array($attempt->mode, ['mock', 'mock_test'], true) ? 'Thi thử' : 'Luyện tập' }}
                 </x-badge>
                 · Hoàn thành lúc {{ $attempt->created_at->format('H:i d/m/Y') }}
             </p>
@@ -40,15 +40,15 @@
     <div class="grid grid-cols-3 gap-4">
         <div class="bg-green-50 rounded-xl p-4 text-center border border-green-100">
             <div class="text-2xl font-black text-green-600">{{ $correct }}</div>
-            <div class="text-xs font-semibold text-green-700 mt-1">✅ Đúng</div>
+            <div class="text-xs font-semibold text-green-700 mt-1">Đúng</div>
         </div>
         <div class="bg-red-50 rounded-xl p-4 text-center border border-red-100">
             <div class="text-2xl font-black text-red-500">{{ $wrong }}</div>
-            <div class="text-xs font-semibold text-red-600 mt-1">❌ Sai</div>
+            <div class="text-xs font-semibold text-red-600 mt-1">Sai</div>
         </div>
         <div class="bg-gray-50 rounded-xl p-4 text-center border border-gray-200">
             <div class="text-2xl font-black text-gray-500">{{ $total }}</div>
-            <div class="text-xs font-semibold text-gray-500 mt-1">📋 Tổng câu</div>
+            <div class="text-xs font-semibold text-gray-500 mt-1">Tổng câu</div>
         </div>
     </div>
 
@@ -96,11 +96,10 @@
                     $userAns = $answer->answer;
                     $correctAns = $q->metadata['correct_answer'] ?? ($q->metadata['correct_answers'] ?? null);
                     $rowBg = $isCorrect ? 'bg-green-50/40' : 'bg-red-50/40';
-                    $icon = $isCorrect ? '✅' : '❌';
                 @endphp
                 <div class="px-5 py-4 {{ $rowBg }}">
                     <div class="flex items-start gap-3">
-                        <span class="text-base shrink-0 mt-0.5">{{ $icon }}</span>
+                        <x-ui.answer-mark :correct="(bool) $isCorrect" class="mt-0.5" />
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="text-xs font-bold text-gray-400 uppercase">{{ \App\Support\PartLabel::text($attempt->skill, $q->part ?? null) }} · Câu {{ $i + 1 }}</span>
@@ -216,7 +215,7 @@
                                                 <div class="shrink-0 text-right">
                                                     <span class="font-bold {{ $isOk ? 'text-green-600' : 'text-red-600' }}">{{ $uLabel }}</span>
                                                     @if(!$isOk)
-                                                        <p class="text-[10px] text-green-600 font-bold">✓ {{ $cLabel }}</p>
+                                                        <p class="text-[10px] text-green-600 font-bold">Đáp án: {{ $cLabel }}</p>
                                                     @endif
                                                 </div>
                                             </div>
@@ -495,7 +494,7 @@
                             @if(!empty($q->explanation))
                                 <div x-data="{ open: false }" class="mt-3">
                                     <button @click="open = !open" class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                                        <span>🔍 Xem giải thích / Transcript</span>
+                                        <span>Xem giải thích / Transcript</span>
                                         <svg class="w-3 h-3 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
                                     <div x-show="open" x-collapse x-cloak class="mt-2 p-3 bg-white border border-indigo-100 rounded-lg text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">

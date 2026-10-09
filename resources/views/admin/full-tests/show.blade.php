@@ -20,7 +20,7 @@
                   onsubmit="return confirm('Gửi chấm lại AI các phần Speaking/Writing còn treo?');">
                 @csrf
                 <button class="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm">
-                    🔄 Chấm lại phần còn treo
+                    Chấm lại phần còn treo
                 </button>
             </form>
         @endif

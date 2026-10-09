@@ -11,7 +11,7 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                 Quay lại
             </a>
-            <h1 class="text-2xl font-bold text-gray-900">Chi tiết bài làm: Speaking 🎤</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Chi tiết bài làm: Speaking </h1>
             <p class="text-sm text-gray-500 mt-1">
                 Set: <strong class="text-gray-700">{{ $attempt->set->title ?? '—' }}</strong>
                 · Hoàn thành lúc: {{ $attempt->created_at->format('d/m/Y H:i') }}
@@ -61,11 +61,11 @@
                 <div>
                     @if($answer->grading_status === 'graded')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
-                            ✅ Điểm: {{ number_format($answer->score ?? 0, 1) }}/10
+                            Điểm: {{ number_format($answer->score ?? 0, 1) }}/10
                         </span>
                     @elseif($answer->grading_status === 'ai_graded')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-sm">
-                            🤖 AI chấm nháp:
+                            AI chấm nháp:
                             @if(!empty($answer->ai_metadata['feedback']['cefr_level']))
                                 {{ $answer->ai_metadata['feedback']['cefr_level'] }} ·
                             @endif
@@ -73,7 +73,7 @@
                         </span>
                     @elseif($answer->grading_status === 'ai_failed')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                            ⚠️ Chấm tự động chưa xong
+                            Chấm tự động chưa xong
                         </span>
                     @elseif($answer->grading_status === 'limit_reached')
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700 border border-gray-200">
@@ -87,11 +87,11 @@
                         </span>
                     @elseif($aiRunning)
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                            🤖 AI đang chấm…
+                            AI đang chấm…
                         </span>
                     @else
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-100 text-amber-800">
-                            ⏳ Chờ giảng viên chấm
+                            Chờ giảng viên chấm
                         </span>
                     @endif
                 </div>
@@ -138,7 +138,7 @@
                     {{-- Student's Recording --}}
                     <div>
                         <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                             🎤 Bài làm (Bản ghi âm của bạn)
+                             Bài làm (Bản ghi âm của bạn)
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             @php

@@ -1,5 +1,5 @@
 <x-mail::message>
-# Sắp tới giờ học 👋
+# Sắp tới giờ học 
 
 Buổi học online của bạn sắp bắt đầu:
 

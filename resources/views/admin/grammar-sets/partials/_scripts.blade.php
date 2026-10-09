@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = JSON.parse(stored);
             const banner = document.createElement('div');
             banner.className = 'mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm flex items-center justify-between';
-            banner.innerHTML = `<span>⚠️ Có bản nháp chưa lưu từ ${data.time}</span>
+            banner.innerHTML = `<span>Có bản nháp chưa lưu từ ${data.time}</span>
                 <button onclick="localStorage.removeItem('${STORAGE_KEY}');this.closest('div').remove()"
                         class="text-xs underline opacity-60 hover:opacity-100">Xoá</button>`;
             form.before(banner);
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!resp.ok) throw new Error();
             const json = await resp.json();
             localStorage.removeItem(STORAGE_KEY);
-            indicator.textContent = `✓ Đã lưu lúc ${json.saved_at}`;
+            indicator.textContent = `Đã lưu lúc ${json.saved_at}`;
             indicator.classList.remove('hidden');
             setTimeout(() => indicator.classList.add('hidden'), 4000);
             

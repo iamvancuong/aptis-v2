@@ -47,7 +47,7 @@
                       @submit="if (busy || !confirm('Bắt đầu Full Test? Lượt thi sẽ được tính ngay.')) { $event.preventDefault(); return; } busy = true">
                     @csrf
                     <button type="submit" :disabled="busy" class="w-full inline-flex justify-center items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow disabled:opacity-60 disabled:cursor-wait">
-                        <span x-show="!busy">🚀 Bắt đầu Full Test</span>
+                        <span x-show="!busy">Bắt đầu Full Test</span>
                         <span x-show="busy" x-cloak>Đang chuẩn bị đề…</span>
                     </button>
                 </form>

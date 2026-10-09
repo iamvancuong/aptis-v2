@@ -1,174 +1,125 @@
 @extends('layouts.app')
 
-@section('title', ($title ?? 'Lịch sử làm bài') . ' - Milaedu')
+@section('title', $title . ' - Milaedu')
+
+@php
+    // Dùng chung cho 3 trang lịch sử; $kind = quiz | writing | speaking (HistoryController::listing).
+    $routes = ['quiz' => 'history.index', 'writing' => 'writingHistory.index', 'speaking' => 'speakingHistory.index'];
+    $detailRoutes = ['quiz' => 'history.show', 'writing' => 'writingHistory.show', 'speaking' => 'speakingHistory.show'];
+    $baseRoute = $routes[$kind];
+    $filters = request()->only('score_min', 'date_from', 'date_to');
+    $dangLoc = $dateFrom || $dateTo || ($scoreMin !== null && $scoreMin !== '');
+    $modeLabel = ['all' => 'Tất cả', 'practice' => 'Luyện tập', 'mock_test' => 'Thi thử'];
+@endphp
 
 @section('content')
-<div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-900">{{ $title ?? 'Lịch sử làm bài' }}</h1>
-    <p class="mt-2 text-gray-600">Xem lại các bài thi và luyện tập của bạn</p>
-</div>
+<x-ui.page-header :title="$title" subtitle="Xem lại điểm và chi tiết các bài luyện tập, thi thử của bạn"
+    :crumbs="[['label' => 'Luyện tập', 'url' => route('dashboard')], ['label' => 'Lịch sử']]" />
 
-{{-- Mode Filter Tabs --}}
-@php
-    $currentMode = $mode ?? 'all';
-    $baseRoute = 'history.index';
-    if (isset($isWriting) && $isWriting) $baseRoute = 'writingHistory.index';
-    if (isset($isSpeaking) && $isSpeaking) $baseRoute = 'speakingHistory.index';
-@endphp
-<div class="flex flex-wrap items-center gap-3 mb-6">
-    <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
-        <a href="{{ route($baseRoute, array_merge(request()->only('score_min','date_from','date_to'), ['mode' => 'all'])) }}"
-           class="px-4 py-2 text-sm font-medium {{ $currentMode === 'all' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-            Tất cả
-        </a>
-        <a href="{{ route($baseRoute, array_merge(request()->only('score_min','date_from','date_to'), ['mode' => 'practice'])) }}"
-           class="px-4 py-2 text-sm font-medium border-l border-gray-200 {{ $currentMode === 'practice' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-            🎯 Luyện tập
-        </a>
-        <a href="{{ route($baseRoute, array_merge(request()->only('score_min','date_from','date_to'), ['mode' => 'mock_test'])) }}"
-           class="px-4 py-2 text-sm font-medium border-l border-gray-200 {{ $currentMode === 'mock_test' ? 'bg-amber-500 text-white' : 'text-gray-600 hover:bg-gray-50' }}">
-            📝 Thi thử
-        </a>
+<x-ui.tabs class="mb-5" :items="[
+    ['label' => 'Trắc nghiệm & Ngữ pháp', 'url' => route('history.index'), 'active' => $kind === 'quiz'],
+    ['label' => 'Writing', 'url' => route('writingHistory.index'), 'active' => $kind === 'writing'],
+    ['label' => 'Speaking', 'url' => route('speakingHistory.index'), 'active' => $kind === 'speaking'],
+]" />
+
+{{-- Bộ lọc --}}
+<div x-data="{ moLoc: {{ $dangLoc ? 'true' : 'false' }} }" class="mb-5">
+    <div class="flex flex-wrap items-center gap-3">
+        <x-ui.tabs variant="pill" :items="collect($modeLabel)->map(fn ($label, $key) => [
+            'label' => $label,
+            'url' => route($baseRoute, array_merge($filters, ['mode' => $key])),
+            'active' => $mode === $key,
+        ])->values()->all()" />
+        <button type="button" @click="moLoc = !moLoc"
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors
+                       {{ $dangLoc ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50' }}">
+            <x-ui.icon name="filter" class="w-4 h-4" />
+            Lọc{{ $dangLoc ? ' (đang lọc)' : '' }}
+        </button>
+        <span class="ml-auto text-sm text-gray-400">{{ $attempts->total() }} bài</span>
     </div>
 
-    {{-- Advanced filter toggle --}}
-    <details class="group" {{ ($dateFrom??null)||($dateTo??null)||($scoreMin??null) ? 'open' : '' }}>
-        <summary class="cursor-pointer text-sm text-gray-500 hover:text-gray-700 select-none flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-            Lọc nâng cao {{ ($dateFrom??null)||($dateTo??null)||($scoreMin??null) ? '(đang lọc)' : '' }}
-        </summary>
-        <form method="GET" action="{{ route($baseRoute) }}"
-              class="mt-2 flex flex-wrap gap-3 items-end bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <input type="hidden" name="mode" value="{{ $currentMode }}">
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Từ ngày</label>
-                <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}"
-                       class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Đến ngày</label>
-                <input type="date" name="date_to" value="{{ $dateTo ?? '' }}"
-                       class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Điểm tối thiểu (%)</label>
-                <input type="number" name="score_min" min="0" max="100" value="{{ $scoreMin ?? '' }}"
-                       placeholder="0" class="border border-gray-200 rounded-lg px-2 py-1.5 text-sm w-24">
-            </div>
-            <button type="submit" class="px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">Lọc</button>
-            @if(($dateFrom??null)||($dateTo??null)||($scoreMin??null))
-                <a href="{{ route($baseRoute, ['mode' => $currentMode]) }}" class="text-sm text-gray-500 hover:text-gray-700">Xóa lọc</a>
-            @endif
-        </form>
-    </details>
+    <form x-cloak x-show="moLoc" x-transition method="GET" action="{{ route($baseRoute) }}"
+          class="mt-3 flex flex-wrap items-end gap-3 p-4 bg-white border border-gray-200 rounded-2xl">
+        <input type="hidden" name="mode" value="{{ $mode }}">
+        <label class="text-xs text-gray-500">Từ ngày
+            <input type="date" name="date_from" value="{{ $dateFrom }}" class="mt-1 block border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+        </label>
+        <label class="text-xs text-gray-500">Đến ngày
+            <input type="date" name="date_to" value="{{ $dateTo }}" class="mt-1 block border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+        </label>
+        <label class="text-xs text-gray-500">Điểm tối thiểu (%)
+            <input type="number" name="score_min" min="0" max="100" value="{{ $scoreMin }}" placeholder="0"
+                   class="mt-1 block w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
+        </label>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">Áp dụng</button>
+        @if($dangLoc)
+            <a href="{{ route($baseRoute, ['mode' => $mode]) }}" class="px-2 py-2 text-sm text-gray-500 hover:text-gray-800">Xoá lọc</a>
+        @endif
+    </form>
 </div>
 
 @if($attempts->isEmpty())
-    <x-alert type="info">
-        Bạn chưa có bài làm nào{{ $currentMode !== 'all' ? ' với bộ lọc này' : '' }}. Hãy bắt đầu luyện tập!
-    </x-alert>
-    <x-button href="{{ route('dashboard') }}" class="mt-4">
-        Về Dashboard
-    </x-button>
+    <x-ui.empty-state :title="$mode !== 'all' || $dangLoc ? 'Không có bài nào khớp bộ lọc' : 'Bạn chưa có bài làm nào'" icon="list">
+        @if($mode !== 'all' || $dangLoc)
+            Thử bỏ bớt điều kiện lọc, hoặc <a href="{{ route($baseRoute) }}" class="text-blue-600 hover:text-blue-700">xem tất cả</a>.
+        @else
+            Làm bài đầu tiên để theo dõi tiến độ — <a href="{{ route('dashboard') }}" class="text-blue-600 hover:text-blue-700">bắt đầu luyện tập</a>.
+        @endif
+    </x-ui.empty-state>
 @else
-    <x-card>
-        <x-table>
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kỹ năng</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Set đề</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Điểm</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày làm</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach($attempts as $attempt)
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="capitalize font-medium">{{ $attempt->skill }}</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <x-badge :variant="$attempt->mode === 'mock_test' ? 'warning' : 'default'">
-                                {{ $attempt->mode === 'mock_test' ? '📝 Thi thử' : '🎯 Luyện tập' }}
-                            </x-badge>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {{ $attempt->set->title ?? ($attempt->set->quiz->title ?? '—') }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($attempt->score !== null)
-                                @php
-                                    $s = (float) $attempt->score;
-                                    $color = $s >= 80 ? 'text-green-600' : ($s >= 50 ? 'text-amber-600' : 'text-red-600');
-                                @endphp
-                                <span class="font-bold text-lg {{ $color }}">{{ number_format($s, 0) }}%</span>
-                                @if($attempt->skill === 'writing' && $s > 0)
-                                    @php $aptis = \App\Support\AptisScale::writing($s); @endphp
-                                    <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold {{ $aptis['color']['badge'] }}"
-                                          title="Điểm Aptis ước tính {{ $aptis['scale'] }}/50">{{ $aptis['level'] }} · {{ $aptis['scale'] }}/50</span>
-                                @endif
-                            @else
-                                <span class="text-gray-400">Chưa chấm</span>
+    <x-ui.panel :padded="false">
+        <ul class="divide-y divide-gray-100">
+            @foreach($attempts as $attempt)
+                @php
+                    $meta = \App\Support\SkillMeta::get($attempt->skill);
+                    $laThiThu = in_array($attempt->mode, ['mock', 'mock_test'], true);
+                    $tenBai = $attempt->set->title ?? ($attempt->set->quiz->title ?? ($laThiThu ? 'Thi thử ' . $meta['name'] : $meta['name']));
+                    $diem = $attempt->score !== null ? (float) $attempt->score : null;
+                    $diemTone = $diem === null ? 'bg-gray-100 text-gray-500' : ($diem >= 80 ? 'bg-emerald-50 text-emerald-700' : ($diem >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'));
+                @endphp
+                <li class="group relative flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 hover:bg-gray-50 transition-colors">
+                    <x-ui.icon-badge :skill="$attempt->skill" size="sm" />
+                    <div class="flex-1 min-w-0">
+                        {{-- Link phủ cả dòng (after:inset-0) — link phụ bên dưới nằm trên nhờ relative z-10 --}}
+                        <a href="{{ route($detailRoutes[$kind], $attempt->id) }}"
+                           class="block text-sm font-semibold text-gray-900 truncate after:absolute after:inset-0">{{ $tenBai }}</a>
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-gray-500">
+                            <span class="font-medium {{ $laThiThu ? 'text-amber-600' : 'text-blue-600' }}">{{ $laThiThu ? 'Thi thử' : 'Luyện tập' }}</span>
+                            @if($tenBai !== $meta['name'])
+                                <span class="text-gray-300">·</span>
+                                <span>{{ $meta['name'] }}</span>
                             @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="text-gray-300">·</span>
+                            <span>{{ ($attempt->finished_at ?? $attempt->created_at)->format('d/m/Y H:i') }}</span>
                             @if($attempt->duration_seconds)
-                                {{ gmdate('H:i:s', $attempt->duration_seconds) }}
-                            @else
-                                -
+                                <span class="text-gray-300">·</span>
+                                <span class="inline-flex items-center gap-1"><x-ui.icon name="clock" class="w-3.5 h-3.5" />{{ gmdate($attempt->duration_seconds >= 3600 ? 'H:i:s' : 'i:s', $attempt->duration_seconds) }}</span>
                             @endif
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $attempt->created_at->format('d/m/Y H:i') }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right">
-                            @if($attempt->mock_test_id)
-                                <div class="flex items-center justify-end gap-3 text-sm">
-                                    <a href="{{ route('mock-test.result', $attempt->mock_test_id) }}" class="text-blue-600 hover:text-blue-700 font-medium">
-                                        KQ Mock Test
-                                    </a>
-                                    @if(isset($isWriting) && $isWriting)
-                                        <span class="text-gray-300">|</span>
-                                        <a href="{{ route('writingHistory.show', $attempt->id) }}" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-                                            Chi tiết
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                                        </a>
-                                    @endif
-                                    @if(isset($isSpeaking) && $isSpeaking)
-                                        <span class="text-gray-300">|</span>
-                                        <a href="{{ route('speakingHistory.show', $attempt->id) }}" class="text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1">
-                                            Chi tiết
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                                        </a>
-                                    @endif
-                                </div>
-                            @elseif(isset($isWriting) && $isWriting)
-                                <a href="{{ route('writingHistory.show', $attempt->id) }}" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">
-                                    Xem chi tiết →
-                                </a>
-                            @elseif(isset($isSpeaking) && $isSpeaking)
-                                <a href="{{ route('speakingHistory.show', $attempt->id) }}" class="text-rose-600 hover:text-rose-800 font-medium text-sm">
-                                    Xem chi tiết →
-                                </a>
-                            @elseif(in_array($attempt->skill, ['reading', 'listening', 'grammar']))
-                                <a href="{{ route('history.show', $attempt->id) }}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                                    Xem chi tiết →
-                                </a>
-                            @else
-                                <span class="text-gray-400 text-sm">—</span>
+                            @if($laThiThu && $attempt->mock_test_id && $kind !== 'quiz')
+                                <span class="text-gray-300">·</span>
+                                <a href="{{ route('mock-test.result', $attempt->mock_test_id) }}" class="relative z-10 text-blue-600 hover:text-blue-700">Kết quả thi thử</a>
                             @endif
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </x-table>
-    </x-card>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        @if($diem !== null && $attempt->skill === 'writing' && $diem > 0)
+                            @php $aptis = \App\Support\AptisScale::writing($diem); @endphp
+                            <span class="hidden sm:inline-flex px-2 py-1 rounded-lg text-xs font-bold {{ $aptis['color']['badge'] }}"
+                                  title="Điểm Aptis ước tính {{ $aptis['scale'] }}/50">{{ $aptis['level'] }} · {{ $aptis['scale'] }}/50</span>
+                        @endif
+                        <span class="min-w-[3.5rem] text-center px-2.5 py-1 rounded-lg text-sm font-bold {{ $diemTone }}">
+                            {{ $diem !== null ? number_format($diem, 0) . '%' : 'Chờ chấm' }}
+                        </span>
+                        <span class="text-gray-300 group-hover:text-blue-500 transition-colors" aria-hidden="true">→</span>
+                    </div>
+                </li>
+            @endforeach
+        </ul>
+    </x-ui.panel>
 
-    <div class="mt-4">
-        {{ $attempts->links() }}
-    </div>
+    @if($attempts->hasPages())
+        <div class="mt-4">{{ $attempts->links() }}</div>
+    @endif
 @endif
 @endsection

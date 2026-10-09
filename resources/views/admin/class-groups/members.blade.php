@@ -41,7 +41,7 @@
                         @click="navigator.clipboard.writeText(list); copied = true; setTimeout(() => copied = false, 2000)"
                         class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shrink-0">
                     <span x-show="!copied">Copy {{ count($inviteEmails) }} địa chỉ</span>
-                    <span x-show="copied" x-cloak>✓ Đã copy</span>
+                    <span x-show="copied" x-cloak>Đã copy</span>
                 </button>
             @endif
         </div>
@@ -71,7 +71,7 @@
                     @click="navigator.clipboard.writeText(list); copied = true; setTimeout(() => copied = false, 2000)"
                     class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
                 <span x-show="!copied">Copy {{ $canGoBo->count() }} địa chỉ cần gỡ</span>
-                <span x-show="copied" x-cloak>✓ Đã copy</span>
+                <span x-show="copied" x-cloak>Đã copy</span>
             </button>
         </div>
     @endif
@@ -94,7 +94,7 @@
                  style mà không báo lỗi gì (bẫy §25). Bản đầu dùng nút xám
                  `hover:bg-gray-800` — đã đối chiếu và nó THIẾU thật.
 
-                 ⚠️ Cách đối chiếu: Tailwind ESCAPE dấu hai chấm trong file CSS, nên
+                 Cách đối chiếu: Tailwind ESCAPE dấu hai chấm trong file CSS, nên
                  phải tìm `hover\:bg-gray-800`, không phải `hover:bg-gray-800`. Tìm
                  sai kiểu thì class nào cũng báo "thiếu" và ta sẽ đi build lại vô ích:
                      grep -F 'hover\:bg-blue-700' public/build/assets/*.css --}}
@@ -189,7 +189,7 @@
              ở form tạo user ghi vào chính cột đó. Đây là bộ lọc để dựng lớp kiểu
              "Nhóm thi tuần này" bằng tay trong vài cú bấm.
 
-             📌 `sm:w-64` KHÔNG có trong `public/build` (ô "Nguồn" bên cạnh cũng
+             `sm:w-64` KHÔNG có trong `public/build` (ô "Nguồn" bên cạnh cũng
              dùng đúng class này và cũng thiếu). Giữ nguyên cho hai ô như nhau —
              thực tế bề rộng do flex chia. Muốn nó có tác dụng thật thì phải chạy
              `npm run build` và upload lại `public/build`, không phải việc của
@@ -217,7 +217,7 @@
               class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center justify-between gap-3"
               onsubmit="return confirm('Thêm tất cả {{ $tongUngVien }} học viên khớp bộ lọc vào lớp?')">
             @csrf
-            {{-- ⚠️ Mọi bộ lọc phải được mang theo đây. Thiếu một ô là nút này
+            {{-- Mọi bộ lọc phải được mang theo đây. Thiếu một ô là nút này
                  thêm nhiều người hơn màn hình đang hiện — không báo lỗi gì. --}}
             <input type="hidden" name="source" value="{{ $source }}">
             <input type="hidden" name="q" value="{{ $tuKhoa }}">

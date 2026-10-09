@@ -3,7 +3,7 @@
     <div class="space-y-6">
         {{-- Instructions --}}
         <div class="bg-blue-50 rounded-lg p-4">
-            <h4 class="font-bold text-blue-800 mb-1">💬 Viết câu trả lời của bạn vào đây</h4>
+            <h4 class="font-bold text-blue-800 mb-1">Viết câu trả lời của bạn vào đây</h4>
             <p class="text-blue-700" x-text="currentQuestion.stem || 'Read each social media post and write a response.'"></p>
         </div>
 
@@ -64,7 +64,7 @@
                         {{-- Sample Answer --}}
                         <template x-if="currentQuestion.metadata?.sample_answer">
                             <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                                <h4 class="font-bold text-indigo-800 mb-2">💡 Đáp án gợi ý (Sample Answer)</h4>
+                                <h4 class="font-bold text-indigo-800 mb-2">Đáp án gợi ý (Sample Answer)</h4>
                                 <div class="space-y-4">
                                     <template x-for="(ans, idx) in currentQuestion.metadata?.sample_answer || []" :key="idx">
                                         <div>

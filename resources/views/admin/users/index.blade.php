@@ -143,15 +143,15 @@
         </button>
         <a href="{{ route('admin.users.export', request()->query()) }}" 
            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
-            📥 Export Excel
+            Export Excel
         </a>
         <button onclick="document.getElementById('importModal').classList.remove('hidden')" 
                 class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm">
-            📤 Import Excel
+            Import Excel
         </button>
         <a href="{{ route('admin.users.template') }}" 
            class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm">
-            📋 Download Template
+            Download Template
         </a>
     </div>
 </x-card>
@@ -228,7 +228,7 @@
                             @if(($user->devtools_flag_count ?? 0) > 0)
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-xs font-bold"
                                       title="Số lần bị phát hiện mở DevTools">
-                                    ⚠ {{ $user->devtools_flag_count }}
+                                    {{ $user->devtools_flag_count }}
                                 </span>
                             @else
                                 <span class="text-xs text-gray-400">—</span>

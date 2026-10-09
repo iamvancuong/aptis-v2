@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Set;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
 
@@ -28,18 +27,21 @@ class SetController extends Controller
             ->orderBy('order')
             ->get();
 
-        return view('sets.index', compact('skill', 'part', 'quiz', 'sets'));
+        // Kết quả của học viên trên từng đề: số lần làm + điểm cao nhất.
+        // Một câu gom nhóm, không N+1.
+        $setStats = \App\Models\Attempt::where('user_id', auth()->id())
+            ->whereIn('set_id', $sets->pluck('id'))
+            ->where('mode', 'practice')
+            ->whereNotNull('finished_at')
+            ->selectRaw('set_id, count(*) as times, max(score) as best')
+            ->groupBy('set_id')
+            ->get()
+            ->keyBy('set_id');
+
+        return view('sets.index', compact('skill', 'part', 'quiz', 'sets', 'setStats'));
     }
 
-    /**
-     * Display set details with questions.
-     */
-    public function show(Set $set)
-    {
-        $set->load(['quiz', 'questions' => function ($query) {
-            $query->orderBy('order');
-        }]);
-
-        return view('sets.show', compact('set'));
-    }
+    // Màn "Xem đề" (sets.show) đã GỠ HẲN 10/2026: nó in toàn bộ câu hỏi
+    // (kể cả bài nghe) ra một trang tĩnh → học viên copy/lộ đề. Học viên chỉ
+    // tiếp cận đề qua màn luyện tập (practice.show). Đừng dựng lại.
 }

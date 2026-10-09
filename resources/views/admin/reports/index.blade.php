@@ -7,7 +7,7 @@
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">📊 Báo cáo toàn lớp</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Báo cáo toàn lớp</h1>
             <p class="text-sm text-gray-500 mt-1">Thống kê kết quả học tập của từng học sinh</p>
         </div>
         <a href="{{ route('admin.reports.export', request()->only('skill', 'date_from', 'date_to')) }}"
@@ -101,11 +101,11 @@
                     <td class="px-4 py-3 text-center text-sm text-gray-600">{{ $row['ai_used'] }}</td>
                     <td class="px-4 py-3 text-center">
                         @if($exp === 'expired')
-                            <span class="text-xs font-medium text-red-600">⛔ Hết hạn</span>
+                            <span class="text-xs font-medium text-red-600">Hết hạn</span>
                         @elseif($exp === 'warning')
-                            <span class="text-xs font-medium text-amber-600">⚠️ Sắp hết</span>
+                            <span class="text-xs font-medium text-amber-600">Sắp hết</span>
                         @elseif($exp === 'active')
-                            <span class="text-xs text-green-600">✅ {{ $row['expires_at']?->format('d/m/Y') }}</span>
+                            <span class="text-xs text-green-600">{{ $row['expires_at']?->format('d/m/Y') }}</span>
                         @else
                             <span class="text-xs text-gray-400">Không giới hạn</span>
                         @endif

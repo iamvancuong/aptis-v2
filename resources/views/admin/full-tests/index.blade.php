@@ -6,18 +6,18 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">🏁 Full Test</h1>
+            <h1 class="text-2xl font-bold text-gray-900">Full Test</h1>
             <p class="text-sm text-gray-500 mt-1">Các lượt thi liên tục 5 phần của học viên</p>
         </div>
         <a href="{{ route('admin.full-tests.quotas') }}"
            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">
-            🎟️ Cấp lượt Full Test
+            Cấp lượt Full Test
         </a>
     </div>
 
     <div class="flex flex-wrap gap-3 items-center">
         <div class="flex rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
-            @foreach(['all' => 'Tất cả', 'completed' => '✅ Đã thi xong', 'in_progress' => '⏳ Đang làm'] as $val => $label)
+            @foreach(['all' => 'Tất cả', 'completed' => 'Đã thi xong', 'in_progress' => 'Đang làm'] as $val => $label)
                 <a href="{{ route('admin.full-tests.index', array_merge(request()->only('q'), ['status' => $val])) }}"
                    class="px-3 py-2 text-xs font-medium {{ $status === $val ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50' }} {{ !$loop->first ? 'border-l border-gray-200' : '' }}">
                     {{ $label }}
@@ -59,7 +59,7 @@
                             @if(! $r['finished'])
                                 <span class="text-amber-600 font-medium">Đang làm phần {{ min($ft->current_stage + 1, 5) }}/5</span>
                             @elseif($r['fully_graded'])
-                                <span class="text-green-600 font-medium">✓ Có bảng điểm</span>
+                                <span class="text-green-600 font-medium">Có bảng điểm</span>
                             @else
                                 <span class="text-blue-600 font-medium">Chờ chấm AI</span>
                             @endif

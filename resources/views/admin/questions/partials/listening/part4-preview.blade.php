@@ -35,7 +35,7 @@
                                 x-show="correctAnswers[qIndex] === cIndex" 
                                 class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded"
                             >
-                                ✓ Correct
+                                Correct
                             </span>
                         </div>
                     </template>

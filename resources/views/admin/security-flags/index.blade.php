@@ -6,7 +6,7 @@
 <div class="space-y-6">
     {{-- Header --}}
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">🛡️ Cảnh báo bảo mật</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Cảnh báo bảo mật</h1>
         <p class="text-sm text-gray-500 mt-1">
             Hai loại cảnh báo tách riêng bên dưới: <strong>đăng nhập nhiều thiết bị</strong> và
             <strong>mở Developer Tools</strong>. Cả hai đều là tín hiệu để xem xét, không phải bằng chứng —
@@ -20,7 +20,7 @@
          trạng của những tài khoản vi phạm trước đó. Đổi lại nó chỉ là con số. --}}
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-800">
-            📱 Tài khoản đang mang vi phạm thiết bị ({{ $dangViPham->count() }})
+            Tài khoản đang mang vi phạm thiết bị ({{ $dangViPham->count() }})
         </div>
 
         @if($dangViPham->isEmpty())
@@ -71,7 +71,7 @@
          `violation_count` không nói được. Chỉ có dữ liệu từ khi bật ghi log. --}}
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 font-semibold text-gray-800">
-            📱 Nhật ký vi phạm thiết bị
+            Nhật ký vi phạm thiết bị
         </div>
 
         @if($flagsThietBi->isEmpty())
@@ -114,7 +114,7 @@
     </div>
 
     <div class="pt-2">
-        <h2 class="text-lg font-bold text-gray-900">🧰 Mở Developer Tools</h2>
+        <h2 class="text-lg font-bold text-gray-900">Mở Developer Tools</h2>
         <p class="text-sm text-gray-500 mt-1">
             Tín hiệu phỏng đoán và có thể báo nhầm — xem xét kỹ trước khi khoá.
         </p>

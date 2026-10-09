@@ -112,7 +112,7 @@
 
         {{-- Correct Order Feedback --}}
         <div x-show="hasAnswered(currentQuestion.id) && feedback[currentQuestion.id] && !feedback[currentQuestion.id].correct" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h4 class="font-bold text-yellow-800 mb-2">✅ Correct Order:</h4>
+            <h4 class="font-bold text-yellow-800 mb-2">Correct Order:</h4>
             <ol class="list-decimal list-inside space-y-1 text-yellow-900 text-sm">
                 <template x-if="p2HasFixedStart()">
                     <li x-text="currentQuestion.metadata.sentences[0]"></li>

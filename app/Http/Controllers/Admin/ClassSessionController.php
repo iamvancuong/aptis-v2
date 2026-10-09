@@ -73,7 +73,7 @@ class ClassSessionController extends Controller
             ->where('expires_at', '<', now()->addDays(7))
             ->count();
 
-        // ⚠️ Lỗ hổng thật: học viên hết hạn NHƯNG vẫn nằm trong lời mời Calendar
+        // Lỗ hổng thật: học viên hết hạn NHƯNG vẫn nằm trong lời mời Calendar
         // thì có link trong lịch của họ và vào Meet thẳng — KHÔNG đi qua cổng web
         // nên hệ thống không chặn được. Phải gỡ tay khỏi sự kiện Calendar.
         // Chỉ liệt kê người hết hạn KỂ TỪ lần admin bấm "Đã cập nhật lời mời",
@@ -165,7 +165,7 @@ class ClassSessionController extends Controller
 
         if (! $session->load('classGroup')->hasMeetLink()) {
             return $redirect->with('warning', $thongBao
-                . ' ⚠️ Buổi này CHƯA CÓ link phòng nên học viên chưa vào được —'
+                . ' Buổi này CHƯA CÓ link phòng nên học viên chưa vào được —'
                 . ' dán link vào buổi, hoặc vào lớp dán link dùng chung cho cả lớp.');
         }
 
