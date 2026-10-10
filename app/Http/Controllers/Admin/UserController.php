@@ -107,6 +107,30 @@ class UserController extends Controller
 
         $user = User::create($data);
 
+        // Gửi luôn thông tin đăng nhập vào email học viên (mặc định bật) — dùng lại
+        // đúng mẫu email của luồng mua gói. Gửi hỏng KHÔNG được làm hỏng việc tạo
+        // tài khoản: báo admin và vẫn hiện mật khẩu để gửi tay.
+        if ($request->boolean('send_credentials')) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\AccountCredentialsMail(
+                    email: $user->email,
+                    password: $plainPassword,
+                    isNew: true,
+                    expiresAt: $user->expires_at,
+                ));
+
+                return redirect()->route('admin.users.index')
+                    ->with('success', "Đã tạo tài khoản {$user->email} và gửi email thông tin đăng nhập cho học viên. "
+                        . "Nếu học viên không thấy thư (kể cả mục Spam), mật khẩu tạm là: {$plainPassword} — chỉ hiện một lần này.");
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Gửi email tài khoản cho {$user->email} thất bại: " . $e->getMessage());
+
+                return redirect()->route('admin.users.index')
+                    ->with('warning', "Đã tạo tài khoản {$user->email} nhưng GỬI EMAIL THẤT BẠI. "
+                        . "Mật khẩu tạm: {$plainPassword} — hãy gửi tay cho học viên, mật khẩu chỉ hiện một lần này.");
+            }
+        }
+
         return redirect()->route('admin.users.index')
             ->with('success', "Đã tạo tài khoản {$user->email}. Mật khẩu: {$plainPassword} — hãy gửi cho học viên ngay, mật khẩu chỉ hiện một lần này. Học viên sẽ phải đổi ở lần đăng nhập đầu.");
     }

@@ -79,6 +79,19 @@
             @enderror
         </div>
 
+        {{-- Gửi luôn thông tin đăng nhập vào email học viên — khỏi phải copy mật khẩu gửi tay. --}}
+        <div class="mb-6 p-4 rounded-xl border border-blue-100 bg-blue-50">
+            <input type="hidden" name="send_credentials" value="0">
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" name="send_credentials" value="1" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                       {{ old('send_credentials', '1') === '1' ? 'checked' : '' }}>
+                <span class="text-sm">
+                    <span class="font-semibold text-gray-900">Gửi email thông tin đăng nhập cho học viên</span>
+                    <span class="block text-gray-600 mt-0.5">Email gồm địa chỉ đăng nhập, mật khẩu tạm và nút "Đăng nhập ngay". Học viên phải đổi mật khẩu ở lần đăng nhập đầu.</span>
+                </span>
+            </label>
+        </div>
+
         <!-- Actions -->
         <div class="flex gap-3">
             <x-button type="submit">
