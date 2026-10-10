@@ -15,7 +15,7 @@
             <template x-if="!currentQuestion.audio_path">
                 <div class="flex items-center gap-3 text-gray-400 py-2">
                     <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-                    <span class="text-sm font-medium">No audio available</span>
+                    <span class="text-sm font-medium">Chưa có file nghe</span>
                 </div>
             </template>
         </div>
@@ -27,8 +27,8 @@
         </div>
 
         {{-- Title display near choices --}}
-        <div class="mb-4 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100/50" x-show="currentQuestion.title">
-            <h5 class="text-[11px] font-bold text-indigo-500 tracking-wide mb-0" x-text="currentQuestion.title"></h5>
+        <div class="mb-4 bg-blue-50/50 p-3 rounded-lg border border-blue-100/50" x-show="currentQuestion.title">
+            <h5 class="text-[11px] font-bold text-blue-500 tracking-wide mb-0" x-text="currentQuestion.title"></h5>
         </div>
 
         {{-- Radio Choices --}}
@@ -54,16 +54,7 @@
         {{-- Feedback --}}
         <template x-if="hasAnswered(currentQuestion.id)">
             <div class="text-sm">
-                <div x-show="listeningPart1Answer == currentQuestion.metadata.correct_answer" class="flex items-center text-green-600 font-bold">
-                    <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    Correct!
-                </div>
-                <div x-show="listeningPart1Answer != currentQuestion.metadata.correct_answer" class="flex items-center text-red-600">
-                    <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    <span class="font-bold">Incorrect.</span>
-                    <span class="ml-1 text-gray-600">Answer:</span>
-                    <span class="ml-1 font-bold text-green-600" x-text="currentQuestion.metadata.choices[currentQuestion.metadata.correct_answer]"></span>
-                </div>
+                <x-ui.verdict ok="listeningPart1Answer == currentQuestion.metadata.correct_answer" answer="currentQuestion.metadata.choices[currentQuestion.metadata.correct_answer]" />
             </div>
         </template>
 

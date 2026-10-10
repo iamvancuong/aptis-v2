@@ -1,27 +1,18 @@
-{{-- Generic Feedback Footer (Reusable across skills) --}}
-{{-- For Writing, we use AI feedback or Sample Answers instead of simple right/wrong --}}
+{{-- Phản hồi chung sau khi kiểm tra một câu (trắc nghiệm). Writing/Speaking dùng nhận xét AI riêng. --}}
 <template x-if="currentQuestion.skill !== 'writing' && currentQuestion.skill !== 'speaking'">
-    <div x-show="hasAnswered(currentQuestion.id)" 
-         class="px-6 pb-6 bg-gray-50 border-t border-gray-100 pt-4">
-        <div class="flex items-start">
-            <div class="flex-shrink-0">
-                <span class="flex items-center justify-center h-8 w-8 rounded-full"
-                      :class="feedback[currentQuestion.id]?.correct ? 'bg-green-100' : 'bg-red-100'">
-                    <svg class="w-5 h-5" :class="feedback[currentQuestion.id]?.correct ? 'text-green-600' : 'text-red-600'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path x-show="feedback[currentQuestion.id]?.correct" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        <path x-show="!feedback[currentQuestion.id]?.correct" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </span>
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium" :class="feedback[currentQuestion.id]?.correct ? 'text-green-800' : 'text-red-800'">
-                    <span x-text="feedback[currentQuestion.id]?.correct ? 'Well done!' : 'Review your answers above.'"></span>
-                </h3>
-                <div class="mt-4" x-show="currentQuestion.metadata.explanation">
-                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                        <span class="font-semibold text-blue-800 block mb-2">Giải thích / Transcript:</span>
-                        <div class="text-sm text-gray-700 whitespace-pre-wrap" x-html="currentQuestion.metadata.explanation"></div>
-                    </div>
+    <div x-show="hasAnswered(currentQuestion.id)" class="px-5 sm:px-6 py-4 bg-gray-50 border-t border-gray-100">
+        <div class="flex items-start gap-3">
+            <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                  :class="feedback[currentQuestion.id]?.correct ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'">
+                <x-ui.icon name="check" class="w-4 h-4" x-show="feedback[currentQuestion.id]?.correct" />
+                <x-ui.icon name="x" class="w-4 h-4" x-show="!feedback[currentQuestion.id]?.correct" />
+            </span>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold pt-1.5" :class="feedback[currentQuestion.id]?.correct ? 'text-emerald-800' : 'text-red-800'"
+                   x-text="feedback[currentQuestion.id]?.correct ? 'Chính xác, làm tốt lắm!' : 'Chưa đúng hết — xem lại các ý đánh dấu đỏ ở trên.'"></p>
+                <div class="mt-3 bg-white rounded-xl p-4 border border-gray-200" x-show="currentQuestion.metadata.explanation">
+                    <p class="text-sm font-semibold text-gray-900 mb-1.5">Giải thích / Transcript</p>
+                    <div class="text-sm text-gray-700 whitespace-pre-wrap" x-html="currentQuestion.metadata.explanation"></div>
                 </div>
             </div>
         </div>

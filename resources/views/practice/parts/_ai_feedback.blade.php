@@ -1,18 +1,18 @@
 <div x-show="hasAnswered(currentQuestion.id)" class="mt-8 space-y-6">
     {{-- AI Action Button --}}
-    <div class="flex flex-col items-center justify-center p-6 bg-indigo-50 rounded-2xl border-2 border-dashed border-indigo-200" x-show="!aiFeedback[currentQuestion.id]">
+    <div class="flex flex-col items-center justify-center p-6 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200" x-show="!aiFeedback[currentQuestion.id]">
         <div class="text-center space-y-3">
-            <div class="flex items-center justify-center gap-2 text-indigo-700 font-bold text-lg">
+            <div class="flex items-center justify-center gap-2 text-blue-700 font-bold text-lg">
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                 <span>Nhận xét chi tiết bằng AI</span>
             </div>
-            <p class="text-indigo-600/80 text-sm max-w-md">
+            <p class="text-blue-600/80 text-sm max-w-md">
                 Phân tích lỗi ngữ pháp, từ vựng và gợi ý cách diễn đạt hay hơn chuẩn APTIS.
             </p>
             <button 
                 @click="getAiFeedback()"
                 :disabled="isSaving || isAiLoading[currentQuestion.id] || (aiUsageStatus[currentQuestion.part]?.remaining <= 0 && !{{ auth()->user()->isAdmin() ? 'true' : 'false' }})"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all hover:scale-105 active:scale-95"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all hover:scale-105 active:scale-95"
             >
                 <template x-if="!isSaving && !isAiLoading[currentQuestion.id]">
                     <div class="flex items-center gap-2">
@@ -33,7 +33,7 @@
                     </div>
                 </template>
             </button>
-            <div class="text-xs text-indigo-500 font-medium mt-2">
+            <div class="text-xs text-blue-500 font-medium mt-2">
                 <template x-if="aiUsageStatus[currentQuestion.part]?.remaining === 'unlimited'">
                     <span>Lượt còn lại: Không giới hạn (Admin)</span>
                 </template>
@@ -57,9 +57,9 @@
 
     {{-- AI Feedback Content --}}
     <div x-show="aiFeedback[currentQuestion.id]" x-transition class="space-y-6">
-        <div class="bg-white border-2 border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
+        <div class="bg-white border-2 border-blue-100 rounded-2xl overflow-hidden shadow-sm">
             {{-- Header --}}
-            <div class="bg-indigo-600 px-6 py-4 flex items-center justify-between text-white">
+            <div class="bg-blue-600 px-6 py-4 flex items-center justify-between text-white">
                 <div class="flex items-center gap-2 font-bold">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span>Phân tích từ AI</span>
@@ -75,10 +75,10 @@
                         <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
                             <h4 class="font-bold text-gray-800 capitalize flex items-center justify-between">
                                 <span class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     <span x-text="criteria.replace('_', ' ')"></span>
                                 </span>
-                                <span class="px-2 py-1 bg-white text-indigo-700 font-bold rounded-lg text-sm shadow-sm border border-indigo-100" x-text="(aiFeedback[currentQuestion.id]?.scores?.scores[criteria] ?? 0) + '/5'"></span>
+                                <span class="px-2 py-1 bg-white text-blue-700 font-bold rounded-lg text-sm shadow-sm border border-blue-100" x-text="(aiFeedback[currentQuestion.id]?.scores?.scores[criteria] ?? 0) + '/5'"></span>
                             </h4>
                             <p class="text-sm text-gray-700 leading-relaxed" x-text="aiFeedback[currentQuestion.id]?.scores?.feedback[criteria]"></p>
                         </div>
@@ -114,7 +114,7 @@
 
                 {{-- Schema v3: Part-Specific Responses --}}
                 <div x-show="aiFeedback[currentQuestion.id]?.scores?.schema_version >= 3 && aiFeedback[currentQuestion.id]?.scores?.part_responses" class="pt-6 border-t border-gray-100 space-y-6">
-                    <h4 class="font-bold text-indigo-700 flex items-center gap-2">
+                    <h4 class="font-bold text-blue-700 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         Phân tích & Bài mẫu chi tiết từng phần
                     </h4>
@@ -122,11 +122,11 @@
                     <div class="space-y-6">
                         <template x-for="(response, idx) in aiFeedback[currentQuestion.id]?.scores?.part_responses" :key="idx">
                             <div class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm relative overflow-hidden">
-                                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                                <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                                 
                                 {{-- Target Label --}}
                                 <div class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs" x-text="idx + 1"></span>
+                                    <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs" x-text="idx + 1"></span>
                                     <span x-text="response.label || ('Phần ' + (idx + 1))"></span>
                                 </div>
                                 
@@ -140,7 +140,7 @@
                                                     <span class="text-red-500 mt-0.5"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></span>
                                                     <div>
                                                         <span class="text-gray-500 line-through" x-text="correction.original"></span>
-                                                        <span class="mx-2 text-indigo-400">→</span>
+                                                        <span class="mx-2 text-blue-400">→</span>
                                                         <span class="font-bold text-green-600" x-text="correction.corrected"></span>
                                                     </div>
                                                 </div>
@@ -152,8 +152,8 @@
 
                                 {{-- The Improved Sample --}}
                                 <div>
-                                    <div class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Mẫu tối ưu</div>
-                                    <div class="bg-indigo-50/50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-indigo-100" x-text="response.improved_sample"></div>
+                                    <div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Mẫu tối ưu</div>
+                                    <div class="bg-blue-50/50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed border border-blue-100" x-text="response.improved_sample"></div>
                                 </div>
                             </div>
                         </template>
@@ -162,18 +162,18 @@
 
                 {{-- Fallback for Schema v1/v2 (Legacy Improved Sample) --}}
                 <div x-show="!aiFeedback[currentQuestion.id]?.scores?.schema_version || aiFeedback[currentQuestion.id]?.scores?.schema_version < 3" class="pt-6 border-t border-gray-100 space-y-4">
-                    <h4 class="font-bold text-indigo-700 flex items-center gap-2">
+                    <h4 class="font-bold text-blue-700 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         Bài viết mẫu tối ưu (Nhấn để xem)
                     </h4>
                     <div 
                         x-data="{ expanded: false }" 
                         @click="expanded = !expanded"
-                        class="cursor-pointer group relative bg-indigo-50/30 rounded-2xl p-6 border border-indigo-100 transition-all hover:bg-indigo-50"
+                        class="cursor-pointer group relative bg-blue-50/30 rounded-2xl p-6 border border-blue-100 transition-all hover:bg-blue-50"
                     >
                         <div class="text-gray-700 leading-relaxed whitespace-pre-wrap" :class="expanded ? '' : 'line-clamp-3'" x-text="aiFeedback[currentQuestion.id]?.scores?.improved_sample"></div>
                         <div x-show="!expanded" class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white/80 to-transparent flex items-end justify-center pb-2">
-                            <span class="text-indigo-500 font-bold text-xs uppercase tracking-wider group-hover:translate-y-[-2px] transition-transform">Xem thêm</span>
+                            <span class="text-blue-500 font-bold text-xs uppercase tracking-wider group-hover:translate-y-[-2px] transition-transform">Xem thêm</span>
                         </div>
                     </div>
                 </div>

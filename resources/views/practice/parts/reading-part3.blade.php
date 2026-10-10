@@ -3,7 +3,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {{-- LEFT: Texts (each has a reader name, default A - D) --}}
         <div>
-            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Texts</h4>
+            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Đoạn văn</h4>
             <div class="space-y-4">
                 <template x-for="(opt, idx) in currentQuestion.metadata.options" :key="idx">
                     <div class="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
@@ -23,7 +23,7 @@
 
         {{-- RIGHT: Questions with Dropdowns --}}
         <div>
-            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Questions</h4>
+            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Câu hỏi</h4>
             <div class="space-y-3">
                 <template x-for="(q, qIdx) in currentQuestion.metadata.questions" :key="qIdx">
                     <div class="p-4 bg-white rounded-lg border transition-all"
@@ -43,7 +43,7 @@
                             :style="getPart3SelectStyle(qIdx)"
                             :disabled="hasAnswered(currentQuestion.id)"
                         >
-                            <option value="" disabled>- Select person -</option>
+                            <option value="" disabled>- Chọn người -</option>
                             <template x-for="(opt, oIdx) in currentQuestion.metadata.options" :key="oIdx">
                                 <option :value="oIdx" x-text="(currentQuestion.metadata.names && currentQuestion.metadata.names[oIdx]) ? currentQuestion.metadata.names[oIdx] : ('Person ' + String.fromCharCode(65 + oIdx))"></option>
                             </template>
@@ -52,18 +52,7 @@
                         {{-- Feedback --}}
                         <template x-if="hasAnswered(currentQuestion.id)">
                             <div class="mt-2 flex items-center gap-2 text-sm">
-                                {{-- Correct --}}
-                                <div x-show="part3Answers[qIdx] == currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-green-600 font-bold">
-                                    <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                    Correct
-                                </div>
-                                {{-- Incorrect --}}
-                                <div x-show="part3Answers[qIdx] != currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-red-600">
-                                    <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    <span class="font-bold">Incorrect.</span>
-                                    <span class="ml-1 text-gray-600">Answer:</span>
-                                    <span class="ml-1 font-bold text-green-600" x-text="(currentQuestion.metadata.names && currentQuestion.metadata.names[currentQuestion.metadata.correct_answers[qIdx]]) ? currentQuestion.metadata.names[currentQuestion.metadata.correct_answers[qIdx]] : ('Person ' + String.fromCharCode(65 + Number(currentQuestion.metadata.correct_answers[qIdx])))"></span>
-                                </div>
+                                <x-ui.verdict ok="part3Answers[qIdx] == currentQuestion.metadata.correct_answers[qIdx]" answer="(currentQuestion.metadata.names && currentQuestion.metadata.names[currentQuestion.metadata.correct_answers[qIdx]]) ? currentQuestion.metadata.names[currentQuestion.metadata.correct_answers[qIdx]] : ('Person ' + String.fromCharCode(65 + Number(currentQuestion.metadata.correct_answers[qIdx])))" />
                             </div>
                         </template>
                     </div>

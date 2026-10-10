@@ -103,21 +103,21 @@
                         {{-- Sample Answers --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {{-- Task 1 Sample --}}
-                            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5">
-                                <h4 class="font-bold text-indigo-800 mb-3 flex items-center gap-2">
+                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-5">
+                                <h4 class="font-bold text-blue-800 mb-3 flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13.536 14.95a1 1 0 01-1.414 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414zM16.243 16.243a1 1 0 01-1.414 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414z" /></svg>
                                     Sample Answer (Task 1)
                                 </h4>
-                                <div class="text-sm text-indigo-900 whitespace-pre-line leading-relaxed italic" x-text="currentQuestion.metadata.task1?.sample_answer"></div>
+                                <div class="text-sm text-blue-900 whitespace-pre-line leading-relaxed italic" x-text="currentQuestion.metadata.task1?.sample_answer"></div>
                             </div>
                             
                             {{-- Task 2 Sample --}}
-                            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5">
-                                <h4 class="font-bold text-indigo-800 mb-3 flex items-center gap-2">
+                            <div class="bg-blue-50 border border-blue-100 rounded-xl p-5">
+                                <h4 class="font-bold text-blue-800 mb-3 flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 112 0v1a1 1 0 11-2 0zM13.536 14.95a1 1 0 01-1.414 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414zM16.243 16.243a1 1 0 01-1.414 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414z" /></svg>
                                     Sample Answer (Task 2)
                                 </h4>
-                                <div class="text-sm text-indigo-900 whitespace-pre-line leading-relaxed italic" x-text="currentQuestion.metadata.task2?.sample_answer"></div>
+                                <div class="text-sm text-blue-900 whitespace-pre-line leading-relaxed italic" x-text="currentQuestion.metadata.task2?.sample_answer"></div>
                             </div>
                         </div>
                     </div>

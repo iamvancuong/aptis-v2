@@ -1,72 +1,53 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="min-h-screen bg-gray-50 flex flex-col" x-data="practiceSession(@js($questionsJson), '{{ route('practice.check', $set) }}')" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
-    {{-- Premium Header --}}
-    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-30 border-b border-gray-100 shadow-sm transition-all duration-300">
-        <div class="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 w-full">
-            {{-- Progress indicator line --}}
-            <div class="h-full bg-white/40 transition-all duration-500 ease-out flex justify-end" 
-                 :style="`width: ${100 - ((currentIndex + 1) / questions.length) * 100}%`"></div>
-        </div>
-        
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
-                {{-- Back Button --}}
-                @php
-                    $backRoute = $set->quiz->skill === 'grammar' 
-                        ? route('grammar.index') 
-                        : route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]);
-                @endphp
-                <a href="{{ $backRoute }}" 
-                   class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-all shrink-0">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                </a>
-                
-                {{-- Title Area --}}
-                <div class="flex flex-col flex-1 min-w-0 text-center sm:text-left md:flex-row md:items-baseline md:justify-center md:gap-3">
-                    <h1 class="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate tracking-tight">
-                        <span class="capitalize" x-text="currentQuestion?.skill || '{{ ucfirst($set->quiz->skill) }}'"></span> 
-                        {{-- Một bộ đề luyện tập chỉ thuộc một Part, nên nhãn tính sẵn ở
-                             server thay vì đọc từ từng câu hỏi. --}}
-                        {{ \App\Support\PartLabel::text($set->quiz->skill, $set->quiz->part) }}
-                        <span class="hidden md:inline text-gray-300 mx-1">|</span>
-                    </h1>
-                    <p class="text-sm font-medium text-indigo-600 truncate mt-0.5 md:mt-0">
-                        <span x-text="currentQuestion?.title || '{{ $set->name }}'"></span>
-                    </p>
-                </div>
+@section('title', \App\Support\SkillMeta::get($set->quiz->skill)['name'] . ' ' . \App\Support\PartLabel::text($set->quiz->skill, $set->quiz->part) . ' - Luyện tập - Milaedu')
 
-                {{-- Counter & Progress --}}
-                <div class="flex flex-col items-end shrink-0">
-                    <div class="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-semibold text-sm">
-                        <span x-text="currentIndex + 1"></span>
-                        <span class="text-indigo-300 opacity-60">/</span>
-                        <span x-text="questions.length"></span>
-                    </div>
-                </div>
+@section('content')
+<div class="flex flex-col max-w-6xl mx-auto" x-data="practiceSession(@js($questionsJson), '{{ route('practice.check', $set) }}')" style="-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;">
+    @php
+        $skillMeta = \App\Support\SkillMeta::get($set->quiz->skill);
+        $partLabel = \App\Support\PartLabel::text($set->quiz->skill, $set->quiz->part);
+        $backRoute = $set->quiz->skill === 'grammar'
+            ? route('grammar.index')
+            : route('sets.index', ['skill' => $set->quiz->skill, 'part' => $set->quiz->part]);
+    @endphp
+    {{-- Thanh đầu màn luyện: quay lại + tên phần đề + tiến độ câu. Dính đỉnh khi cuộn. --}}
+    <header class="sticky top-0 z-30 bg-white border border-gray-200 rounded-2xl overflow-hidden mb-5">
+        <div class="h-1 bg-gray-100">
+            <div class="h-full bg-blue-600 transition-all duration-500" :style="`width: ${((currentIndex + 1) / questions.length) * 100}%`"></div>
+        </div>
+        <div class="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3">
+            <a href="{{ $backRoute }}" aria-label="Quay lại danh sách đề"
+               class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-900 shrink-0">
+                <x-ui.icon name="arrow-left" class="w-4 h-4" />
+            </a>
+            <x-ui.icon-badge :skill="$set->quiz->skill" size="sm" class="hidden sm:flex" />
+            <div class="flex-1 min-w-0">
+                <h1 class="text-base font-semibold text-gray-900 truncate">{{ $skillMeta['name'] }} · {{ $partLabel }}</h1>
+                <p class="text-xs text-gray-500 truncate" x-text="currentQuestion?.title || @js($set->title)"></p>
             </div>
+            <span class="shrink-0 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold">
+                Câu <span x-text="currentIndex + 1"></span>/<span x-text="questions.length"></span>
+            </span>
         </div>
     </header>
 
     {{-- Main Content --}}
-    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 pb-32">
+    <main class="flex-1 w-full pb-28">
         
         {{-- Practice Step --}}
         <div x-show="step === 'practice'" class="mx-auto">
             <template x-if="currentQuestion">
                 {{-- data-vocab-scope: vùng duy nhất học viên bôi chọn được để tra
                      từ. Xem partials/vocab-lookup.blade.php. --}}
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden" data-vocab-scope>
+                <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden" data-vocab-scope>
                     {{-- Question Header --}}
-                    <div class="p-6 border-b border-gray-100 bg-blue-50">
-                        <div class="max-w-3xl mx-auto">
-                            <div class="text-base md:text-lg font-medium" x-text="currentQuestion.stem"></div>
-                        </div>
+                    <div class="px-5 sm:px-6 py-4 border-b border-gray-100 bg-gray-50" x-show="currentQuestion.stem">
+                        <div class="text-base font-medium text-gray-900" x-text="currentQuestion.stem"></div>
                     </div>
 
                     {{-- Question Content --}}
-                    <div class="p-6">
+                    <div class="p-5 sm:p-6">
                         @include('practice.parts.reading-part1')
                         @include('practice.parts.reading-part2')
                         @include('practice.parts.reading-part3')
@@ -98,88 +79,59 @@
 
     </main>
 
-    {{-- Footer Navigation --}}
-    <footer x-show="step === 'practice'" class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div class="w-full px-4 sm:px-6 lg:px-8 py-3">
-            <div class="flex items-center justify-between gap-3">
-                {{-- Left: Menu + Clock + Notes --}}
-                <div class="flex items-center gap-2">
-                    {{-- Hamburger Menu (Question Nav) --}}
-                    <div class="relative">
-                        <button @click="showNavMenu = !showNavMenu" class="p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                            <svg class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                        </button>
-                        {{-- Dropdown Nav Panel --}}
-                        <div x-show="showNavMenu" @click.outside="showNavMenu = false" x-transition 
-                             class="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[280px] sm:min-w-[340px] max-w-[90vw] max-h-[60vh] flex flex-col z-50 overflow-hidden">
-                            
-                            {{-- Sticky Header with Search --}}
-                            <div class="flex items-center justify-between p-3 border-b border-gray-100 bg-gray-50 shrink-0">
-                                <p class="text-xs text-gray-500 uppercase font-bold tracking-wide">Danh sách câu hỏi</p>
-                            </div>
-                            <div class="p-2 border-b border-gray-100 bg-white shrink-0">
-                                <div class="relative">
-                                    <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                    <input type="text" x-model="searchQuery" placeholder="Tìm kiếm nội dung đề bài..." 
-                                        class="w-full text-sm pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                                    <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600">
-                                        <svg class="w-4 h-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {{-- Scrollable List view --}}
-                            <div class="flex-1 overflow-y-auto bg-gray-50 p-2 space-y-2">
-                                <template x-if="filteredQuestions().length === 0">
-                                    <div class="text-sm text-center text-gray-500 py-4">Không tìm thấy câu hỏi phù hợp</div>
-                                </template>
-                                <template x-for="q in filteredQuestions()" :key="q.originalIndex">
-                                    <button @click="jumpTo(q.originalIndex); showNavMenu = false; searchQuery = ''"
-                                        class="w-full text-left bg-white p-3 rounded-lg border shadow-sm hover:border-indigo-300 transition-colors flex items-start gap-3"
-                                        :class="currentIndex === q.originalIndex ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-gray-200'">
-                                        
-                                        <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold border-2 shrink-0"
-                                            :class="getNavCircleClass(q.originalIndex, q.id)">
-                                            <span x-text="q.originalIndex + 1"></span>
-                                        </div>
-
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">{{ \App\Support\PartLabel::text($set->quiz->skill, $set->quiz->part) }}</p>
-                                            <p class="text-sm text-gray-800 line-clamp-2" x-text="q.title || q.stem || 'Câu hỏi #' + (q.originalIndex + 1)"></p>
-                                        </div>
-                                    </button>
-                                </template>
+    {{-- Thanh điều khiển cố định đáy màn hình --}}
+    <footer x-show="step === 'practice'" class="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 pb-safe">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                {{-- Danh sách câu hỏi --}}
+                <div class="relative">
+                    <x-button variant="secondary" icon="list" x-on:click="showNavMenu = !showNavMenu" aria-label="Danh sách câu hỏi">
+                        <span class="hidden sm:inline">Danh sách câu</span>
+                    </x-button>
+                    <div x-show="showNavMenu" x-cloak @click.outside="showNavMenu = false" x-transition
+                         class="absolute bottom-full left-0 mb-2 bg-white rounded-xl shadow-lg border border-gray-200 w-[min(340px,90vw)] max-h-[60vh] flex flex-col z-50 overflow-hidden">
+                        <div class="p-3 border-b border-gray-100">
+                            <p class="text-sm font-semibold text-gray-900 mb-2">Danh sách câu hỏi</p>
+                            <div class="relative">
+                                <x-ui.icon name="search" class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+                                <input type="text" x-model="searchQuery" placeholder="Tìm trong nội dung đề…"
+                                       class="w-full text-sm pl-8 pr-8 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                <button type="button" x-show="searchQuery" @click="searchQuery = ''" aria-label="Xoá tìm kiếm"
+                                        class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
+                                    <x-ui.icon name="x" class="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
+                        <div class="flex-1 overflow-y-auto p-2 space-y-1.5">
+                            <template x-if="filteredQuestions().length === 0">
+                                <p class="text-sm text-center text-gray-500 py-4">Không tìm thấy câu hỏi phù hợp</p>
+                            </template>
+                            <template x-for="q in filteredQuestions()" :key="q.originalIndex">
+                                <button type="button" @click="jumpTo(q.originalIndex); showNavMenu = false; searchQuery = ''"
+                                        class="w-full text-left p-2.5 rounded-lg border transition-colors flex items-start gap-3 hover:bg-gray-50"
+                                        :class="currentIndex === q.originalIndex ? 'border-blue-500 bg-blue-50/50' : 'border-transparent'">
+                                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 shrink-0"
+                                          :class="getNavCircleClass(q.originalIndex, q.id)" x-text="q.originalIndex + 1"></span>
+                                    <span class="text-sm text-gray-800 line-clamp-2" x-text="q.title || q.stem || 'Câu ' + (q.originalIndex + 1)"></span>
+                                </button>
+                            </template>
+                        </div>
                     </div>
-
-                    {{-- Clock --}}
-                    <button class="p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <svg class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </button>
-
-                    {{-- Tra từ / Sổ tay từ vựng --}}
-                    @if(config('aptis.vocab.enabled'))
-                        <a href="{{ route('vocab.index') }}" target="_blank" rel="noopener"
-                           class="p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-                           title="Sổ tay từ vựng — bôi đen chữ trong bài để tra nghĩa">
-                            <svg class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            <span class="text-sm text-gray-500 hidden sm:inline">Sổ tay từ vựng</span>
-                        </a>
-                    @endif
                 </div>
 
-                {{-- Right: Unified Action Button --}}
-                <div class="flex items-center gap-3">
-                    <button @click="handleFooterAction()"
-                        class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center gap-2">
-                        <span x-text="getFooterButtonText()"></span>
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                    </button>
-                </div>
+                {{-- Tra từ / Sổ tay từ vựng --}}
+                @if(config('aptis.vocab.enabled'))
+                    <x-button variant="secondary" icon="book" :href="route('vocab.index')" target="_blank" rel="noopener"
+                              title="Sổ tay từ vựng — bôi đen chữ trong bài để tra nghĩa">
+                        <span class="hidden sm:inline">Sổ tay từ vựng</span>
+                    </x-button>
+                @endif
             </div>
+
+            {{-- Nút hành động chính: Kiểm tra / Tiếp theo / Hoàn thành --}}
+            <x-button x-on:click="handleFooterAction()">
+                <span x-text="getFooterButtonText()"></span> →
+            </x-button>
         </div>
     </footer>
 </div>
@@ -698,7 +650,7 @@
                 const qId = this.currentQuestion.id;
                 const isSelected = this.listeningPart4Answers[qIdx] === cIdx;
                 if (!this.hasAnswered(qId)) {
-                    return isSelected ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:bg-gray-50';
+                    return isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50';
                 }
                 const correctIdx = parseInt(this.currentQuestion.metadata.correct_answers[qIdx]);
                 if (cIdx === correctIdx) return 'border-green-500 bg-green-50';
@@ -1089,9 +1041,9 @@
                         }
                     } else if (q.skill === 'speaking') {
                         // Speaking doesn't submit instantly on footer click if not answered.
-                        // It forces user to press the big Start Recording button in the UI.
+                        // It forces user to press the big Bắt đầu ghi âm button in the UI.
                         if (this.speakingState === 'idle') {
-                            alert('Vui lòng nhấn Start Recording để thu âm trước khi chuyển tiếp.');
+                            alert('Vui lòng nhấn Bắt đầu ghi âm để thu âm trước khi chuyển tiếp.');
                             return;
                         } else {
                             alert('Đang trong quá trình thu âm, vui lòng đợi.');
@@ -1326,7 +1278,7 @@
                 if (fb && fb.correct) return base + " bg-green-500 text-white border-green-600";
                 if (fb && fb.correct === false) return base + " bg-red-500 text-white border-red-600";
                 // Self-check (graded but null correct/incorrect)
-                return base + " bg-indigo-500 text-white border-indigo-600";
+                return base + " bg-blue-500 text-white border-blue-600";
             }
         };
     }

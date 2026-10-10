@@ -52,7 +52,7 @@
             <input type="number" name="score_min" min="0" max="100" value="{{ $scoreMin }}" placeholder="0"
                    class="mt-1 block w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900">
         </label>
-        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">Áp dụng</button>
+        <x-button type="submit">Áp dụng</x-button>
         @if($dangLoc)
             <a href="{{ route($baseRoute, ['mode' => $mode]) }}" class="px-2 py-2 text-sm text-gray-500 hover:text-gray-800">Xoá lọc</a>
         @endif
@@ -76,7 +76,6 @@
                     $laThiThu = in_array($attempt->mode, ['mock', 'mock_test'], true);
                     $tenBai = $attempt->set->title ?? ($attempt->set->quiz->title ?? ($laThiThu ? 'Thi thử ' . $meta['name'] : $meta['name']));
                     $diem = $attempt->score !== null ? (float) $attempt->score : null;
-                    $diemTone = $diem === null ? 'bg-gray-100 text-gray-500' : ($diem >= 80 ? 'bg-emerald-50 text-emerald-700' : ($diem >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'));
                 @endphp
                 <li class="group relative flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 hover:bg-gray-50 transition-colors">
                     <x-ui.icon-badge :skill="$attempt->skill" size="sm" />
@@ -108,9 +107,7 @@
                             <span class="hidden sm:inline-flex px-2 py-1 rounded-lg text-xs font-bold {{ $aptis['color']['badge'] }}"
                                   title="Điểm Aptis ước tính {{ $aptis['scale'] }}/50">{{ $aptis['level'] }} · {{ $aptis['scale'] }}/50</span>
                         @endif
-                        <span class="min-w-[3.5rem] text-center px-2.5 py-1 rounded-lg text-sm font-bold {{ $diemTone }}">
-                            {{ $diem !== null ? number_format($diem, 0) . '%' : 'Chờ chấm' }}
-                        </span>
+                        <x-ui.score :value="$diem" />
                         <span class="text-gray-300 group-hover:text-blue-500 transition-colors" aria-hidden="true">→</span>
                     </div>
                 </li>

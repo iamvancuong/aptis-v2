@@ -39,7 +39,7 @@
             <!-- Playing Audio State -->
             <div x-show="speakingState === 'playing_audio'" class="text-amber-500 flex flex-col items-center">
                 <svg class="w-12 h-12 animate-pulse mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                <div class="text-lg font-medium animate-pulse">Playing audio...</div>
+                <div class="text-lg font-medium animate-pulse">Đang phát câu hỏi…</div>
             </div>
 
             <!-- Recording State -->
@@ -52,21 +52,21 @@
                     </svg>
                     <div class="text-3xl font-bold text-red-600 absolute" x-text="formatTime(speakingTimer)"></div>
                 </div>
-                <div class="text-sm font-semibold text-red-600 uppercase tracking-widest animate-pulse">Recording...</div>
+                <div class="text-sm font-semibold text-red-600 uppercase tracking-widest animate-pulse">Đang ghi âm…</div>
             </div>
             
             <!-- Idle State -->
             <div x-show="speakingState === 'idle'" class="mt-4">
                 <button @click="startSpeakingPart()" class="px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-3">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                    Start Recording
+                    Bắt đầu ghi âm
                 </button>
             </div>
             
             <!-- Saving State -->
             <div x-show="speakingState === 'saving'" class="text-amber-600 flex flex-col items-center">
                 <svg class="w-10 h-10 animate-spin mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                <div class="text-sm font-medium">Processing Audio...</div>
+                <div class="text-sm font-medium">Đang xử lý ghi âm…</div>
             </div>
         </div>
     </div>

@@ -51,9 +51,9 @@
 
                         {{-- Sample Answer --}}
                         <template x-if="currentQuestion.metadata?.sample_answer">
-                            <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                                <h4 class="font-bold text-indigo-800 mb-2">Đáp án gợi ý (Sample Answer)</h4>
-                                <div class="text-sm text-indigo-900 space-y-2">
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                                <h4 class="font-bold text-blue-800 mb-2">Đáp án gợi ý (Sample Answer)</h4>
+                                <div class="text-sm text-blue-900 space-y-2">
                                      <template x-for="(value, key) in currentQuestion.metadata.sample_answer" :key="key">
                                         <div>
                                             <span class="font-semibold" x-text="key + ':'"></span>

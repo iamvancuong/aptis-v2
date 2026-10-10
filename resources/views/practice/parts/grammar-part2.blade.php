@@ -10,7 +10,7 @@
                 <span class="font-medium text-gray-400 uppercase text-xs tracking-wide w-16 shrink-0">Example</span>
                 <span class="font-semibold text-gray-700" x-text="currentQuestion.metadata.example.left"></span>
                 <span class="text-gray-300 font-mono mx-1" x-text="currentQuestion.metadata.connector || '='"></span>
-                <span class="font-semibold text-indigo-600" x-text="currentQuestion.metadata.example.right"></span>
+                <span class="font-semibold text-blue-600" x-text="currentQuestion.metadata.example.right"></span>
             </div>
         </template>
 
@@ -107,13 +107,13 @@
 
         {{-- Explanation --}}
         <template x-if="hasAnswered(currentQuestion.id) && currentQuestion.explanation">
-            <div class="mt-4 p-4 bg-purple-50 rounded-xl border border-purple-100 flex gap-3">
-                <div class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-lg flex items-center justify-center">
+            <div class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-3">
+                <div class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
                 <div class="flex-1">
-                    <p class="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1">Giải thích</p>
-                    <div class="prose prose-sm prose-purple max-w-none text-purple-900 leading-relaxed ck-content" x-html="currentQuestion.explanation"></div>
+                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Giải thích</p>
+                    <div class="prose prose-sm prose-purple max-w-none text-blue-900 leading-relaxed ck-content" x-html="currentQuestion.explanation"></div>
                 </div>
             </div>
         </template>

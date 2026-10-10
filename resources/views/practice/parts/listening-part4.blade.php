@@ -21,7 +21,7 @@
         {{-- Sub-questions with Radio Choices --}}
         <div class="space-y-6">
             <template x-for="(subQ, qIdx) in currentQuestion.metadata.questions" :key="qIdx">
-                <div class="border-l-4 border-indigo-400 bg-white rounded-r-lg p-5">
+                <div class="border-l-4 border-blue-400 bg-white rounded-r-lg p-5">
                     {{-- Sub-question text --}}
                     <p class="font-semibold text-gray-800 mb-4" x-html="subQ.question"></p>
 
@@ -38,7 +38,7 @@
                                     :value="cIdx"
                                     x-model.number="listeningPart4Answers[qIdx]"
                                     :disabled="hasAnswered(currentQuestion.id)"
-                                    class="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                                    class="w-4 h-4 text-blue-600 focus:ring-blue-500"
                                 >
                                 <span class="text-sm" x-text="choice"></span>
                             </label>
@@ -48,16 +48,7 @@
                     {{-- Per-question feedback --}}
                     <template x-if="hasAnswered(currentQuestion.id)">
                         <div class="mt-3 text-sm">
-                            <div x-show="listeningPart4Answers[qIdx] == currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-green-600 font-bold">
-                                <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                Correct
-                            </div>
-                            <div x-show="listeningPart4Answers[qIdx] != currentQuestion.metadata.correct_answers[qIdx]" class="flex items-center text-red-600">
-                                <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                <span class="font-bold">Incorrect.</span>
-                                <span class="ml-1 text-gray-600">Answer:</span>
-                                <span class="ml-1 font-bold text-green-600" x-text="subQ.choices[currentQuestion.metadata.correct_answers[qIdx]]"></span>
-                            </div>
+                            <x-ui.verdict ok="listeningPart4Answers[qIdx] == currentQuestion.metadata.correct_answers[qIdx]" answer="subQ.choices[currentQuestion.metadata.correct_answers[qIdx]]" />
                         </div>
                     </template>
                 </div>

@@ -54,10 +54,7 @@
                     :hint="$kq && $kq->best !== null ? round((float) $kq->best) . '%' : null" />
 
                 <div class="mt-4 pt-4 border-t border-gray-100">
-                    <a href="{{ route('practice.show', $set->id) }}"
-                       class="w-full inline-flex items-center justify-center px-3 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                        {{ $kq ? 'Luyện lại' : 'Bắt đầu luyện' }} →
-                    </a>
+                    <x-button :href="route('practice.show', $set->id)" class="w-full">{{ $kq ? 'Luyện lại' : 'Bắt đầu luyện' }} →</x-button>
                 </div>
             </x-ui.tile>
         @endforeach

@@ -22,7 +22,7 @@
                     <template x-if="!currentQuestion.metadata.audio_files || !currentQuestion.metadata.audio_files[sIdx]">
                         <div class="flex items-center gap-2 text-gray-400 py-2">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-                            <span class="text-xs">No audio</span>
+                            <span class="text-xs">Chưa có file nghe</span>
                         </div>
                     </template>
 
@@ -60,16 +60,7 @@
                     {{-- Per-speaker feedback --}}
                     <template x-if="hasAnswered(currentQuestion.id)">
                         <div class="mt-2 text-sm">
-                            <div x-show="listeningPart2Answers[sIdx] == currentQuestion.metadata.correct_answers[sIdx]" class="flex items-center text-green-600 font-bold">
-                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                Correct
-                            </div>
-                            <div x-show="listeningPart2Answers[sIdx] != currentQuestion.metadata.correct_answers[sIdx]" class="flex items-center text-red-600">
-                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                <span class="font-bold">Incorrect.</span>
-                                <span class="ml-1 text-gray-600">Answer:</span>
-                                <span class="ml-1 font-bold text-green-600" x-text="currentQuestion.metadata.choices[currentQuestion.metadata.correct_answers[sIdx]]"></span>
-                            </div>
+                            <x-ui.verdict ok="listeningPart2Answers[sIdx] == currentQuestion.metadata.correct_answers[sIdx]" answer="currentQuestion.metadata.choices[currentQuestion.metadata.correct_answers[sIdx]]" />
                         </div>
                     </template>
                 </div>
