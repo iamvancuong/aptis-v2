@@ -43,12 +43,18 @@
     .ftc-score td { font-size: 9pt; padding: 4px 0; border-bottom: 1px solid #d1d5db; }
     .ftc-score .ftc-th td { font-weight: 700; border-bottom: 1px solid #1e1b6e; }
     .ftc-score .ftc-num { text-align: right; }
-    .ftc-chart { border-collapse: separate !important; border-spacing: 5px 0; }
-    .ftc-chart td { height: 18px; font-size: 8pt; text-align: center; }
-    .ftc-chart .ftc-lv { text-align: left; width: 26px; color: #374151; border-top: 1px solid #e5e7eb; }
-    .ftc-chart .ftc-on { background: #e11d48; color: #fff; font-weight: 700; }
-    .ftc-chart .ftc-off { border-top: 1px solid #e5e7eb; }
-    .ftc-chart .ftc-x { font-size: 7pt; color: #374151; padding-top: 4px; height: auto; }
+    /* Biểu đồ theo bố cục phiếu điểm Aptis: cột mảnh, chữ bậc nằm TRÊN đỉnh cột,
+       lưới ngang chạy suốt các mức. Mỗi kỹ năng = [đệm][cột 22px][đệm]; cột là
+       NỀN của ô bảng (không phải <div>) nên liền mạch cả trên web lẫn dompdf —
+       dompdf cho hàng cao hơn khối bên trong, vẽ bằng <div> sẽ bị đứt khúc. */
+    .ftc-chart { table-layout: fixed; }
+    .ftc-chart td { height: 18px; font-size: 8pt; text-align: center; vertical-align: bottom; }
+    .ftc-chart .ftc-gh { text-align: left; font-weight: 700; font-size: 8.5pt; color: #1e1b4b; border-bottom: 1px solid #1e1b6e; padding-bottom: 3px; height: auto; }
+    .ftc-chart .ftc-lv { text-align: left; color: #374151; font-size: 8pt; vertical-align: top; }
+    .ftc-chart .ftc-grid td { border-top: 1px solid #d1d5db; }
+    .ftc-chart .ftc-grid td.ftc-on { background: #e1253a; border-top-color: #e1253a; }
+    .ftc-chart .ftc-bl { font-size: 8pt; font-weight: 700; color: #1e1b4b; padding-bottom: 2px; }
+    .ftc-chart .ftc-x { font-size: 7pt; line-height: 1.15; color: #374151; padding-top: 4px; height: auto; vertical-align: top; border-top: 1px solid #1e1b6e; }
     .ftc-note { font-size: 7.5pt; color: #4b5563; margin-top: 18px; }
 </style>
 
@@ -127,24 +133,41 @@
                 </td>
                 <td style="width: 52%;">
                     <div class="ftc-h">CEFR skill profile</div>
+                    @php
+                        $rank = fn ($lv) => \App\Support\AptisScale::rank((string) $lv);
+                        // Chữ bậc của cột đứng ở hàng NGAY TRÊN đỉnh cột; cột cao tới C
+                        // thì chữ nằm ở hàng đệm trên cùng.
+                        $labelRow = fn ($lv) => $rank($lv) + 1;
+                    @endphp
                     <table class="ftc-chart">
-                        <tr><td class="ftc-x" style="text-align: left; font-weight: 700;" colspan="6">CEFR grade</td></tr>
+                        <colgroup>
+                            <col style="width: 24px;">
+                            @foreach($bars as $lv)<col><col style="width: 22px;"><col>@endforeach
+                        </colgroup>
+                        <tr><td class="ftc-gh" colspan="{{ count($bars) * 3 + 1 }}">CEFR grade</td></tr>
+                        <tr>
+                            <td class="ftc-lv"></td>
+                            @foreach($bars as $lv)
+                                <td></td>
+                                <td>@if($labelRow($lv) === count($levels))<div class="ftc-bl">{{ $lv }}</div>@endif</td>
+                                <td></td>
+                            @endforeach
+                        </tr>
                         @foreach($levels as $row)
-                            <tr>
+                            <tr class="ftc-grid">
                                 <td class="ftc-lv">{{ $row }}</td>
-                                @foreach($bars as $name => $lv)
-                                    @php
-                                        $on = \App\Support\AptisScale::rank($lv) >= \App\Support\AptisScale::rank($row);
-                                        $top = $lv === $row;
-                                    @endphp
-                                    <td class="{{ $on ? 'ftc-on' : 'ftc-off' }}">{{ $top ? $lv : '' }}</td>
+                                @foreach($bars as $lv)
+                                    @php $on = $rank($lv) >= $rank($row); @endphp
+                                    <td></td>
+                                    <td class="{{ $on ? 'ftc-on' : '' }}">@if(! $on && $labelRow($lv) === $rank($row))<div class="ftc-bl">{{ $lv }}</div>@endif</td>
+                                    <td></td>
                                 @endforeach
                             </tr>
                         @endforeach
                         <tr>
                             <td></td>
                             @foreach($bars as $name => $lv)
-                                <td class="ftc-x">{{ $name }}</td>
+                                <td class="ftc-x" colspan="3">{!! $name === 'Overall' ? 'Overall<br>CEFR grade' : e($name) !!}</td>
                             @endforeach
                         </tr>
                     </table>
