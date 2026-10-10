@@ -22,7 +22,7 @@
                     <td class="px-4 py-3 font-medium text-gray-800">
                         {{ $row['label'] }}
                         @if($detailLinks && $row['mock'] && $row['submitted'] && $row['skill'] !== 'grammar')
-                            <a href="{{ route('mock-test.result', $row['mock']) }}" class="ml-2 text-xs text-indigo-600 hover:underline">chi tiết</a>
+                            <a href="{{ route('mock-test.result', $row['mock']) }}" class="ml-2 text-xs text-blue-600 hover:underline">chi tiết</a>
                         @endif
                     </td>
                     <td class="px-4 py-3 text-right font-semibold">
@@ -56,11 +56,9 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
         <p class="text-gray-700">
             Tổng 4 kỹ năng: <strong>{{ $report['total'] }}/200</strong> ·
-            Trình độ ước tính: <strong class="text-indigo-700">{{ $report['overall'] }}</strong>
+            Trình độ ước tính: <strong class="text-blue-700">{{ $report['overall'] }}</strong>
         </p>
-        <a href="{{ $pdfRoute }}" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow">
-            ⬇ Tải bảng điểm (PDF)
-        </a>
+        <x-button :href="$pdfRoute" icon="download">Tải bảng điểm (PDF)</x-button>
     </div>
 
     <div class="overflow-x-auto">

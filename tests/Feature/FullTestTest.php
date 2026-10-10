@@ -391,7 +391,8 @@ class FullTestTest extends TestCase
 
         $this->actingAs($u)->get(route('full-test.result', $ft))
             ->assertOk()
-            ->assertSee('vượt mục tiêu B1')          // đạt B2 > mục tiêu B1
+            ->assertSee('B1')                          // đạt B2 > mục tiêu B1 (lời chúc: FullTestCaption)
+            ->assertSee('Ăn mừng lại')
             ->assertSee('fullTestFireworks', false);
     }
 
@@ -402,8 +403,9 @@ class FullTestTest extends TestCase
 
         $this->actingAs($u)->get(route('full-test.result', $ft))
             ->assertOk()
-            ->assertSee('mục tiêu C không còn xa')
-            ->assertSee('Nên ưu tiên luyện <strong>Reading</strong> — đang 20/50', false)
+            ->assertSee('Reading (đang 20/50)')     // kỹ năng yếu nhất được gợi ý trong lời động viên
+            ->assertSee('Luyện Reading ngay')
+            ->assertDontSee('Ăn mừng lại')
             ->assertDontSee('fullTestFireworks', false);
     }
 

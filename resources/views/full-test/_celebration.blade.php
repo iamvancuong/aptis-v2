@@ -1,58 +1,44 @@
 {{--
-    Chúc mừng / động viên theo mục tiêu (users.target_level) — chỉ trang học viên.
-    Biến: $aim (FullTestService::aim), $fullTest.
+    Chúc mừng (đạt mục tiêu) hoặc chia buồn + động viên (chưa đạt) theo
+    users.target_level — chỉ trang học viên. Lời văn: App\Support\FullTestCaption.
+    Biến: $aim (FullTestService::aim), $report, $fullTest.
 
     Pháo hoa tự vẽ bằng canvas (không thêm thư viện). Tự bắn lần đầu mở trang
     của mỗi lượt thi; sau đó bấm "Ăn mừng lại". Tắt nếu máy bật "giảm chuyển động".
 --}}
 @php
-    $name = \Illuminate\Support\Str::of($fullTest->user->name ?? '')->trim()->afterLast(' ');
+    // Tên gọi = chữ cuối của họ tên (tiếng Việt: "Nguyễn Văn An" → "An").
+    $name = (string) \Illuminate\Support\Str::of($fullTest->user->name ?? '')->trim()->afterLast(' ');
+    $caption = \App\Support\FullTestCaption::for($aim, $report, $name, $fullTest->id);
+    $dat = $aim['reached'];
     $weak = $aim['weakest'];
 @endphp
 
-@if($aim['reached'])
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-white px-6 py-6 shadow-lg"
-         x-data="fullTestFireworks('ft-celebrated-{{ $fullTest->id }}')" x-init="autoPlay()">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div class="flex-1">
-                @if($aim['exceeded'])
-                    <h2 class="text-2xl font-extrabold">Xuất sắc{{ $name->isNotEmpty() ? ', ' . $name : '' }}! Bạn đã vượt mục tiêu {{ $aim['target'] }}</h2>
-                    <p class="mt-1 text-white/90">
-                        Trình độ ước tính <strong>{{ $aim['overall'] }}</strong> với {{ $report['total'] }}/200 điểm, cao hơn cả mục tiêu đặt ra.
-                        Bạn hoàn toàn có thể đặt mục tiêu cao hơn để thử thách bản thân!
-                    </p>
+<div @class([
+        'rounded-2xl border px-5 sm:px-6 py-5',
+        'bg-emerald-50 border-emerald-200' => $dat,
+        'bg-white border-gray-200' => ! $dat,
+     ])
+     @if($dat) x-data="fullTestFireworks('ft-celebrated-{{ $fullTest->id }}')" x-init="autoPlay()" @endif>
+    <div class="flex flex-col sm:flex-row sm:items-start gap-4">
+        <x-ui.icon-badge :icon="$dat ? 'trophy' : 'flag'" :tone="$dat ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-50 text-blue-600'" />
+        <div class="flex-1 min-w-0">
+            <h2 class="text-lg sm:text-xl font-bold {{ $dat ? 'text-emerald-900' : 'text-gray-900' }}">{{ $caption['title'] }}</h2>
+            <p class="mt-1.5 leading-relaxed {{ $dat ? 'text-emerald-800' : 'text-gray-600' }}">{{ $caption['body'] }}</p>
+
+            <div class="flex flex-wrap gap-2 mt-4">
+                @if($dat)
+                    <x-button variant="secondary" size="sm" x-on:click="play()">Ăn mừng lại</x-button>
                 @else
-                    <h2 class="text-2xl font-extrabold">Chúc mừng{{ $name->isNotEmpty() ? ' ' . $name : '' }}! Bạn đã chạm mục tiêu {{ $aim['target'] }}</h2>
-                    <p class="mt-1 text-white/90">
-                        Trình độ ước tính <strong>{{ $aim['overall'] }}</strong> với {{ $report['total'] }}/200 điểm.
-                        Công sức ôn luyện đã được đền đáp — giữ vững phong độ này tới ngày thi thật nhé!
-                    </p>
+                    @if($weak)
+                        <x-button size="sm" :href="route('skills.show', $weak['skill'])">Luyện {{ $weak['label'] }} ngay</x-button>
+                    @endif
+                    <x-button variant="secondary" size="sm" :href="route('full-test.index')">Về trang Full Test</x-button>
                 @endif
             </div>
-            <button type="button" @click="play()"
-                    class="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 font-semibold text-sm">
-                Ăn mừng lại
-            </button>
         </div>
     </div>
-@else
-    <div class="rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-6">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div class="flex-1">
-                <h2 class="text-xl font-extrabold text-indigo-900">
-                    Bạn đang ở {{ $aim['overall'] }} — mục tiêu {{ $aim['target'] }} không còn xa!
-                </h2>
-                <p class="mt-1 text-indigo-800/90">
-                    Còn khoảng <strong>{{ $aim['gap'] }} điểm</strong> (tổng 4 kỹ năng) nữa là chạm {{ $aim['target'] }}.
-                    @if($weak)
-                        Nên ưu tiên luyện <strong>{{ $weak['label'] }}</strong> — đang {{ $weak['scale'] }}/50 ({{ $weak['level'] }}).
-                    @endif
-                    Mỗi lượt luyện đều đưa bạn đến gần mục tiêu hơn, cố lên nhé!
-                </p>
-            </div>
-        </div>
-    </div>
-@endif
+</div>
 
 @if($aim['reached'])
 @once
