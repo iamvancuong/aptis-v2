@@ -207,6 +207,75 @@
                 return meta ? meta.getAttribute('content') : '';
             },
 
+            /**
+             * POST dùng chung cho màn luyện tập. Trước đây mọi lỗi (hết phiên, bị
+             * đăng xuất, đang thi thử, gọi quá nhanh, DB chập chờn) đều ra cùng
+             * một câu "Không lấy được kết quả" nên không ai biết vì sao.
+             *
+             * - 419 (mã CSRF cũ — vd. vừa đăng nhập lại ở tab khác): tự xin mã mới
+             *   rồi gửi lại 1 lần, học viên không mất bài đang làm dở.
+             * - retry=true: lỗi mạng / 5xx thử lại 1 lần sau 1,5 giây. CHỈ bật cho
+             *   thao tác đọc (kiểm tra đáp án) — nộp bài mà gửi lại có thể tạo
+             *   bài làm trùng nếu lần đầu thực ra đã lưu xong.
+             * - redirect:'manual': bị đá về trang đăng nhập thì nhận ra ngay, thay
+             *   vì nhận trang HTML 200 rồi vỡ khi đọc JSON.
+             */
+            async postJson(url, body, { retry = false } = {}) {
+                const isForm = body instanceof FormData;
+                for (let lan = 0; lan < 2; lan++) {
+                    let res;
+                    try {
+                        res = await fetch(url, {
+                            method: 'POST',
+                            redirect: 'manual',
+                            headers: Object.assign(
+                                { 'Accept': 'application/json', 'X-CSRF-TOKEN': this.getCsrfToken() },
+                                isForm ? {} : { 'Content-Type': 'application/json' }
+                            ),
+                            body: isForm ? body : JSON.stringify(body),
+                        });
+                    } catch (e) {
+                        if (retry && lan === 0) { await new Promise(r => setTimeout(r, 1500)); continue; }
+                        throw new Error('Mất kết nối mạng. Kiểm tra Internet rồi bấm lại nhé — bài đang làm vẫn còn nguyên.');
+                    }
+
+                    if (res.status === 419 && lan === 0 && await this.refreshCsrfToken()) continue;
+                    if (res.status >= 500 && retry && lan === 0) { await new Promise(r => setTimeout(r, 1500)); continue; }
+
+                    if (res.type === 'opaqueredirect' || res.status === 401 || res.status === 419) {
+                        throw new Error('Phiên đăng nhập đã hết (hoặc tài khoản vừa đăng nhập ở thiết bị khác). '
+                            + 'Hãy mở milaedu.com ở TAB MỚI để đăng nhập lại, rồi quay về tab này bấm lại — bài đang làm vẫn còn nguyên.');
+                    }
+
+                    let data = null;
+                    try { data = await res.json(); } catch (e) {}
+                    if (res.ok) return data;
+                    throw new Error(this.httpErrorMessage(res.status, data));
+                }
+            },
+
+            httpErrorMessage(status, data) {
+                if (status === 423 || status === 403 || status === 422) {
+                    return (data && data.message) || 'Thao tác này hiện chưa được phép.';
+                }
+                if (status === 429) return 'Bạn thao tác hơi nhanh — đợi khoảng 1 phút rồi bấm lại nhé.';
+                if (status >= 500) return 'Máy chủ đang bận. Vui lòng thử lại sau ít phút — bài đang làm vẫn còn nguyên.';
+                return 'Có lỗi xảy ra (mã ' + status + '). Vui lòng thử lại.';
+            },
+
+            async refreshCsrfToken() {
+                try {
+                    const res = await fetch('{{ route('csrf.token') }}', { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return false;
+                    const { token } = await res.json();
+                    if (!token) return false;
+                    document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', token);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            },
+
             // --- Lifecycle ---
             init() {
                 // Stamp each question with its position ONCE. The nav list reads
@@ -975,25 +1044,13 @@
                 if (q._revealed) return true;
 
                 try {
-                    const res = await fetch(this.checkUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        },
-                        body: JSON.stringify({ question_id: q.id }),
-                    });
-
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-
-                    const data = await res.json();
-                    Object.assign(q.metadata, data.answer_key || {});
+                    const data = await this.postJson(this.checkUrl, { question_id: q.id }, { retry: true });
+                    Object.assign(q.metadata, (data && data.answer_key) || {});
                     q._revealed = true;
                     this.questions = [...this.questions];
                     return true;
                 } catch (e) {
-                    alert('Không lấy được kết quả. Vui lòng kiểm tra kết nối và thử lại.');
+                    alert(e.message);
                     return false;
                 }
             },
@@ -1133,41 +1190,24 @@
                             });
                         });
                         
-                        const response = await fetch(`{{ route('practice.store', $set->id) }}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': this.getCsrfToken()
-                            },
-                            body: formData
-                        });
-                        if (!response.ok) throw new Error('Failed to save attempt with audio');
-                        const result = await response.json();
+                        const result = await this.postJson(`{{ route('practice.store', $set->id) }}`, formData);
                         this.attemptId = result.attempt_id;
                         this.answerIds = result.answer_ids || {};
                         this.redirectUrl = result.redirect;
                     } else {
                         // Standard JSON check
-                        const response = await fetch(`{{ route('practice.store', $set->id) }}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': this.getCsrfToken()
-                            },
-                            body: JSON.stringify({
-                                answers: this.answers,
-                                duration: 0,
-                                attempt_id: this.attemptId
-                            })
+                        const result = await this.postJson(`{{ route('practice.store', $set->id) }}`, {
+                            answers: this.answers,
+                            duration: 0,
+                            attempt_id: this.attemptId
                         });
-                        if (!response.ok) throw new Error('Failed to save attempt');
-                        const result = await response.json();
                         this.attemptId = result.attempt_id;
                         this.answerIds = result.answer_ids || {};
                         this.redirectUrl = result.redirect;
                     }
                 } catch (error) {
                     console.error("Submit error:", error);
-                    alert("Có lỗi xảy ra khi nộp bài. Vui lòng thử lại.");
+                    alert('Chưa lưu được bài: ' + error.message);
                 } finally {
                     this.isSaving = false;
                 }

@@ -88,6 +88,14 @@ Route::get('/robots.txt', function () {
 // session rồi chuyển tới trang đăng ký với gói chọn sẵn. VD: /dk/M1/thang
 Route::get('/dk/{sale}/{goi?}', [\App\Http\Controllers\RegistrationController::class, 'referral'])->name('referral');
 
+// Cấp lại mã CSRF cho trang đang mở lâu (màn luyện tập/thi). Khi phiên đổi
+// (đăng nhập lại ở tab khác) mã cũ trong trang hết hiệu lực → 419; JS gọi đây
+// lấy mã mới rồi gửi lại, học viên không mất bài đang làm. Mã CSRF không phải bí
+// mật (trang nào cũng nhúng sẵn trong HTML) nên không cần đăng nhập.
+Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]))
+    ->middleware('throttle:30,1')
+    ->name('csrf.token');
+
 // Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
