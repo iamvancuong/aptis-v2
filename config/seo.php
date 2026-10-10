@@ -7,6 +7,12 @@
  * viên đặt ở đây để dùng trong thẻ meta + structured data (nội dung thật, hợp lệ),
  * KHÔNG phải kỹ thuật giấu chữ cho bot.
  */
+// Công tắc DUY NHẤT cho việc hiện tên giảng viên trên trang công khai (giao diện,
+// title, meta, keywords, JSON-LD). Đã đổi ý vài lần (bỏ 10/2026 → hiện lại 08/10 →
+// bỏ 10/10) nên gom về một env: SEO_SHOW_INSTRUCTOR=true là hiện lại, khỏi sửa code.
+$hienTenGv = (bool) env('SEO_SHOW_INSTRUCTOR', false);
+$tenGv = env('SEO_INSTRUCTOR_NAME', 'Cô Dung');
+
 return [
     // Tên thương hiệu hiển thị trên tab, OG, structured data.
     'site_name' => env('SEO_SITE_NAME', 'Milaedu'),
@@ -20,9 +26,11 @@ return [
     // Mô tả mặc định (~150–160 ký tự). Chứa từ khóa tự nhiên.
     'default_description' => env('SEO_DEFAULT_DESCRIPTION', 'Nền tảng luyện thi Aptis online: đề thi thử sát thật, Chấm chữa writing và speaking chi tiết, lộ trình bám sát mục tiêu điểm. Học mọi lúc, mọi nơi.'),
 
-    // Từ khóa nền (dùng cho meta keywords + gợi ý nội dung). Tên giảng viên nằm ở
-    // đây như một cụm từ khóa thật gắn với thương hiệu.
-    'keywords' => env('SEO_KEYWORDS', 'luyện thi Aptis, Aptis online, luyện thi Aptis cùng cô Dung, cô Dung Aptis, Aptis Speaking, Aptis Writing, khóa học Aptis, thi thử Aptis'),
+    // Từ khóa nền (dùng cho meta keywords + gợi ý nội dung). Có tên giảng viên
+    // chỉ khi bật SEO_SHOW_INSTRUCTOR.
+    'keywords' => env('SEO_KEYWORDS', 'luyện thi Aptis, Aptis online, '
+        . ($hienTenGv ? 'luyện thi Aptis cùng ' . mb_strtolower($tenGv) . ', ' . mb_strtolower($tenGv) . ' Aptis, ' : '')
+        . 'Aptis Speaking, Aptis Writing, khóa học Aptis, thi thử Aptis'),
 
     // Ảnh chia sẻ mạng xã hội (OG/Twitter). Đặt file thật vào public/ sau.
     'og_image' => env('SEO_OG_IMAGE', '/images/og-default.png'),
@@ -35,10 +43,12 @@ return [
     // VD: SEO_GOOGLE_SITE_VERIFICATION=abc123xyz...
     'google_site_verification' => env('SEO_GOOGLE_SITE_VERIFICATION', ''),
 
-    // Thông tin giảng viên cho structured data Person + trang giới thiệu.
-    // Đây là NỘI DUNG THẬT, người dùng thấy được ở mục "Về giảng viên"/footer.
+    // Thông tin giảng viên cho trang giới thiệu (+ structured data Person khi hiện tên).
     'instructor' => [
-        'name'        => env('SEO_INSTRUCTOR_NAME', 'Cô Dung'),
+        'show'        => $hienTenGv,
+        'name'        => $tenGv,
+        // Cách gọi trên trang công khai: tên thật khi bật, chữ trung tính khi tắt.
+        'display'     => $hienTenGv ? $tenGv : 'đội ngũ giảng viên Milaedu',
         'job_title'   => env('SEO_INSTRUCTOR_TITLE', 'Giảng viên luyện thi Aptis'),
         // 2–3 dòng bio thật — bạn cập nhật nội dung chính xác sau.
         'bio'         => env('SEO_INSTRUCTOR_BIO', 'Nhiều năm luyện thi Aptis, trực tiếp chấm chữa Writing cho học viên đạt mục tiêu điểm.'),

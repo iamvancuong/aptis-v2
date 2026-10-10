@@ -2,9 +2,10 @@
 
 @php $gv = config('seo.instructor'); @endphp
 
-@section('title', 'Giới thiệu — Luyện thi Aptis cùng ' . $gv['name'])
-@section('meta_description', 'Tìm hiểu về Milaedu và ' . $gv['name'] . ' — ' . $gv['job_title'] . '. Luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing chi tiết.')
-@section('meta_keywords', $gv['name'] . ' Aptis, luyện thi Aptis cùng ' . $gv['name'] . ', giảng viên Aptis, luyện thi Aptis online, Milaedu')
+{{-- Tên giảng viên chỉ hiện khi bật SEO_SHOW_INSTRUCTOR (config/seo.php). --}}
+@section('title', $gv['show'] ? 'Giới thiệu — Luyện thi Aptis cùng ' . $gv['name'] : 'Giới thiệu Milaedu — Luyện thi Aptis online có chấm chữa')
+@section('meta_description', ($gv['show'] ? 'Tìm hiểu về Milaedu và ' . $gv['name'] . ' — ' . $gv['job_title'] . '.' : 'Tìm hiểu về Milaedu — nền tảng luyện thi Aptis online.') . ' Luyện thi Aptis online với đề thi thử sát thật và chấm chữa Writing chi tiết.')
+@section('meta_keywords', ($gv['show'] ? $gv['name'] . ' Aptis, luyện thi Aptis cùng ' . $gv['name'] . ', ' : 'giới thiệu Milaedu, ') . 'giảng viên Aptis, luyện thi Aptis online, Milaedu')
 @section('og_type', 'article')
 
 @push('head')
@@ -14,13 +15,13 @@
     '@type'    => 'AboutPage',
     'name'     => 'Giới thiệu Milaedu',
     'url'      => rtrim(config('app.url'), '/') . '/gioi-thieu',
-    'about'    => [
+    'about'    => $gv['show'] ? [
         '@type'       => 'Person',
         'name'        => $gv['name'],
         'jobTitle'    => $gv['job_title'],
         'description' => $gv['bio'],
         'knowsAbout'  => ['Aptis', 'Aptis Speaking', 'Aptis Writing', 'Luyện thi Aptis'],
-    ],
+    ] : ['@type' => 'EducationalOrganization', 'name' => config('seo.site_name')],
     'breadcrumb' => [
         '@type' => 'BreadcrumbList',
         'itemListElement' => [
@@ -38,7 +39,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
         <p class="text-sm font-bold tracking-widest uppercase text-blue-700 mb-3">Về chúng tôi</p>
         <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-tight">
-            Luyện thi Aptis cùng {{ $gv['name'] }} tại Milaedu
+            {{ $gv['show'] ? 'Luyện thi Aptis cùng ' . $gv['name'] . ' tại Milaedu' : 'Luyện thi Aptis online cùng Milaedu' }}
         </h1>
         <p class="mt-5 text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
             Milaedu là nền tảng luyện thi Aptis online, tập trung vào điều quan trọng nhất với người học:
@@ -53,14 +54,14 @@
         <div class="md:col-span-1">
             {{-- Ảnh thật nếu đã khai SEO_INSTRUCTOR_PHOTO, chưa có thì ô chữ cái đầu. --}}
             @if(!empty($gv['photo']))
-                <img src="{{ $gv['photo'] }}" alt="{{ $gv['name'] }} — {{ $gv['job_title'] }}"
+                <img src="{{ $gv['photo'] }}" alt="{{ $gv['show'] ? $gv['name'] . ' — ' : '' }}{{ $gv['job_title'] }}"
                      loading="lazy" class="aspect-square w-full rounded-2xl object-cover shadow-lg">
             @else
                 <div class="aspect-square rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 text-white flex items-center justify-center text-6xl font-extrabold shadow-lg">
-                    {{ \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim($gv['name']), ' '), 0, 1)) }}
+                    {{ $gv['show'] ? \Illuminate\Support\Str::upper(mb_substr(\Illuminate\Support\Str::afterLast(trim($gv['name']), ' '), 0, 1)) : 'M' }}
                 </div>
             @endif
-            <p class="mt-4 text-center font-bold text-slate-900 text-lg">{{ $gv['name'] }}</p>
+            <p class="mt-4 text-center font-bold text-slate-900 text-lg">{{ $gv['show'] ? $gv['name'] : 'Giảng viên Milaedu' }}</p>
             <p class="text-center text-sm text-slate-500">{{ $gv['job_title'] }}</p>
         </div>
         <div class="md:col-span-2">

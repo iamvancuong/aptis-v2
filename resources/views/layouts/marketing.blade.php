@@ -72,7 +72,11 @@
                 </div>
                 <p class="text-sm leading-relaxed max-w-md text-slate-400">
                     Nền tảng luyện thi Aptis online: đề thi thử sát thật, chấm chữa Writing chi tiết.
-                    Đồng hành cùng {{ config('seo.instructor.name') }} — {{ config('seo.instructor.job_title') }}.
+                    @if(config('seo.instructor.show'))
+                        Đồng hành cùng {{ config('seo.instructor.name') }} — {{ config('seo.instructor.job_title') }}.
+                    @else
+                        Đồng hành cùng đội ngũ giảng viên luyện thi Aptis giàu kinh nghiệm.
+                    @endif
                 </p>
             </div>
             <div>
