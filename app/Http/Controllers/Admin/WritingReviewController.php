@@ -20,9 +20,7 @@ class WritingReviewController extends Controller
         $filter = $request->get('filter', 'pending');
         $search = $request->get('search');
 
-        $query = Attempt::where('skill', 'writing')
-            ->whereIn('mode', ['mock', 'mock_test'])
-            ->where('is_grading_requested', true)
+        $query = Attempt::teacherQueue('writing')
             ->with(['user', 'set.quiz', 'attemptAnswers.writingReview', 'attemptAnswers.question']);
 
         if ($search) {
@@ -36,9 +34,7 @@ class WritingReviewController extends Controller
         // Bao gồm cả 'limit_reached' (học viên hết lượt AI) và 'pending'/'ai_graded' —
         // trước đây chỉ lấy pending/ai_graded nên bài limit_reached (thường là bài
         // ĐÃ TRẢ PHÍ nhờ giáo viên chấm) bị lọt khỏi hàng đợi.
-        $notGraded = function ($q) {
-            $q->where('grading_status', '!=', 'graded')->orWhereNull('grading_status');
-        };
+        $notGraded = Attempt::notGradedByTeacher('writing');
 
         if ($filter === 'pending') {
             $query->whereHas('attemptAnswers', $notGraded);

@@ -19,10 +19,7 @@ class SpeakingReviewController extends Controller
         $filter = $request->query('status', 'pending');
         $search = $request->query('search');
 
-        $query = Attempt::with(['user', 'set'])
-            ->where('skill', 'speaking')
-            ->whereIn('mode', ['mock', 'mock_test'])
-            ->where('is_grading_requested', true);
+        $query = Attempt::with(['user', 'set'])->teacherQueue('speaking');
 
         if ($search) {
             $query->whereHas('user', function ($q) use ($search) {
@@ -35,7 +32,7 @@ class SpeakingReviewController extends Controller
         // trạng thái 'pending'. Từ khi có chấm AI, một bài đã trả phí chấm tay
         // sẽ chuyển sang 'ai_graded' và biến mất khỏi danh sách nếu lọc theo
         // 'pending' — đúng bằng lỗi đã gặp ở trang Writing (TIEN_DO §21).
-        $needsTeacher = fn ($q) => $q->whereNotIn('grading_status', ['graded', 'manually_graded']);
+        $needsTeacher = Attempt::notGradedByTeacher('speaking');
 
         if ($filter === 'pending') {
             $query->whereHas('attemptAnswers', $needsTeacher);

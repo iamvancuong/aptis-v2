@@ -24,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
     {
         // Huy hiệu "N từ cần ôn" trên menu Từ vựng. Lịch ôn chỉ có tác dụng khi
         // học viên quay lại đúng hạn — phải nhắc ở chỗ họ nhìn thấy mọi trang.
+        View::composer('layouts.admin', function ($view) {
+            $view->with('pendingReviews', $this->adminPendingReviews());
+        });
+
         View::composer('layouts.app', function ($view) {
             $vocabDue = $this->vocabDueCount();
             $view->with('vocabDueCount', $vocabDue);
@@ -72,6 +76,24 @@ class AppServiceProvider extends ServiceProvider
         }
 
         return $items;
+    }
+
+    /**
+     * Số bài thi thử còn chờ giáo viên chấm — hiện trên sidebar admin. Dùng đúng
+     * định nghĩa của trang chấm (Attempt::awaitingTeacher) nên số luôn khớp.
+     */
+    protected function adminPendingReviews(): array
+    {
+        try {
+            return [
+                'writing'  => \App\Models\Attempt::awaitingTeacher('writing')->count(),
+                'speaking' => \App\Models\Attempt::awaitingTeacher('speaking')->count(),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Không đếm được bài chờ chấm: ' . $e->getMessage());
+
+            return ['writing' => 0, 'speaking' => 0];
+        }
     }
 
     protected function vocabDueCount(): int

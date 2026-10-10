@@ -49,6 +49,34 @@ class Attempt extends Model
         return $this->belongsTo(MockTest::class);
     }
 
+    /**
+     * Điều kiện "phần này còn chờ GIÁO VIÊN chấm" — một nguồn cho trang chấm
+     * Writing/Speaking và số đếm trên sidebar admin (trước đây mỗi trang tự viết,
+     * dễ lệch nhau).
+     *   Writing : mọi trạng thái trừ 'graded' (gồm cả limit_reached / ai_graded / null).
+     *   Speaking: mọi trạng thái trừ 'graded' / 'manually_graded'.
+     */
+    public static function notGradedByTeacher(string $skill): \Closure
+    {
+        return $skill === 'writing'
+            ? fn ($q) => $q->where(fn ($w) => $w->where('grading_status', '!=', 'graded')->orWhereNull('grading_status'))
+            : fn ($q) => $q->whereNotIn('grading_status', ['graded', 'manually_graded']);
+    }
+
+    /** Bài thi thử đã gửi giáo viên chấm (hàng đợi chấm tay) của một kỹ năng. */
+    public function scopeTeacherQueue($query, string $skill)
+    {
+        return $query->where('skill', $skill)
+            ->whereIn('mode', ['mock', 'mock_test'])
+            ->where('is_grading_requested', true);
+    }
+
+    /** Hàng đợi chấm tay, chỉ những bài còn phần chưa chấm. */
+    public function scopeAwaitingTeacher($query, string $skill)
+    {
+        return $query->teacherQueue($skill)->whereHas('attemptAnswers', self::notGradedByTeacher($skill));
+    }
+
     public function attemptAnswers(): HasMany
     {
         return $this->hasMany(AttemptAnswer::class);
