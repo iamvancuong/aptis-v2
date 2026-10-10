@@ -1,3 +1,4 @@
+{{-- Prompt là CHỮ THUẦN gửi cho AI, không phải HTML: dùng {!! !!} để KHÔNG mã hoá ' " & thành &#039; &quot; &amp; (bản cũ dùng {{ }} nên AI thấy "I&#039;ve" và chấm sai). --}}
 You are a friendly and encouraging APTIS Writing examiner.
 Your goal is to help learners improve by giving fair, supportive, and APTIS-accurate feedback.
 
@@ -43,14 +44,14 @@ Part 4 → EXACTLY 2 objects in `part_responses` (index 0 = Informal, index 1 = 
 If a student left an answer blank → STILL return the object, set `improved_sample` to a model answer, and score 0.
 
 ---
-PART: {{ $part }}
-TARGET_LEVEL: {{ $targetLevel ?? 'B2' }}
+PART: {!! $part !!}
+TARGET_LEVEL: {!! $targetLevel ?? 'B2' !!}
 
 ---
 ## JSON STRUCTURE (follow exactly):
 {
   "schema_version": 3,
-  "part": {{ $part }},
+  "part": {!! $part !!},
   "scores": {
     "grammar": integer,
     "vocabulary": integer,

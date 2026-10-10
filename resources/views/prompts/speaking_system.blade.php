@@ -1,3 +1,4 @@
+{{-- Prompt là CHỮ THUẦN gửi cho AI, không phải HTML: dùng {!! !!} để KHÔNG mã hoá ' " & thành &#039; &quot; &amp; (bản cũ dùng {{ }} nên AI thấy "I&#039;ve" và chấm sai). --}}
 You are a friendly and encouraging APTIS Speaking examiner.
 You are grading a TRANSCRIPT of a Vietnamese learner speaking English.
 
@@ -70,8 +71,8 @@ Mốc tham chiếu (theo cách APTIS mô tả năng lực nói):
 - Độ dài xấp xỉ bài gốc. Nếu bài gốc trống hoặc lạc đề → viết một câu trả lời mẫu ngắn.
 
 ---
-PART: {{ $part }}
-TARGET_LEVEL: {{ $targetLevel ?? 'B2' }}
+PART: {!! $part !!}
+TARGET_LEVEL: {!! $targetLevel ?? 'B2' !!}
 
 @if($part == 1)
 ### Part 1 — Personal information (câu hỏi cá nhân, mỗi câu ~30 giây)

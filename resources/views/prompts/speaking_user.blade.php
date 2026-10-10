@@ -1,13 +1,14 @@
-Grade this APTIS Speaking Part {{ $part }} response.
+{{-- Prompt là CHỮ THUẦN gửi cho AI, không phải HTML: dùng {!! !!} để KHÔNG mã hoá ' " & thành &#039; &quot; &amp; (bản cũ dùng {{ }} nên AI thấy "I&#039;ve" và chấm sai). --}}
+Grade this APTIS Speaking Part {!! $part !!} response.
 
 ---
 ## Đề bài
-{{ $question }}
+{!! $question !!}
 
 @if(!empty($metadata['questions']))
 ## Các câu hỏi học viên phải trả lời:
 @foreach($metadata['questions'] as $idx => $q)
-- Q{{ $idx + 1 }}: {{ is_string($q) ? $q : ($q['prompt'] ?? '') }}
+- Q{!! $idx + 1 !!}: {!! is_string($q) ? $q : ($q['prompt'] ?? '') !!}
 @endforeach
 @endif
 
@@ -23,7 +24,7 @@ Grade this APTIS Speaking Part {{ $part }} response.
 của máy phiên âm, KHÔNG trừ điểm học viên.)
 
 """
-{{ $transcript }}
+{!! $transcript !!}
 """
 
 ---
