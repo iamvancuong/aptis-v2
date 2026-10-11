@@ -1098,9 +1098,9 @@
                         }
                     } else if (q.skill === 'speaking') {
                         // Speaking doesn't submit instantly on footer click if not answered.
-                        // It forces user to press the big Bắt đầu ghi âm button in the UI.
+                        // It forces user to press the big Start Recording button in the UI.
                         if (this.speakingState === 'idle') {
-                            alert('Vui lòng nhấn Bắt đầu ghi âm để thu âm trước khi chuyển tiếp.');
+                            alert('Vui lòng nhấn Start Recording để thu âm trước khi chuyển tiếp.');
                             return;
                         } else {
                             alert('Đang trong quá trình thu âm, vui lòng đợi.');

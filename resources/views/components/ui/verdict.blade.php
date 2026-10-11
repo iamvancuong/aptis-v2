@@ -5,13 +5,13 @@
 @props(['ok', 'answer' => null, 'html' => false])
 <div {{ $attributes->merge(['class' => 'text-sm']) }}>
     <span x-show="{{ $ok }}" class="inline-flex items-center gap-1.5 font-semibold text-emerald-600">
-        <x-ui.icon name="check" class="w-4 h-4" /> Đúng
+        <x-ui.icon name="check" class="w-4 h-4" /> Correct
     </span>
     <span x-show="!({{ $ok }})" class="inline-flex flex-wrap items-center gap-x-1.5 text-red-600">
         <x-ui.icon name="x" class="w-4 h-4" />
-        <span class="font-semibold">Sai.</span>
+        <span class="font-semibold">Incorrect.</span>
         @if($answer)
-            <span class="text-gray-500">Đáp án:</span>
+            <span class="text-gray-500">Answer:</span>
             <span class="font-semibold text-emerald-700" {{ $html ? 'x-html' : 'x-text' }}="{{ $answer }}"></span>
         @endif
     </span>

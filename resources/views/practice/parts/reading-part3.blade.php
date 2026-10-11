@@ -3,7 +3,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {{-- LEFT: Texts (each has a reader name, default A - D) --}}
         <div>
-            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Đoạn văn</h4>
+            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Texts</h4>
             <div class="space-y-4">
                 <template x-for="(opt, idx) in currentQuestion.metadata.options" :key="idx">
                     <div class="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
@@ -23,7 +23,7 @@
 
         {{-- RIGHT: Questions with Dropdowns --}}
         <div>
-            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Câu hỏi</h4>
+            <h4 class="font-bold text-gray-700 text-sm uppercase tracking-wide mb-3">Questions</h4>
             <div class="space-y-3">
                 <template x-for="(q, qIdx) in currentQuestion.metadata.questions" :key="qIdx">
                     <div class="p-4 bg-white rounded-lg border transition-all"
@@ -43,7 +43,7 @@
                             :style="getPart3SelectStyle(qIdx)"
                             :disabled="hasAnswered(currentQuestion.id)"
                         >
-                            <option value="" disabled>- Chọn người -</option>
+                            <option value="" disabled>- Select person -</option>
                             <template x-for="(opt, oIdx) in currentQuestion.metadata.options" :key="oIdx">
                                 <option :value="oIdx" x-text="(currentQuestion.metadata.names && currentQuestion.metadata.names[oIdx]) ? currentQuestion.metadata.names[oIdx] : ('Person ' + String.fromCharCode(65 + oIdx))"></option>
                             </template>

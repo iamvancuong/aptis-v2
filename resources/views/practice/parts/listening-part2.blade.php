@@ -22,7 +22,7 @@
                     <template x-if="!currentQuestion.metadata.audio_files || !currentQuestion.metadata.audio_files[sIdx]">
                         <div class="flex items-center gap-2 text-gray-400 py-2">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-                            <span class="text-xs">Chưa có file nghe</span>
+                            <span class="text-xs">No audio available</span>
                         </div>
                     </template>
 

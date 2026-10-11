@@ -15,7 +15,7 @@
                         :style="getPart4SelectStyle(pIdx)"
                         :disabled="hasAnswered(currentQuestion.id)"
                     >
-                        <option value="" disabled>- Chọn -</option>
+                        <option value="" disabled>- Select -</option>
                         <template x-for="(h, hIdx) in currentQuestion.metadata.headings" :key="hIdx">
                             <option :value="hIdx" x-text="h"></option>
                         </template>

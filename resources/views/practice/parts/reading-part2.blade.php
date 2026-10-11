@@ -1,12 +1,12 @@
 {{-- Reading Part 2: Paragraph Ordering (Two-Column Drag & Drop) --}}
 <template x-if="currentQuestion.skill === 'reading' && currentQuestion.part === 2">
     <div class="space-y-4">
-        <p class="text-sm text-gray-500">Kéo câu ở cột phải (hoặc chạm để chọn rồi chạm vào ô trống) để xếp đúng thứ tự ở cột trái.</p>
+        <p class="text-sm text-gray-500">Drag sentences from the right panel into the correct order on the left.</p>
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {{-- LEFT: Drop Zones (Order Slots) --}}
             <div class="space-y-3">
-                <h4 class="text-sm font-semibold text-gray-900 mb-2">Thứ tự của bạn</h4>
+                <h4 class="text-sm font-semibold text-gray-900 mb-2">Your order</h4>
                 
                 {{-- Fixed First Sentence --}}
                 <template x-if="p2HasFixedStart()">
@@ -52,8 +52,8 @@
                             
                             <template x-if="!slot">
                                 <div class="flex-1">
-                                    <span class="text-sm text-gray-400 md:hidden">Chạm để đặt câu đã chọn vào đây</span>
-                                    <span class="text-sm text-gray-400 hidden md:inline">Thả một câu vào đây</span>
+                                    <span class="text-sm text-gray-400 md:hidden">Tap to place the selected sentence here</span>
+                                    <span class="text-sm text-gray-400 hidden md:inline">Drop a sentence here</span>
                                 </div>
                             </template>
                         </div>
@@ -70,7 +70,7 @@
 
             {{-- RIGHT: Sentence Pool --}}
             <div class="space-y-3">
-                <h4 class="text-sm font-semibold text-gray-900 mb-2">Các câu cần xếp</h4>
+                <h4 class="text-sm font-semibold text-gray-900 mb-2">Sentences</h4>
                 
                 <template x-for="(item, poolIdx) in part2Pool" :key="'pool-'+item.originalIndex">
                     <div class="p-3 bg-white rounded-lg border flex items-center gap-3 transition-all hover:shadow-md cursor-pointer touch-action-pan-y"
@@ -98,14 +98,14 @@
                 </template>
                 
                 <div x-show="part2Pool.length === 0 && !hasAnswered(currentQuestion.id) && !isFullTest" class="p-4 text-center text-gray-400 text-sm italic border border-dashed border-gray-300 rounded-lg">
-                    Đã xếp hết các câu. Bấm “Kiểm tra” bên dưới để xem kết quả.
+                    All sentences placed. Click “Kiểm tra” below to check your answer.
                 </div>
             </div>
         </div>
 
         {{-- Correct Order Feedback --}}
         <div x-show="hasAnswered(currentQuestion.id) && feedback[currentQuestion.id] && !feedback[currentQuestion.id].correct" class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-            <h4 class="font-semibold text-emerald-800 mb-2">Thứ tự đúng</h4>
+            <h4 class="font-semibold text-emerald-800 mb-2">Correct order</h4>
             <ol class="list-decimal list-inside space-y-1 text-emerald-900 text-sm">
                 <template x-if="p2HasFixedStart()">
                     <li x-text="currentQuestion.metadata.sentences[0]"></li>
