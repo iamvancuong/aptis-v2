@@ -128,10 +128,17 @@
                 @endif
             </div>
 
-            {{-- Nút hành động chính: Kiểm tra / Tiếp theo / Hoàn thành --}}
-            <x-button x-on:click="handleFooterAction()">
-                <span x-text="getFooterButtonText()"></span> →
-            </x-button>
+            <div class="flex items-center gap-2">
+                {{-- Quay lại câu trước: câu đã kiểm tra hiện lại bài làm + đáp án, chưa làm thì làm tiếp. --}}
+                <x-button variant="secondary" icon="arrow-left" x-on:click="prev()"
+                          x-bind:disabled="currentIndex === 0 || !canNavigate()" aria-label="Câu trước">
+                    <span class="hidden sm:inline">Câu trước</span>
+                </x-button>
+                {{-- Nút hành động chính: Kiểm tra / Tiếp theo / Hoàn thành --}}
+                <x-button x-on:click="handleFooterAction()">
+                    <span x-text="getFooterButtonText()"></span> →
+                </x-button>
+            </div>
         </div>
     </footer>
 </div>
@@ -1139,11 +1146,18 @@
                 }
             },
 
+            // Đang phát câu hỏi / chuẩn bị / ghi âm / lưu bài Speaking thì không cho
+            // rời câu — đổi câu giữa chừng sẽ cắt ngang bản ghi đang thu.
+            canNavigate() {
+                return this.currentQuestion?.skill !== 'speaking' || this.speakingState === 'idle';
+            },
+
             prev() {
-                if (this.currentIndex > 0) this.currentIndex--;
+                if (this.currentIndex > 0 && this.canNavigate()) this.currentIndex--;
             },
 
             jumpTo(index) {
+                if (!this.canNavigate()) return;
                 this.currentIndex = index;
             },
 
