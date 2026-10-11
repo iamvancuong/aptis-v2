@@ -1,12 +1,10 @@
 {{-- Reading Part 2: Paragraph Ordering (Two-Column Drag & Drop) --}}
 <template x-if="currentQuestion.skill === 'reading' && currentQuestion.part === 2">
     <div class="space-y-4">
-        <p class="text-sm text-gray-500">Drag sentences from the right panel into the correct order on the left.</p>
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {{-- LEFT: Drop Zones (Order Slots) --}}
             <div class="space-y-3">
-                <h4 class="text-sm font-semibold text-gray-900 mb-2">Your order</h4>
                 
                 {{-- Fixed First Sentence --}}
                 <template x-if="p2HasFixedStart()">
@@ -52,8 +50,6 @@
                             
                             <template x-if="!slot">
                                 <div class="flex-1">
-                                    <span class="text-sm text-gray-400 md:hidden">Tap to place the selected sentence here</span>
-                                    <span class="text-sm text-gray-400 hidden md:inline">Drop a sentence here</span>
                                 </div>
                             </template>
                         </div>
@@ -70,7 +66,6 @@
 
             {{-- RIGHT: Sentence Pool --}}
             <div class="space-y-3">
-                <h4 class="text-sm font-semibold text-gray-900 mb-2">Sentences</h4>
                 
                 <template x-for="(item, poolIdx) in part2Pool" :key="'pool-'+item.originalIndex">
                     <div class="p-3 bg-white rounded-lg border flex items-center gap-3 transition-all hover:shadow-md cursor-pointer touch-action-pan-y"
@@ -97,9 +92,6 @@
                     </div>
                 </template>
                 
-                <div x-show="part2Pool.length === 0 && !hasAnswered(currentQuestion.id) && !isFullTest" class="p-4 text-center text-gray-400 text-sm italic border border-dashed border-gray-300 rounded-lg">
-                    All sentences placed. Click “Kiểm tra” below to check your answer.
-                </div>
             </div>
         </div>
 

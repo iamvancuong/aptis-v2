@@ -22,7 +22,6 @@
 
         {{-- Topic/Question --}}
         <div>
-            <h4 class="font-bold text-gray-800 mb-1">Câu hỏi</h4>
             <p class="text-gray-700 text-sm"></p>
             <p class="text-gray-700" x-show="currentQuestion.stem" x-html="currentQuestion.stem"></p>
         </div>
