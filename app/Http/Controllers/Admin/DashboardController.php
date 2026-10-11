@@ -25,32 +25,36 @@ class DashboardController extends Controller
             'total' => $totalMockTests,
         ];
 
-        // 3. Writing Reviews (Attempts waiting for grading)
-        $pendingWritings = Attempt::where('skill', 'writing')
-            ->whereIn('mode', ['mock', 'mock_test'])
-            ->where('is_grading_requested', true)
-            ->whereHas('attemptAnswers', function ($q) {
-                $q->whereIn('grading_status', ['pending', 'ai_graded']);
-            })
-            ->count();
+        // 3. Bài chờ giáo viên chấm — chỉ đếm khi còn chấm tay (thẻ ẩn khi AI chấm thay).
+        $pendingWritings = $aiGradedWritings = $pendingSpeaking = 0;
+        if (config('aptis.teacher_grading_enabled')) {
+            $pendingWritings = Attempt::where('skill', 'writing')
+                ->whereIn('mode', ['mock', 'mock_test'])
+                ->where('is_grading_requested', true)
+                ->whereHas('attemptAnswers', function ($q) {
+                    $q->whereIn('grading_status', ['pending', 'ai_graded']);
+                })
+                ->count();
 
-        $aiGradedWritings = Attempt::where('skill', 'writing')
-            ->whereIn('mode', ['mock', 'mock_test'])
-            ->where('is_grading_requested', true)
-            ->whereHas('attemptAnswers', function ($q) {
-                $q->where('grading_status', 'ai_graded');
-            })
-            ->count();
+            $aiGradedWritings = Attempt::where('skill', 'writing')
+                ->whereIn('mode', ['mock', 'mock_test'])
+                ->where('is_grading_requested', true)
+                ->whereHas('attemptAnswers', function ($q) {
+                    $q->where('grading_status', 'ai_graded');
+                })
+                ->count();
             
-        // 3.5. Speaking Reviews (Attempts waiting for grading)
-        $pendingSpeaking = Attempt::where('skill', 'speaking')
-            ->whereIn('mode', ['mock', 'mock_test'])
-            ->where('is_grading_requested', true)
-            ->whereHas('attemptAnswers', function ($q) {
-                $q->whereIn('grading_status', ['pending']);
-            })
-            ->count();
+            // 3.5. Speaking Reviews (Attempts waiting for grading)
+            $pendingSpeaking = Attempt::where('skill', 'speaking')
+                ->whereIn('mode', ['mock', 'mock_test'])
+                ->where('is_grading_requested', true)
+                ->whereHas('attemptAnswers', function ($q) {
+                    $q->whereIn('grading_status', ['pending']);
+                })
+                ->count();
             
+        }
+
         // 4. Recent completed mock tests (Last 5)
         $recentMockTests = MockTest::with('user')
             ->where('status', 'completed')

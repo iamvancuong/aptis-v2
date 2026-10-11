@@ -9,8 +9,8 @@ return [
     | dashboard, mọi URL `/lop-hoc*` trả 404, và cron KHÔNG gửi email nhắc giờ.
     |
     | Cố ý KHÔNG xoá code: tính năng chỉ đang hoãn (Pha 0 đã chạy được — xem §23).
-    | Phía ADMIN vẫn dùng bình thường (`/admin/class-sessions`, `/admin/class-groups`)
-    | để chuẩn bị buổi học trước khi mở lại cho học viên.
+    | Phía ADMIN cũng ẩn theo (11/10/2026, cô yêu cầu bỏ lớp Google Meet): menu
+    | Lớp online/Lớp học biến mất và `/admin/class-*`, `/admin/cong-cu-lop` trả 404.
     |
     | Mặc định TẮT: quên khai `.env` thì tính năng vẫn ẩn, an toàn hơn là lộ ra.
     | Bật lại: đặt `CLASSES_ENABLED=true` trong `.env` rồi chạy lại `config:cache`
@@ -22,6 +22,9 @@ return [
     | "Gửi giáo viên chấm bài" (đơn chấm phí cho Mock Test Writing/Speaking).
     | Mặc định TẮT — nút đã ẩn ở giao diện, backend cũng chặn. Bật lại: đặt
     | `TEACHER_GRADING_ENABLED=true` rồi `config:cache`.
+    | Tắt cũng ẩn luôn phía admin: mục "Writing/Speaking chờ chấm" trên sidebar và
+    | 3 thẻ chờ chấm ở Tổng quan (AI chấm thay giáo viên). Trang chấm vẫn mở được
+    | bằng URL `/admin/writing-reviews`, `/admin/speaking-reviews` để xem bài cũ.
     */
     'teacher_grading_enabled' => (bool) env('TEACHER_GRADING_ENABLED', false),
 

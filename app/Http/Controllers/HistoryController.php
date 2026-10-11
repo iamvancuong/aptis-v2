@@ -121,6 +121,35 @@ class HistoryController extends Controller
         return view('history.speaking-show', compact('attempt'));
     }
 
+    /**
+     * Admin xoá bài Writing/Speaking của CHÍNH MÌNH — bài minh hoạ đề trên lớp
+     * dồn lại mỗi tuần. Học viên không xoá được (bài của họ là dữ liệu tiến độ).
+     */
+    public function destroy(Attempt $attempt)
+    {
+        abort_unless(auth()->user()->isAdmin() && $attempt->user_id === auth()->id(), 403);
+        abort_unless(in_array($attempt->skill, ['writing', 'speaking'], true), 404);
+
+        \App\Support\AttemptPurger::purge([$attempt->id]);
+
+        return redirect()->route($attempt->skill === 'writing' ? 'writingHistory.index' : 'speakingHistory.index')
+            ->with('success', 'Đã xoá bài.');
+    }
+
+    /** Admin xoá TẤT CẢ bài của mình ở một kỹ năng (writing | speaking). */
+    public function destroyMine(string $skill)
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless(in_array($skill, ['writing', 'speaking'], true), 404);
+
+        $count = \App\Support\AttemptPurger::purge(
+            auth()->user()->attempts()->where('skill', $skill)->pluck('id')
+        );
+
+        return redirect()->route($skill === 'writing' ? 'writingHistory.index' : 'speakingHistory.index')
+            ->with('success', "Đã xoá {$count} bài.");
+    }
+
     public function requestGrading(Request $request, Attempt $attempt)
     {
         if ($attempt->user_id !== auth()->id()) {

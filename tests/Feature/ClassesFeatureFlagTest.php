@@ -111,6 +111,25 @@ class ClassesFeatureFlagTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    /** Cô yêu cầu bỏ lớp Google Meet (11/10/2026): phía admin cũng phải 404, không chỉ ẩn menu. */
+    public function test_admin_khong_con_menu_va_url_lop_tra_404(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin', 'email' => 'admin@example.test', 'password' => bcrypt('x'),
+            'role' => 'admin', 'status' => 'active', 'max_devices' => 2, 'violation_count' => 0,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertDontSee('Lớp online')
+            ->assertDontSee(route('admin.class-groups.index'));
+
+        foreach (['admin.class-sessions.index', 'admin.class-groups.index', 'admin.class-tools.index'] as $name) {
+            $this->actingAs($admin)->get(route($name))->assertNotFound();
+        }
+    }
+
     public function test_bat_lai_bang_cau_hinh_thi_tinh_nang_song_lai(): void
     {
         // Xác nhận công tắc là thứ duy nhất chặn — không có gì bị xoá nhầm.

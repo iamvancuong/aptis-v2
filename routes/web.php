@@ -165,6 +165,9 @@ Route::middleware(['auth', 'user.blocked', 'session.limit'])->group(function () 
     // Unified Student History
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
     Route::get('/history/{attempt}', [HistoryController::class, 'show'])->name('history.show');
+    // Admin xoá bài minh hoạ Writing/Speaking của chính mình (HistoryController::destroy*).
+    Route::delete('/history/xoa-tat-ca/{skill}', [HistoryController::class, 'destroyMine'])->name('history.destroy-mine');
+    Route::delete('/history/{attempt}', [HistoryController::class, 'destroy'])->name('history.destroy');
     Route::post('/attempts/{attempt}/request-grading', [HistoryController::class, 'requestGrading'])->name('attempts.request-grading');
     
     // Writing History specific
@@ -327,23 +330,27 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     // Doanh số
     Route::get('revenue', [\App\Http\Controllers\Admin\RevenueController::class, 'index'])->name('revenue.index');
 
-    // Lớp online — tạo buổi + dán link Meet (không có trang show riêng).
-    // `joins` phải khai TRƯỚC resource để không bị nuốt bởi route {class_session}.
-    Route::get('class-sessions/{classSession}/nhat-ky', [\App\Http\Controllers\Admin\ClassSessionController::class, 'joins'])->name('class-sessions.joins');
-    Route::post('class-sessions/da-cap-nhat-loi-moi', [\App\Http\Controllers\Admin\ClassSessionController::class, 'markInviteSynced'])->name('class-sessions.invite-synced');
-    Route::resource('class-sessions', \App\Http\Controllers\Admin\ClassSessionController::class)->except('show');
+    // Lớp online / Lớp học (Google Meet) — đang HOÃN: tắt CLASSES_ENABLED thì cả
+    // phía admin cũng 404 (trước đây chỉ ẩn menu, gõ thẳng URL vẫn vào được).
+    Route::middleware('feature:classes_enabled')->group(function () {
+        // Lớp online — tạo buổi + dán link Meet (không có trang show riêng).
+        // `joins` phải khai TRƯỚC resource để không bị nuốt bởi route {class_session}.
+        Route::get('class-sessions/{classSession}/nhat-ky', [\App\Http\Controllers\Admin\ClassSessionController::class, 'joins'])->name('class-sessions.joins');
+        Route::post('class-sessions/da-cap-nhat-loi-moi', [\App\Http\Controllers\Admin\ClassSessionController::class, 'markInviteSynced'])->name('class-sessions.invite-synced');
+        Route::resource('class-sessions', \App\Http\Controllers\Admin\ClassSessionController::class)->except('show');
 
-    // Chạy các lệnh KIỂM TRA lớp online ngay trên web (thay cPanel Terminal).
-    // Chỉ lệnh chỉ-đọc, danh sách trắng nằm cứng trong controller — đọc phần
-    // chú thích đầu `ClassToolsController` trước khi thêm lệnh mới vào đó.
-    Route::get('cong-cu-lop', [\App\Http\Controllers\Admin\ClassToolsController::class, 'index'])->name('class-tools.index');
-    Route::post('cong-cu-lop', [\App\Http\Controllers\Admin\ClassToolsController::class, 'run'])->name('class-tools.run');
+        // Chạy các lệnh KIỂM TRA lớp online ngay trên web (thay cPanel Terminal).
+        // Chỉ lệnh chỉ-đọc, danh sách trắng nằm cứng trong controller — đọc phần
+        // chú thích đầu `ClassToolsController` trước khi thêm lệnh mới vào đó.
+        Route::get('cong-cu-lop', [\App\Http\Controllers\Admin\ClassToolsController::class, 'index'])->name('class-tools.index');
+        Route::post('cong-cu-lop', [\App\Http\Controllers\Admin\ClassToolsController::class, 'run'])->name('class-tools.run');
 
-    // Lớp học — nhóm học viên cố định, buổi học gắn vào lớp.
-    // Các route con phải khai TRƯỚC resource, nếu không `{classGroup}` nuốt hết.
-    Route::get('class-groups/{classGroup}/thanh-vien', [\App\Http\Controllers\Admin\ClassGroupController::class, 'members'])->name('class-groups.members');
-    Route::post('class-groups/{classGroup}/thanh-vien', [\App\Http\Controllers\Admin\ClassGroupController::class, 'addMembers'])->name('class-groups.members.add');
-    Route::post('class-groups/{classGroup}/thanh-vien/tat-ca', [\App\Http\Controllers\Admin\ClassGroupController::class, 'addAllMatching'])->name('class-groups.members.add-all');
-    Route::delete('class-groups/{classGroup}/thanh-vien/{user}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'removeMember'])->name('class-groups.members.remove');
-    Route::resource('class-groups', \App\Http\Controllers\Admin\ClassGroupController::class)->except('show');
+        // Lớp học — nhóm học viên cố định, buổi học gắn vào lớp.
+        // Các route con phải khai TRƯỚC resource, nếu không `{classGroup}` nuốt hết.
+        Route::get('class-groups/{classGroup}/thanh-vien', [\App\Http\Controllers\Admin\ClassGroupController::class, 'members'])->name('class-groups.members');
+        Route::post('class-groups/{classGroup}/thanh-vien', [\App\Http\Controllers\Admin\ClassGroupController::class, 'addMembers'])->name('class-groups.members.add');
+        Route::post('class-groups/{classGroup}/thanh-vien/tat-ca', [\App\Http\Controllers\Admin\ClassGroupController::class, 'addAllMatching'])->name('class-groups.members.add-all');
+        Route::delete('class-groups/{classGroup}/thanh-vien/{user}', [\App\Http\Controllers\Admin\ClassGroupController::class, 'removeMember'])->name('class-groups.members.remove');
+        Route::resource('class-groups', \App\Http\Controllers\Admin\ClassGroupController::class)->except('show');
+    });
 });

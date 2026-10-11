@@ -80,15 +80,18 @@
                     <x-admin.nav-item :href="route('admin.users.index')" icon="users" label="Tài khoản học viên" :active="$is('admin.users.*')" />
                     <x-admin.nav-item :href="route('admin.full-tests.index')" icon="flag" label="Full Test & cấp lượt" :active="$is('admin.full-tests.*')" />
                     <x-admin.nav-item :href="route('admin.security-flags.index')" icon="shield" label="Cảnh báo bảo mật" :active="$is('admin.security-flags.*')" />
-                    {{-- Lớp online / Lớp học: ẩn khi tính năng lớp đang hoãn (CLASSES_ENABLED=false), giống menu học viên. --}}
+                    {{-- Lớp online / Lớp học: ẩn khi tính năng lớp đang hoãn (CLASSES_ENABLED=false); route cũng 404. --}}
                     @if(config('aptis.classes_enabled'))
                         <x-admin.nav-item :href="route('admin.class-sessions.index')" icon="video" label="Lớp online" :active="$is('admin.class-sessions.*')" />
                         <x-admin.nav-item :href="route('admin.class-groups.index')" icon="users" label="Lớp học" :active="$is('admin.class-groups.*')" />
                     @endif
 
-                    <x-admin.nav-section label="Chấm bài" />
-                    <x-admin.nav-item :href="route('admin.writing-reviews.index')" icon="pencil" label="Writing chờ chấm" :active="$is('admin.writing-reviews.*')" :badge="$pending['writing']" />
-                    <x-admin.nav-item :href="route('admin.speaking-reviews.index')" icon="mic" label="Speaking chờ chấm" :active="$is('admin.speaking-reviews.*')" :badge="$pending['speaking']" />
+                    {{-- Chấm tay: ẩn khi AI chấm thay giáo viên (TEACHER_GRADING_ENABLED=false). --}}
+                    @if(config('aptis.teacher_grading_enabled'))
+                        <x-admin.nav-section label="Chấm bài" />
+                        <x-admin.nav-item :href="route('admin.writing-reviews.index')" icon="pencil" label="Writing chờ chấm" :active="$is('admin.writing-reviews.*')" :badge="$pending['writing']" />
+                        <x-admin.nav-item :href="route('admin.speaking-reviews.index')" icon="mic" label="Speaking chờ chấm" :active="$is('admin.speaking-reviews.*')" :badge="$pending['speaking']" />
+                    @endif
 
                     <x-admin.nav-section label="Ngân hàng đề" />
                     <x-admin.nav-group icon="book" label="Reading & Listening" :active="$is('admin.sets.*', 'admin.questions.*')">

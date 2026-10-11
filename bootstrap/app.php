@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'user.blocked' => \App\Http\Middleware\CheckUserBlocked::class,
             'session.limit' => \App\Http\Middleware\SessionLimit::class,
             'admin' => \App\Http\Middleware\AdminOnly::class,
+            'feature' => \App\Http\Middleware\FeatureEnabled::class,
         ]);
         
         // Check account expiration for all web routes

@@ -16,7 +16,8 @@
 </div>
 
 <!-- TOP STATS -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+@php $chamTay = config('aptis.teacher_grading_enabled'); @endphp
+<div class="grid grid-cols-1 md:grid-cols-2 {{ $chamTay ? 'lg:grid-cols-5' : '' }} gap-6 mb-8">
     <x-card class="border-l-4 border-l-blue-500 shadow-sm relative overflow-hidden group">
         <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition">
             <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path></svg>
@@ -46,6 +47,8 @@
         </div>
     </x-card>
 
+    {{-- Thẻ chờ chấm tay: ẩn khi AI chấm thay giáo viên (TEACHER_GRADING_ENABLED=false). --}}
+    @if($chamTay)
     <x-card class="border-l-4 border-l-amber-500 shadow-sm relative overflow-hidden group">
         <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition">
             <svg class="w-16 h-16 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
@@ -102,6 +105,7 @@
             @endif
         </div>
     </x-card>
+    @endif
 </div>
 
 <!-- MAIN CONTENT GRID -->

@@ -84,6 +84,11 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function adminPendingReviews(): array
     {
+        // Mục chờ chấm đang ẩn (AI chấm thay) — khỏi chạy 2 câu đếm ở mọi trang admin.
+        if (! config('aptis.teacher_grading_enabled')) {
+            return ['writing' => 0, 'speaking' => 0];
+        }
+
         try {
             return [
                 'writing'  => \App\Models\Attempt::awaitingTeacher('writing')->count(),

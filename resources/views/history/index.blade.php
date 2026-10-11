@@ -10,6 +10,8 @@
     $filters = request()->only('score_min', 'date_from', 'date_to');
     $dangLoc = $dateFrom || $dateTo || ($scoreMin !== null && $scoreMin !== '');
     $modeLabel = ['all' => 'Tất cả', 'practice' => 'Luyện tập', 'mock_test' => 'Thi thử'];
+    // Admin xoá được bài minh hoạ Writing/Speaking của mình (HistoryController::destroy*).
+    $xoaDuoc = $kind !== 'quiz' && auth()->user()->isAdmin();
 @endphp
 
 @section('content')
@@ -37,6 +39,13 @@
             Lọc{{ $dangLoc ? ' (đang lọc)' : '' }}
         </button>
         <span class="ml-auto text-sm text-gray-400">{{ $attempts->total() }} bài</span>
+        @if($xoaDuoc && $attempts->total() > 0)
+            <form method="POST" action="{{ route('history.destroy-mine', $kind) }}"
+                  onsubmit="return confirm('Xoá hẳn TẤT CẢ bài {{ ucfirst($kind) }} của bạn (kể cả bài đang lọc ẩn)? Không khôi phục được.')">
+                @csrf @method('DELETE')
+                <x-button type="submit" variant="secondary" size="sm" icon="trash">Xoá tất cả</x-button>
+            </form>
+        @endif
     </div>
 
     <form x-cloak x-show="moLoc" x-transition method="GET" action="{{ route($baseRoute) }}"
@@ -108,6 +117,16 @@
                                   title="Điểm Aptis ước tính {{ $aptis['scale'] }}/50">{{ $aptis['level'] }} · {{ $aptis['scale'] }}/50</span>
                         @endif
                         <x-ui.score :value="$diem" />
+                        @if($xoaDuoc)
+                            <form method="POST" action="{{ route('history.destroy', $attempt) }}" class="relative z-10"
+                                  onsubmit="return confirm('Xoá hẳn bài này? Không khôi phục được.')">
+                                @csrf @method('DELETE')
+                                <button type="submit" title="Xoá bài" aria-label="Xoá bài"
+                                        class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                    <x-ui.icon name="trash" class="w-4 h-4" />
+                                </button>
+                            </form>
+                        @endif
                         <span class="text-gray-300 group-hover:text-blue-500 transition-colors" aria-hidden="true">→</span>
                     </div>
                 </li>
