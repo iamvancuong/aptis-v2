@@ -828,7 +828,12 @@
                 console.log('--- Speaking: setupRecording START ---');
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    this.mediaRecorder = new MediaRecorder(stream);
+                    // 32 kbps đủ rõ giọng nói; mặc định ~128 kbps làm file nặng gấp 4, nộp chậm.
+                    try {
+                        this.mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 32000 });
+                    } catch (e) {
+                        this.mediaRecorder = new MediaRecorder(stream);
+                    }
                     console.log('--- Speaking: MediaRecorder created ---', this.mediaRecorder.state);
                     
                     this.mediaRecorder.ondataavailable = (event) => {

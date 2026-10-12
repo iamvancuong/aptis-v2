@@ -214,8 +214,13 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
             </svg>
-            <p class="mt-4 text-lg font-bold text-gray-800">Đang nộp bài…</p>
-            <p class="mt-1 text-sm text-gray-500">Vui lòng không tắt hoặc tải lại trang.</p>
+            <p class="mt-4 text-lg font-bold text-gray-800"
+               x-text="uploadProgress === null ? 'Đang nộp bài…' : (uploadProgress < 100 ? 'Đang tải bài nói lên… ' + uploadProgress + '%' : 'Đang lưu bài…')">Đang nộp bài…</p>
+            {{-- Thanh tiến độ tải file ghi âm: mạng yếu vẫn thấy bài đang chạy, không tưởng bị treo. --}}
+            <div x-show="uploadProgress !== null" class="mt-3 h-2 max-w-xs mx-auto rounded-full bg-gray-200 overflow-hidden" style="width: 16rem">
+                <div class="h-2 rounded-full bg-green-600 transition-all" :style="'width: ' + (uploadProgress || 0) + '%'"></div>
+            </div>
+            <p class="mt-2 text-sm text-gray-500">Vui lòng không tắt hoặc tải lại trang.</p>
         </div>
     </div>
 </div>
@@ -237,6 +242,7 @@ function mockTestExam() {
         autoSaveInterval: null,
         showConfirmModal: false,
         submitting: false,
+        uploadProgress: null, // % tải file ghi âm khi nộp Speaking; null = không hiện thanh
         storageKey: 'mock_exam_{{ $mockTest->id }}',
         lastSaved: null,
 
@@ -839,7 +845,13 @@ function mockTestExam() {
             console.log('--- Speaking: setupRecording START ---');
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                this.mediaRecorder = new MediaRecorder(stream);
+                // 32 kbps đủ rõ giọng nói cho AI phiên âm và giáo viên nghe. Mặc định
+                // trình duyệt ~128 kbps → một bài Speaking ~8 MB, mạng yếu chờ nộp vài phút.
+                try {
+                    this.mediaRecorder = new MediaRecorder(stream, { audioBitsPerSecond: 32000 });
+                } catch (e) {
+                    this.mediaRecorder = new MediaRecorder(stream);
+                }
                 console.log('--- Speaking: MediaRecorder created ---', this.mediaRecorder.state);
                 
                 this.mediaRecorder.ondataavailable = (event) => {
@@ -1108,15 +1120,15 @@ function mockTestExam() {
                 }
 
                 try {
-                    const response = await fetch('{{ route("mock-test.submit", $mockTest) }}', {
-                        method: 'POST',
-                        body: formData // No Content-Type header so browser sets multipart/form-data with boundary
-                    });
-                    this.handleSubmitResponse(response);
+                    this.uploadProgress = 0;
+                    const response = await this.postWithProgress('{{ route("mock-test.submit", $mockTest) }}', formData);
+                    await this.handleSubmitResponse(response);
                 } catch (error) {
                     console.error('Submit error:', error);
                     alert('Lỗi kết nối. Vui lòng thử lại.');
                     this.submitting = false;
+                } finally {
+                    if (!this.submitting) this.uploadProgress = null;
                 }
             } else {
                 const allAnswers = {};
@@ -1142,6 +1154,28 @@ function mockTestExam() {
             }
         },
         
+        // fetch() không báo được tiến độ tải lên → dùng XHR, trả về object có đủ
+        // các trường handleSubmitResponse đọc (status, ok, redirected, headers, json).
+        postWithProgress(url, formData) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url);
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) this.uploadProgress = Math.round(e.loaded / e.total * 100);
+                };
+                xhr.onload = () => resolve({
+                    status: xhr.status,
+                    ok: xhr.status >= 200 && xhr.status < 300,
+                    redirected: !!xhr.responseURL && xhr.responseURL !== url,
+                    headers: { get: (name) => xhr.getResponseHeader(name) },
+                    json: async () => JSON.parse(xhr.responseText),
+                });
+                xhr.onerror = () => reject(new Error('Network error'));
+                xhr.onabort = () => reject(new Error('Upload aborted'));
+                xhr.send(formData); // Không đặt Content-Type: trình duyệt tự thêm boundary multipart
+            });
+        },
+
         async handleSubmitResponse(response) {
             // Handle non-JSON responses (e.g. 500 HTML error pages)
             const contentType = response.headers.get('content-type') || '';
