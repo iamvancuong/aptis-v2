@@ -47,7 +47,7 @@ class UsersImport implements ToCollection, WithHeadingRow, WithChunkReading
             $batch[] = [
                 'name'            => $row['name'] ?? '',
                 'email'           => $email,
-                // Ô mật khẩu trống → mật khẩu ngẫu nhiên (KHÔNG dùng 'password123' chung);
+                // Ô mật khẩu trống → mật khẩu mặc định 12345678 (App\Support\InitialPassword);
                 // admin đặt lại ở trang sửa user nếu cần. Luôn buộc đổi ở lần đăng nhập đầu.
                 'password'        => Hash::make(! empty($row['password']) ? (string) $row['password'] : \App\Support\InitialPassword::make()),
                 'must_change_password' => true,

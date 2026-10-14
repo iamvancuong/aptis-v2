@@ -59,7 +59,7 @@ class AdminCreateUserMailTest extends TestCase
         Mail::shouldReceive('to')->andThrow(new \RuntimeException('SMTP down'));
 
         $this->tao(['send_credentials' => '1'])
-            ->assertSessionHas('warning', fn ($msg) => str_contains($msg, 'GỬI EMAIL THẤT BẠI') && str_contains($msg, 'Mật khẩu tạm'));
+            ->assertSessionHas('warning', fn ($msg) => str_contains($msg, 'GỬI EMAIL THẤT BẠI') && str_contains($msg, '12345678'));
         $this->assertDatabaseHas('users', ['email' => 'an@example.test']);
     }
 }

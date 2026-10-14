@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\FullTest;
 use App\Models\MockTest;
 use App\Models\Question;
 use App\Models\Quiz;
@@ -146,13 +147,16 @@ class SecurityHardeningTest extends TestCase
 
     // ─── 5. Lấy đáp án qua API check trong giờ thi thử ──────────────────────
 
-    public function test_khong_lay_duoc_dap_an_khi_dang_thi_thu(): void
+    public function test_khong_lay_duoc_dap_an_khi_dang_lam_full_test(): void
     {
         $u = $this->user();
         [$set, $q] = $this->setWithQuestion('reading', 1, ['correct_answers' => [1]]);
+        $full = FullTest::create([
+            'user_id' => $u->id, 'status' => 'in_progress', 'current_stage' => 3, 'started_at' => now(),
+        ]);
 
         $mock = MockTest::create([
-            'user_id' => $u->id, 'skill' => 'reading', 'duration_minutes' => 35,
+            'user_id' => $u->id, 'full_test_id' => $full->id, 'skill' => 'reading', 'duration_minutes' => 35,
             'sections' => [['part' => 1, 'set_id' => $set->id]],
             'started_at' => now(), 'status' => 'in_progress',
         ]);
@@ -163,6 +167,23 @@ class SecurityHardeningTest extends TestCase
 
         // Nộp bài xong → luyện tập lại bình thường.
         $mock->update(['status' => 'completed']);
+        $this->actingAs($u)->postJson(route('practice.check', $set), ['question_id' => $q->id])
+            ->assertOk()
+            ->assertJsonPath('answer_key.correct_answers', [1]);
+    }
+
+    public function test_thi_thu_thuong_bo_do_khong_khoa_luyen_tap(): void
+    {
+        // Học viên bấm bắt đầu Thi thử Reading rồi bỏ ra luyện tập (lỗi báo 14/10/2026).
+        $u = $this->user();
+        [$set, $q] = $this->setWithQuestion('reading', 1, ['correct_answers' => [1]]);
+
+        MockTest::create([
+            'user_id' => $u->id, 'skill' => 'reading', 'duration_minutes' => 35,
+            'sections' => [['part' => 1, 'set_id' => $set->id]],
+            'started_at' => now(), 'status' => 'in_progress',
+        ]);
+
         $this->actingAs($u)->postJson(route('practice.check', $set), ['question_id' => $q->id])
             ->assertOk()
             ->assertJsonPath('answer_key.correct_answers', [1]);

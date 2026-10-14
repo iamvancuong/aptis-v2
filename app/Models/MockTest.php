@@ -54,10 +54,15 @@ class MockTest extends Model
      *
      * "Đang trong giờ thi" = status in_progress VÀ chưa quá thời lượng + 15 phút
      * dự phòng — bài bỏ dở cả tuần trước không được khoá luyện tập mãi mãi.
+     *
+     * Chỉ tính phần thi của Full Test (giới hạn lượt, có bảng điểm). Thi thử
+     * thường làm lại không giới hạn nên chẳng có gì để gian lận, mà khoá thì học
+     * viên bấm "Bắt đầu" rồi bỏ ra luyện tập sẽ bị chặn tới gần một tiếng.
      */
     public static function userIsTakingSet(int $userId, int $setId): bool
     {
         return static::where('user_id', $userId)
+            ->whereNotNull('full_test_id')
             ->where('status', 'in_progress')
             ->where('started_at', '>=', now()->subMinutes(24 * 60))
             ->get(['id', 'sections', 'started_at', 'duration_minutes'])

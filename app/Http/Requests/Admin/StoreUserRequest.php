@@ -23,8 +23,8 @@ class StoreUserRequest extends FormRequest
         // bị sửa gửi lên role khác thì cũng không tạo được admin bằng đường này.
         $this->merge(['role' => 'user']);
 
-        // Không có ô nhập mật khẩu ở form — controller sinh mật khẩu ngẫu nhiên
-        // (App\Support\InitialPassword) và hiện cho admin một lần.
+        // Không có ô nhập mật khẩu ở form — controller đặt mật khẩu mặc định
+        // 12345678 (App\Support\InitialPassword).
 
         // Convert expires_at to end of day if present
         if ($this->filled('expires_at')) {

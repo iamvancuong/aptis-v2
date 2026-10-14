@@ -94,8 +94,8 @@ class UserController extends Controller
         // bằng cách thêm field vào POST. Nguồn tài khoản không phải input.
         $data['source'] = \App\Models\User::SOURCE_MANUAL;
         
-        // Mật khẩu ngẫu nhiên riêng từng tài khoản (không dùng chung 12345678 nữa)
-        // và buộc học viên đổi ở lần đăng nhập đầu.
+        // Mật khẩu mặc định 12345678 (App\Support\InitialPassword) và buộc học
+        // viên đổi ở lần đăng nhập đầu.
         $plainPassword = \App\Support\InitialPassword::make();
         $data['password'] = bcrypt($plainPassword);
         $data['must_change_password'] = true;
@@ -121,18 +121,18 @@ class UserController extends Controller
 
                 return redirect()->route('admin.users.index')
                     ->with('success', "Đã tạo tài khoản {$user->email} và gửi email thông tin đăng nhập cho học viên. "
-                        . "Nếu học viên không thấy thư (kể cả mục Spam), mật khẩu tạm là: {$plainPassword} — chỉ hiện một lần này.");
+                        . "Nếu học viên không thấy thư (kể cả mục Spam), mật khẩu là: {$plainPassword}.");
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning("Gửi email tài khoản cho {$user->email} thất bại: " . $e->getMessage());
 
                 return redirect()->route('admin.users.index')
                     ->with('warning', "Đã tạo tài khoản {$user->email} nhưng GỬI EMAIL THẤT BẠI. "
-                        . "Mật khẩu tạm: {$plainPassword} — hãy gửi tay cho học viên, mật khẩu chỉ hiện một lần này.");
+                        . "Mật khẩu: {$plainPassword} — hãy gửi tay cho học viên.");
             }
         }
 
         return redirect()->route('admin.users.index')
-            ->with('success', "Đã tạo tài khoản {$user->email}. Mật khẩu: {$plainPassword} — hãy gửi cho học viên ngay, mật khẩu chỉ hiện một lần này. Học viên sẽ phải đổi ở lần đăng nhập đầu.");
+            ->with('success', "Đã tạo tài khoản {$user->email}. Mật khẩu: {$plainPassword}. Học viên sẽ phải đổi ở lần đăng nhập đầu.");
     }
 
     public function edit(User $user)

@@ -42,8 +42,7 @@ class PaymentFulfillmentTest extends TestCase
         $user = User::where('email', 'newbuyer@example.test')->first();
         $this->assertNotNull($user);
         $this->assertTrue($user->must_change_password);
-        // Mật khẩu ngẫu nhiên riêng từng tài khoản — đúng cái được gửi qua email,
-        // và KHÔNG còn là 12345678 dùng chung.
+        // Mật khẩu mặc định 12345678 — đúng cái được gửi qua email.
         $sentPassword = null;
         Mail::assertSent(AccountCredentialsMail::class, function ($m) use (&$sentPassword) {
             $sentPassword = $m->password;
@@ -51,7 +50,7 @@ class PaymentFulfillmentTest extends TestCase
         });
         $this->assertNotNull($sentPassword);
         $this->assertTrue(Hash::check($sentPassword, $user->password));
-        $this->assertFalse(Hash::check('12345678', $user->password));
+        $this->assertSame('12345678', $sentPassword);
         $this->assertTrue($user->expires_at->isFuture());
 
         $this->assertSame('paid', $order->fresh()->status);

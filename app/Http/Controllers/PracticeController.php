@@ -66,11 +66,11 @@ class PracticeController extends Controller
             return response()->json(['message' => 'Question not found in this set.'], 404);
         }
 
-        // Đang thi thử một đề chứa bộ này → không trả đáp án (chống gọi API lấy
+        // Đang làm Full Test có bộ này → không trả đáp án (chống gọi API lấy
         // đáp án trong giờ thi). Xem MockTest::userIsTakingSet.
         if (\App\Models\MockTest::userIsTakingSet((int) auth()->id(), (int) $set->id)) {
             return response()->json([
-                'message' => 'Bạn đang trong giờ thi thử có bộ đề này. Đáp án sẽ mở sau khi nộp bài thi.',
+                'message' => 'Bạn đang làm dở một phần Full Test có bộ đề này. Đáp án sẽ mở sau khi nộp phần thi đó.',
             ], 423);
         }
 

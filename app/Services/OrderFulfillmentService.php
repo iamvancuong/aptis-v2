@@ -91,8 +91,7 @@ class OrderFulfillmentService
 
                 $result = [$user, false, null];
             } else {
-                // Mật khẩu ngẫu nhiên riêng từng tài khoản (gửi qua email), KHÔNG
-                // dùng chung 12345678 — xem App\Support\InitialPassword.
+                // Mật khẩu mặc định 12345678 — xem App\Support\InitialPassword.
                 $plainPassword = \App\Support\InitialPassword::make();
 
                 $user = User::create([
