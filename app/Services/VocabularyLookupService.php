@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AiLookup;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\VocabLookupUsage;
 use App\Models\VocabularyItem;
@@ -102,7 +103,10 @@ class VocabularyLookupService
             return 'unlimited';
         }
 
-        $limit = (int) config('aptis.vocab.daily_limit', 60);
+        // Mức chung chỉnh ở Admin → Cài đặt (chưa lưu thì lấy .env), cộng phần cô
+        // cấp thêm riêng cho học viên ở màn Cấp lượt.
+        $limit = Setting::int('vocab_daily_limit', (int) config('aptis.vocab.daily_limit', 60))
+            + (int) $user->vocab_extra_daily;
         $used = (int) VocabLookupUsage::where('user_id', $user->id)
             ->whereDate('usage_date', today())
             ->value('count');

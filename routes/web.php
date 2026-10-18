@@ -262,6 +262,7 @@ Route::middleware(['auth', 'user.blocked', 'session.limit', 'admin'])->prefix('a
     Route::get('full-tests', [\App\Http\Controllers\Admin\FullTestController::class, 'index'])->name('full-tests.index');
     Route::get('full-tests/quotas', [\App\Http\Controllers\Admin\FullTestController::class, 'quotas'])->name('full-tests.quotas');
     Route::put('full-tests/quotas/{user}', [\App\Http\Controllers\Admin\FullTestController::class, 'updateQuota'])->name('full-tests.quotas.update');
+    Route::put('full-tests/quotas/{user}/vocab', [\App\Http\Controllers\Admin\FullTestController::class, 'updateVocabExtra'])->name('full-tests.quotas.vocab');
     Route::get('full-tests/{fullTest}', [\App\Http\Controllers\Admin\FullTestController::class, 'show'])->name('full-tests.show');
     Route::get('full-tests/{fullTest}/pdf', [\App\Http\Controllers\Admin\FullTestController::class, 'pdf'])->name('full-tests.pdf');
     Route::post('full-tests/{fullTest}/regrade', [\App\Http\Controllers\Admin\FullTestController::class, 'regrade'])->name('full-tests.regrade');

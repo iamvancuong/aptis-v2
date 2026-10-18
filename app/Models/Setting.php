@@ -30,4 +30,15 @@ class Setting extends Model
 
         return in_array((string) $value, ['1', 'true', 'on', 'yes'], true);
     }
+
+    /**
+     * Read a setting as an integer. Returns $default when the key is absent or
+     * not numeric, so an admin-editable limit can fall back to its config value.
+     */
+    public static function int(string $key, int $default): int
+    {
+        $value = static::where('key', $key)->value('value');
+
+        return is_numeric($value) ? (int) $value : $default;
+    }
 }

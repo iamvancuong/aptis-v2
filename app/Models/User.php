@@ -70,6 +70,17 @@ class User extends Authenticatable
                 $query->where($query->qualifyColumn('role'), '!=', self::ROLE_OWNER);
             }
         });
+
+        // Tài khoản mới (mua gói / admin tạo / import) nhận số lượt Full Test mặc
+        // định cô đặt ở Admin → Cài đặt. Đổi mức này KHÔNG đụng tài khoản cũ.
+        static::creating(function (self $user) {
+            if ($user->full_test_quota === null) {
+                $user->full_test_quota = Setting::int(
+                    'default_full_test_quota',
+                    (int) config('aptis.full_test.default_quota', 3)
+                );
+            }
+        });
     }
 
     protected $fillable = [

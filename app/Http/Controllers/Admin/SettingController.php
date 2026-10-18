@@ -36,7 +36,25 @@ class SettingController extends Controller
             'default_max_devices' => 'required|integer|min:1|max:10',
             'default_ai_limit' => 'required|integer|min:1',
             'speaking_ai_limit' => 'required|integer|min:1',
+            'default_full_test_quota' => 'required|integer|min:0|max:1000',
+            'vocab_daily_limit' => 'required|integer|min:0|max:10000',
         ]);
+
+        Setting::updateOrCreate(
+            ['key' => 'default_full_test_quota'],
+            [
+                'value' => $request->default_full_test_quota,
+                'label' => 'Số lượt Full Test cho tài khoản mới',
+            ]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'vocab_daily_limit'],
+            [
+                'value' => $request->vocab_daily_limit,
+                'label' => 'Số lượt tra từ mỗi ngày cho mỗi học viên',
+            ]
+        );
 
         // Hạn mức AI chấm Nói để RIÊNG, không dùng chung `default_ai_limit` với
         // Writing: hai kỹ năng khác chi phí API và khác nhu cầu, gộp một ô thì

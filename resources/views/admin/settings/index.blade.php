@@ -189,6 +189,48 @@
                     @enderror
                 </div>
 
+                <!-- Full Test mặc định cho tài khoản mới -->
+                <div>
+                    <label for="default_full_test_quota" class="block text-sm font-semibold text-gray-700 mb-2">Số lượt <strong>Full Test</strong> cho tài khoản mới <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        </div>
+                        <input type="number" id="default_full_test_quota" name="default_full_test_quota"
+                            value="{{ old('default_full_test_quota', \App\Models\Setting::int('default_full_test_quota', (int) config('aptis.full_test.default_quota', 3))) }}" min="0" max="1000"
+                            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Chỉ áp dụng cho tài khoản <strong>tạo sau</strong> khi lưu. Tài khoản cũ cấp thêm ở
+                        <a href="{{ route('admin.full-tests.quotas') }}" class="text-indigo-600 hover:underline">Cấp lượt học viên</a>.
+                    </p>
+                    @error('default_full_test_quota')
+                        <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Tra từ mỗi ngày -->
+                <div>
+                    <label for="vocab_daily_limit" class="block text-sm font-semibold text-gray-700 mb-2">Số lượt <strong>tra từ</strong> mỗi ngày <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        </div>
+                        <input type="number" id="vocab_daily_limit" name="vocab_daily_limit"
+                            value="{{ old('vocab_daily_limit', \App\Models\Setting::int('vocab_daily_limit', (int) config('aptis.vocab.daily_limit', 60))) }}" min="0" max="10000"
+                            class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Áp dụng ngay cho <strong>mọi</strong> học viên, tính lại từ 0 mỗi ngày. Học viên được cấp thêm riêng
+                        thì cộng thêm phần đó.
+                    </p>
+                    @error('vocab_daily_limit')
+                        <p class="text-red-500 text-sm mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Default Max Devices -->
                 <div>
                     <label for="default_max_devices" class="block text-sm font-semibold text-gray-700 mb-2">Số lượng Đăng nhập Thiết bị (Mặc định) <span class="text-red-500">*</span></label>

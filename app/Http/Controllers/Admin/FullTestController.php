@@ -89,4 +89,16 @@ class FullTestController extends Controller
 
         return back()->with('success', "Đã đặt {$user->email}: {$data['full_test_quota']} lượt Full Test.");
     }
+
+    /** Số lượt tra từ cấp THÊM mỗi ngày cho riêng học viên (cộng vào mức chung). */
+    public function updateVocabExtra(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'vocab_extra_daily' => 'required|integer|min:0|max:10000',
+        ]);
+
+        $user->forceFill(['vocab_extra_daily' => $data['vocab_extra_daily']])->save();
+
+        return back()->with('success', "Đã đặt {$user->email}: thêm {$data['vocab_extra_daily']} lượt tra từ mỗi ngày.");
+    }
 }

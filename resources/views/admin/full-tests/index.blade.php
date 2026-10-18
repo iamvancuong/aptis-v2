@@ -11,7 +11,7 @@
         </div>
         <a href="{{ route('admin.full-tests.quotas') }}"
            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm">
-            Cấp lượt Full Test
+            Cấp lượt học viên
         </a>
     </div>
 

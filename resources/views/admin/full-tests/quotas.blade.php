@@ -1,15 +1,20 @@
 @extends('layouts.admin')
 
-@section('title', 'Cấp lượt Full Test')
+@section('title', 'Cấp lượt học viên')
 
 @section('content')
-<div class="space-y-6 max-w-4xl">
+@php
+    $vocabDaily = \App\Models\Setting::int('vocab_daily_limit', (int) config('aptis.vocab.daily_limit', 60));
+@endphp
+<div class="space-y-6 max-w-5xl">
     <div>
         <a href="{{ route('admin.full-tests.index') }}" class="text-sm text-indigo-600 hover:underline">← Full Test</a>
-        <h1 class="text-2xl font-bold text-gray-900 mt-1">Cấp lượt Full Test</h1>
+        <h1 class="text-2xl font-bold text-gray-900 mt-1">Cấp lượt học viên</h1>
         <p class="text-sm text-gray-500 mt-1">
-            Mỗi tài khoản mặc định {{ config('aptis.full_test.default_quota', 3) }} lượt. Đặt số lượt được cấp cho từng học viên
-            (tổng số lượt, đã tính cả lượt đã dùng).
+            <strong>Full Test:</strong> tổng số lượt được cấp (đã tính cả lượt đã dùng); tài khoản mới nhận
+            {{ \App\Models\Setting::int('default_full_test_quota', (int) config('aptis.full_test.default_quota', 3)) }} lượt.
+            <strong>Tra từ:</strong> mọi học viên có {{ $vocabDaily }} lượt/ngày; ô bên dưới là số lượt cấp <em>thêm</em> mỗi ngày.
+            Đổi mức chung ở <a href="{{ route('admin.settings.index') }}" class="text-indigo-600 hover:underline">Cài đặt</a>.
         </p>
     </div>
 
@@ -24,8 +29,9 @@
             <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                 <tr>
                     <th class="text-left px-4 py-3">Học viên</th>
-                    <th class="text-center px-4 py-3">Đã dùng</th>
-                    <th class="text-left px-4 py-3">Số lượt được cấp</th>
+                    <th class="text-center px-4 py-3">Full Test đã dùng</th>
+                    <th class="text-left px-4 py-3">Lượt Full Test được cấp</th>
+                    <th class="text-left px-4 py-3">Tra từ thêm/ngày</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -49,9 +55,20 @@
                                 <button class="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Lưu</button>
                             </form>
                         </td>
+                        <td class="px-4 py-3">
+                            <form method="POST" action="{{ route('admin.full-tests.quotas.vocab', $u) }}" class="flex items-center gap-2">
+                                @csrf
+                                @method('PUT')
+                                <span class="text-gray-400">+</span>
+                                <input type="number" name="vocab_extra_daily" min="0" max="10000" value="{{ $u->vocab_extra_daily }}"
+                                       class="w-20 px-2 py-1.5 text-sm border border-gray-200 rounded-lg">
+                                <button class="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Lưu</button>
+                                <span class="text-xs text-gray-500 whitespace-nowrap">= {{ $vocabDaily + (int) $u->vocab_extra_daily }}/ngày</span>
+                            </form>
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" class="px-4 py-10 text-center text-gray-400">Không tìm thấy học viên.</td></tr>
+                    <tr><td colspan="4" class="px-4 py-10 text-center text-gray-400">Không tìm thấy học viên.</td></tr>
                 @endforelse
             </tbody>
         </table>
