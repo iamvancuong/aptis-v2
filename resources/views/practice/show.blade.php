@@ -23,8 +23,14 @@
             </a>
             <x-ui.icon-badge :skill="$set->quiz->skill" size="sm" class="hidden sm:flex" />
             <div class="flex-1 min-w-0">
-                <h1 class="text-base font-semibold text-gray-900 truncate">{{ $skillMeta['name'] }} · {{ $partLabel }}</h1>
-                <p class="text-xs text-gray-500 truncate" x-text="currentQuestion?.title || @js($set->title)"></p>
+                @if($set->quiz->skill === 'reading' && in_array((int) $set->quiz->part, [2, 3], true))
+                    {{-- Reading Part 2-3: chủ đề đoạn văn (vd. "Weekend activities") là thứ học viên cần nhìn, nên đưa lên làm tiêu đề chính. --}}
+                    <p class="text-xs text-gray-500 truncate">{{ $skillMeta['name'] }} · {{ $partLabel }}</p>
+                    <h1 class="text-lg sm:text-xl font-bold text-gray-900 leading-snug line-clamp-2" x-text="currentQuestion?.title || @js($set->title)"></h1>
+                @else
+                    <h1 class="text-base font-semibold text-gray-900 truncate">{{ $skillMeta['name'] }} · {{ $partLabel }}</h1>
+                    <p class="text-xs text-gray-500 truncate" x-text="currentQuestion?.title || @js($set->title)"></p>
+                @endif
             </div>
             <span class="shrink-0 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold">
                 Câu <span x-text="currentIndex + 1"></span>/<span x-text="questions.length"></span>

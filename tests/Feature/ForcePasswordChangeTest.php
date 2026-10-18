@@ -55,6 +55,25 @@ class ForcePasswordChangeTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))->assertOk();
     }
 
+    public function test_can_log_in_with_new_password_after_change(): void
+    {
+        $user = $this->user(true);
+
+        $this->actingAs($user)->post(route('password.update'), [
+            'password'              => 'new-strong-pass',
+            'password_confirmation' => 'new-strong-pass',
+        ]);
+        $this->post(route('logout'));
+
+        $this->post('/login', ['email' => 'u@example.test', 'password' => '12345678'])
+            ->assertSessionHasErrors('email');
+        $this->assertGuest();
+
+        $this->post('/login', ['email' => 'u@example.test', 'password' => 'new-strong-pass'])
+            ->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_password_must_be_confirmed_and_long_enough(): void
     {
         $this->actingAs($this->user(true))

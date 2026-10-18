@@ -220,6 +220,7 @@
             <div x-show="uploadProgress !== null" class="mt-3 h-2 max-w-xs mx-auto rounded-full bg-gray-200 overflow-hidden" style="width: 16rem">
                 <div class="h-2 rounded-full bg-green-600 transition-all" :style="'width: ' + (uploadProgress || 0) + '%'"></div>
             </div>
+            <p x-show="retryNote" x-text="retryNote" class="mt-3 text-sm font-medium text-amber-700"></p>
             <p class="mt-2 text-sm text-gray-500">Vui lòng không tắt hoặc tải lại trang.</p>
         </div>
     </div>
@@ -243,6 +244,7 @@ function mockTestExam() {
         showConfirmModal: false,
         submitting: false,
         uploadProgress: null, // % tải file ghi âm khi nộp Speaking; null = không hiện thanh
+        retryNote: '', // báo "đang gửi lại" trên màn chờ khi mạng rớt lúc nộp
         storageKey: 'mock_exam_{{ $mockTest->id }}',
         lastSaved: null,
 
@@ -1120,14 +1122,17 @@ function mockTestExam() {
                 }
 
                 try {
-                    this.uploadProgress = 0;
-                    const response = await this.postWithProgress('{{ route("mock-test.submit", $mockTest) }}', formData);
+                    const response = await this.sendWithRetry(() => {
+                        this.uploadProgress = 0;
+                        return this.postWithProgress('{{ route("mock-test.submit", $mockTest) }}', formData);
+                    });
                     await this.handleSubmitResponse(response);
                 } catch (error) {
                     console.error('Submit error:', error);
-                    alert('Lỗi kết nối. Vui lòng thử lại.');
+                    alert(this.networkErrorMessage);
                     this.submitting = false;
                 } finally {
+                    this.retryNote = '';
                     if (!this.submitting) this.uploadProgress = null;
                 }
             } else {
@@ -1137,23 +1142,54 @@ function mockTestExam() {
                 }
 
                 try {
-                    const response = await fetch('{{ route("mock-test.submit", $mockTest) }}', {
+                    const response = await this.sendWithRetry(() => fetch('{{ route("mock-test.submit", $mockTest) }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         },
                         body: JSON.stringify({ answers: allAnswers })
-                    });
-                    this.handleSubmitResponse(response);
+                    }));
+                    await this.handleSubmitResponse(response);
                 } catch (error) {
                     console.error('Submit error:', error);
-                    alert('Lỗi kết nối. Vui lòng thử lại.');
+                    alert(this.networkErrorMessage);
                     this.submitting = false;
+                } finally {
+                    this.retryNote = '';
                 }
             }
         },
-        
+
+        networkErrorMessage: 'Không gửi được bài vì mạng của bạn bị gián đoạn (đã tự thử lại nhiều lần).\n\n'
+            + 'Bài làm vẫn còn nguyên trên máy này. Hãy kiểm tra Wi-Fi/4G rồi bấm Nộp bài lại — đừng tải lại hay đóng trang.',
+
+        // Lỗi "mạng" (fetch/XHR ném lỗi, không có mã HTTP) gần như luôn do kết nối
+        // của học viên rớt giữa chừng — Wi-Fi chập chờn, chuyển mạng, máy ngủ. Server
+        // nộp idempotent (khoá + "đã nộp trước đó" trả lại redirect) nên gửi lại an toàn:
+        // tự thử lại vài lần thay vì bắt học viên tự bấm.
+        async sendWithRetry(send) {
+            const delays = [2000, 5000, 10000];
+            for (let i = 0; ; i++) {
+                try {
+                    return await send();
+                } catch (error) {
+                    if (i >= delays.length) throw error;
+                    console.warn('Submit network error, retrying:', error);
+                    if (!navigator.onLine) {
+                        this.retryNote = 'Mất kết nối mạng — đang chờ có mạng lại để gửi tiếp…';
+                        await Promise.race([
+                            new Promise(r => window.addEventListener('online', r, { once: true })),
+                            new Promise(r => setTimeout(r, 30000)),
+                        ]);
+                    } else {
+                        this.retryNote = `Kết nối chập chờn — đang tự gửi lại (lần ${i + 1}/${delays.length})…`;
+                        await new Promise(r => setTimeout(r, delays[i]));
+                    }
+                }
+            }
+        },
+
         // fetch() không báo được tiến độ tải lên → dùng XHR, trả về object có đủ
         // các trường handleSubmitResponse đọc (status, ok, redirected, headers, json).
         postWithProgress(url, formData) {
