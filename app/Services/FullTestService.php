@@ -208,30 +208,45 @@ class FullTestService
             ];
 
             if ($attempt) {
+                // Gom điểm theo part: [đạt, tối đa]. KHÔNG dùng attempts.score: số đó
+                // chia đều theo `point` trong DB (đa số = 1) nên lệch tỉ trọng part của
+                // bài thi thật, và với Viết/Nói chỉ tính các phần đã có điểm.
+                $parts = [];
                 if (in_array($skill, ['writing', 'speaking'], true)) {
-                    // Tự tính từ điểm từng phần (0–10), phần bỏ trống = 0. KHÔNG dùng
-                    // attempts.score: số đó chỉ tính trên các phần đã có điểm, nên bài
-                    // bỏ trống 3/4 phần vẫn có thể ra điểm cao.
-                    $answers = $attempt->attemptAnswers;
-                    $sum = 0.0;
-                    foreach ($answers as $a) {
+                    // Điểm từng phần 0–10, phần bỏ trống = 0.
+                    foreach ($attempt->attemptAnswers as $a) {
+                        $part = (int) ($a->question->part ?? 0);
+                        $parts[$part] ??= [0.0, 0.0];
+                        $parts[$part][1] += 10;
                         if ($this->isBlankAnswer($skill, $a->answer)) {
                             continue;
                         }
                         if (in_array($a->grading_status, self::FINAL_STATUSES, true)) {
-                            $sum += (float) ($a->score ?? 0);
+                            $parts[$part][0] += (float) ($a->score ?? 0);
                         } elseif ($a->grading_status === 'ai_failed') {
                             $row['failed']++;
                         } else {
                             $row['pending']++;
                         }
                     }
-                    $row['percent'] = $answers->count() > 0 ? round($sum / $answers->count() * 10, 2) : 0.0;
                     $row['graded'] = $row['pending'] === 0 && $row['failed'] === 0;
                 } else {
-                    $row['percent'] = (float) $attempt->score;
+                    foreach ($attempt->attemptAnswers as $a) {
+                        $part = (int) ($a->question->part ?? 0);
+                        $parts[$part] ??= [0.0, 0.0];
+                        $parts[$part][0] += (float) ($a->score ?? 0);
+                        $parts[$part][1] += (float) ($a->question->point ?? 0);
+                    }
                     $row['graded'] = true;
                 }
+
+                $ratios = collect($parts)
+                    ->filter(fn ($p) => $p[1] > 0)
+                    ->map(fn ($p) => $p[0] / $p[1])
+                    ->all();
+                $row['percent'] = $ratios === [] && ! in_array($skill, ['writing', 'speaking'], true)
+                    ? (float) $attempt->score // bài cũ không còn câu hỏi để tính lại
+                    : AptisScale::weightedPercent($skill, $ratios);
 
                 $row['scale'] = AptisScale::fromPercent($row['percent']);
                 if (in_array($skill, AptisScale::CEFR_SKILLS, true)) {
@@ -252,7 +267,7 @@ class FullTestService
         return [
             'skills'       => $skills,
             'total'        => $total,
-            'overall'      => AptisScale::overallLevel($total),
+            'overall'      => AptisScale::overallLevel(array_map(fn ($r) => $r['level'], $skills)),
             'finished'     => $finished,
             'fully_graded' => $finished && collect($skills)->every(fn ($r) => $r['submitted'] && $r['graded']),
         ];
@@ -286,7 +301,8 @@ class FullTestService
             'overall'  => $overall,
             'reached'  => $reached,
             'exceeded' => AptisScale::rank($overall) > AptisScale::rank($target),
-            'gap'      => max(0, AptisScale::overallThreshold($target) - $report['total']),
+            'gap'      => $reached ? 0 : AptisScale::pointsToReach(
+                array_map(fn ($r) => $r['scale'], $report['skills']), $target),
             'weakest'  => $weakest,
         ];
     }

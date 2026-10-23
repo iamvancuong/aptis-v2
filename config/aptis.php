@@ -165,12 +165,27 @@ return [
     | Điểm Aptis TỐI THIỂU để đạt từng bậc. Đây là ngưỡng THAM KHẢO phổ biến của
     | Aptis General (British Council có thể điều chỉnh theo kỳ) — kết quả trên web
     | là ước tính. Grammar & Vocabulary không xếp bậc CEFR (giống phiếu điểm thật).
-    | Bậc tổng (Overall) tính từ tổng điểm 4 kỹ năng (/200) so với tổng ngưỡng.
+    | Bậc tổng (Overall) = trung bình cộng bậc của 4 kỹ năng, .5 làm tròn lên
+    | (B1 + B1 + B2 + B2 = B2) — KHÔNG so tổng điểm /200.
     */
     'cefr_bands' => [
         'listening' => ['C' => 42, 'B2' => 34, 'B1' => 24, 'A2' => 16, 'A1' => 8,  'A0' => 0],
         'reading'   => ['C' => 46, 'B2' => 38, 'B1' => 26, 'A2' => 16, 'A1' => 8,  'A0' => 0],
         'speaking'  => ['C' => 48, 'B2' => 41, 'B1' => 26, 'A2' => 16, 'A1' => 4,  'A0' => 0],
         'writing'   => ['C' => 48, 'B2' => 40, 'B1' => 26, 'A2' => 18, 'A1' => 6,  'A0' => 0],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Điểm tối đa từng Part trên thang 50 của mỗi kỹ năng (bài thi thật)
+    |--------------------------------------------------------------------------
+    | Điểm `point` của câu hỏi trong DB không theo đúng tỉ lệ này (đa số = 1), nên
+    | Full Test quy đổi: tỉ lệ đúng của từng part × điểm tối đa của part đó.
+    */
+    'part_weights' => [
+        'reading'   => [1 => 10, 2 => 10, 3 => 16, 4 => 14],
+        'listening' => [1 => 26, 2 => 8,  3 => 8,  4 => 8],
+        'writing'   => [1 => 5,  2 => 10, 3 => 15, 4 => 20],
+        'speaking'  => [1 => 5,  2 => 10, 3 => 15, 4 => 20],
     ],
 ];

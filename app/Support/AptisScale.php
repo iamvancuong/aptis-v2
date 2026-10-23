@@ -89,42 +89,109 @@ class AptisScale
     }
 
     /**
-     * Bậc tổng từ tổng điểm 4 kỹ năng (0–200): so với tổng ngưỡng từng bậc của
-     * 4 kỹ năng (ví dụ B1 = 24 + 26 + 26 + 26 = 102).
+     * Bậc tổng = trung bình cộng bậc của 4 kỹ năng, .5 làm tròn lên (cách của
+     * British Council): B2+B2+C+C = C, B1+B1+B2+B2 = B2, C+B2+A2+B1 = B2.
+     * Kỹ năng thiếu (null) tính là A0.
+     *
+     * Không so tổng điểm /200: ngưỡng từng kỹ năng khác nhau nên B1+B1+B2+B2
+     * có thể chỉ được ~140 điểm < tổng ngưỡng B2 (153) mà vẫn là B2.
+     *
+     * @param  array<string, ?string>  $levels  skill => bậc
      */
-    public static function overallLevel(int $totalScale): string
+    public static function overallLevel(array $levels): string
     {
-        $sums = [];
-
+        $sum = 0;
         foreach (self::CEFR_SKILLS as $skill) {
-            foreach (self::bands($skill) as $level => $min) {
-                $sums[$level] = ($sums[$level] ?? 0) + $min;
-            }
+            $sum += self::rank((string) ($levels[$skill] ?? 'A0'));
         }
 
-        arsort($sums);
+        // Tổng bậc ≥ 4·r − 2 ⇔ trung bình ≥ r − 0.5. Số nguyên nên không lệch.
+        $rank = intdiv($sum + 2, count(self::CEFR_SKILLS));
 
-        foreach ($sums as $level => $min) {
-            if ($totalScale >= $min) {
-                return $level;
-            }
-        }
-
-        return 'A0';
+        return self::LEVELS[min($rank, count(self::LEVELS) - 1)];
     }
 
     /**
-     * Tổng điểm 4 kỹ năng (0–200) tối thiểu để đạt bậc tổng `$level`.
+     * Ít điểm Aptis nhất phải cộng thêm (tổng các kỹ năng) để bậc tổng đạt
+     * `$target` — thử mọi cách nâng bậc từng kỹ năng (6^4 tổ hợp, rất nhẹ).
+     *
+     * @param  array<string, int>  $scales  skill => điểm 0–50
      */
-    public static function overallThreshold(string $level): int
+    public static function pointsToReach(array $scales, string $target): int
     {
-        $sum = 0;
-
+        $options = [];
         foreach (self::CEFR_SKILLS as $skill) {
-            $sum += self::bands($skill)[$level] ?? 0;
+            $scale = (int) ($scales[$skill] ?? 0);
+            $bands = self::bands($skill);
+            $current = self::rank(self::levelForScale($skill, $scale));
+
+            // [số bậc tăng, điểm cần thêm]
+            $options[$skill] = [[0, 0]];
+            for ($r = $current + 1; $r < count(self::LEVELS); $r++) {
+                $min = $bands[self::LEVELS[$r]] ?? null;
+                if ($min !== null) {
+                    $options[$skill][] = [$r - $current, max(0, $min - $scale)];
+                }
+            }
         }
 
-        return $sum;
+        $levels = [];
+        foreach (self::CEFR_SKILLS as $skill) {
+            $levels[$skill] = self::levelForScale($skill, (int) ($scales[$skill] ?? 0));
+        }
+        $currentSum = array_sum(array_map(fn ($l) => self::rank($l), $levels));
+        $need = max(0, 4 * self::rank($target) - 2 - $currentSum);
+
+        $best = PHP_INT_MAX;
+        $walk = function (array $skills, int $gain, int $cost) use (&$walk, &$best, $options, $need) {
+            if ($cost >= $best) {
+                return;
+            }
+            if ($gain >= $need) {
+                $best = $cost;
+
+                return;
+            }
+            if ($skills === []) {
+                return;
+            }
+            $skill = array_shift($skills);
+            foreach ($options[$skill] as [$g, $c]) {
+                $walk($skills, $gain + $g, $cost + $c);
+            }
+        };
+        $walk(self::CEFR_SKILLS, 0, 0);
+
+        return $best === PHP_INT_MAX ? 0 : $best;
+    }
+
+    /**
+     * Điểm % của một kỹ năng theo tỉ trọng part của bài thi thật
+     * (`config('aptis.part_weights')`): Σ(tỉ lệ đúng part × điểm tối đa part)
+     * chia cho tổng điểm tối đa các part có trong đề. Kỹ năng không có tỉ trọng
+     * → trung bình các part.
+     *
+     * @param  array<int, float>  $partRatios  part => tỉ lệ đúng 0–1
+     */
+    public static function weightedPercent(string $skill, array $partRatios): float
+    {
+        if ($partRatios === []) {
+            return 0.0;
+        }
+
+        $weights = function_exists('app') && app()->bound('config')
+            ? (array) config("aptis.part_weights.{$skill}", [])
+            : [];
+
+        $earned = 0.0;
+        $max = 0.0;
+        foreach ($partRatios as $part => $ratio) {
+            $w = (float) ($weights[$part] ?? ($weights === [] ? 1 : 0));
+            $earned += $w * max(0.0, min(1.0, $ratio));
+            $max += $w;
+        }
+
+        return $max > 0 ? round($earned / $max * 100, 2) : 0.0;
     }
 
     /**

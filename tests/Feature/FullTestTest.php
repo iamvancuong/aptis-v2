@@ -348,8 +348,8 @@ class FullTestTest extends TestCase
 
         $report = app(FullTestService::class)->report($ft->fresh());
         $this->assertTrue($report['fully_graded']);
-        // 1 phần 8/10, 3 phần bỏ trống = 0 → 20% → 10/50 (KHÔNG phải 80%).
-        $this->assertSame(10, $report['skills']['writing']['scale']);
+        // Part 1 (tối đa 5/50) được 8/10, 3 phần bỏ trống = 0 → 4/50 (KHÔNG phải 80%).
+        $this->assertSame(4, $report['skills']['writing']['scale']);
 
         $this->actingAs($u)->get(route('full-test.result', $ft))
             ->assertOk()
@@ -414,10 +414,46 @@ class FullTestTest extends TestCase
         $this->assertSame('B2', AptisScale::levelForScale('speaking', 41));
         $this->assertSame('B1', AptisScale::levelForScale('speaking', 40));
         $this->assertSame('B1', AptisScale::levelForScale('listening', 24));
-        // Ngưỡng tổng B1 = 24 + 26 + 26 + 26 = 102
-        $this->assertSame('B1', AptisScale::overallLevel(102));
-        $this->assertSame('A2', AptisScale::overallLevel(101));
-        $this->assertSame('C', AptisScale::overallLevel(196));
+    }
+
+    /** Bậc tổng = trung bình bậc 4 kỹ năng, .5 làm tròn lên (ví dụ của British Council). */
+    public function test_bac_tong_la_trung_binh_bac_ky_nang(): void
+    {
+        $lv = fn (string $l, string $r, string $s, string $w) =>
+            AptisScale::overallLevel(['listening' => $l, 'reading' => $r, 'speaking' => $s, 'writing' => $w]);
+
+        $this->assertSame('C', $lv('B2', 'B2', 'C', 'C'));
+        $this->assertSame('B2', $lv('B1', 'B1', 'B2', 'B2'));
+        $this->assertSame('B2', $lv('C', 'B2', 'A2', 'B1'));
+        $this->assertSame('B2', $lv('B1', 'B1', 'B1', 'C'));
+        $this->assertSame('B1', $lv('B1', 'B1', 'B1', 'B2'));
+        $this->assertSame('B1', $lv('B1', 'A1', 'B1', 'B1'));
+        $this->assertSame('B1', $lv('B2', 'A2', 'A2', 'A2'));
+        $this->assertSame('A2', $lv('B1', 'A2', 'A2', 'A1'));
+        $this->assertSame('A0', AptisScale::overallLevel([]));
+
+        // B1+B1+B2+B2 chỉ 140/200 (< tổng ngưỡng B2 = 153) nhưng vẫn là B2.
+        $scales = ['listening' => 30, 'reading' => 30, 'speaking' => 41, 'writing' => 40];
+        $levels = [];
+        foreach ($scales as $k => $v) {
+            $levels[$k] = AptisScale::levelForScale($k, $v);
+        }
+        $this->assertSame('B2', AptisScale::overallLevel($levels));
+        $this->assertSame(0, AptisScale::pointsToReach($scales, 'B2'));
+        // Lên C: tổng bậc 14 → cần 18, thêm 4 bậc. Rẻ nhất 27 điểm, ví dụ
+        // Listening 30→34 (4) + Reading 30→38 (8) + Speaking 41→48 (7) + Writing 40→48 (8).
+        $this->assertSame(27, AptisScale::pointsToReach($scales, 'C'));
+    }
+
+    /** Reading/Listening quy theo tỉ trọng part của bài thi thật, không theo `point` trong DB. */
+    public function test_diem_ky_nang_theo_ti_trong_part(): void
+    {
+        // Listening: Part 1 đúng hết (26/50), Part 2–4 sai hết → 26/50.
+        $this->assertSame(52.0, AptisScale::weightedPercent('listening', [1 => 1, 2 => 0, 3 => 0, 4 => 0]));
+        // Reading: Part 3 đúng hết (16), Part 4 đúng nửa (7) → 23/50.
+        $this->assertSame(46.0, AptisScale::weightedPercent('reading', [1 => 0, 2 => 0, 3 => 1, 4 => 0.5]));
+        // Writing: Part 4 (20) được 7/10, các phần khác 10/10 → 30 + 14 = 44/50.
+        $this->assertSame(88.0, AptisScale::weightedPercent('writing', [1 => 1, 2 => 1, 3 => 1, 4 => 0.7]));
     }
 
     // ─── Admin ──────────────────────────────────────────────────────────────
