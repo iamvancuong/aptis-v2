@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\MockTest;
 use App\Models\Set;
 
 /**
@@ -72,9 +73,13 @@ class MockTestBuilder
 
             $usedSetIds = array_merge($usedSetIds, $sets->pluck('id')->toArray());
 
-            $sections[] = $setCount > 1
+            $section = $setCount > 1
                 ? ['part' => $part, 'set_ids' => $sets->pluck('id')->toArray()]
                 : ['part' => $part, 'set_id' => $sets->first()->id];
+
+            // Cách cắt câu khi bộ nhiều câu hơn số cần thi — xem MockTest::getSectionsWithSets().
+            $section['pick'] = MockTest::PICK_MD5;
+            $sections[] = $section;
         }
 
         return $sections;

@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MockTest extends Model
 {
+    /** Giá trị `sections.*.pick`: cắt câu theo md5 thay cho crc32 (xem getSectionsWithSets). */
+    public const PICK_MD5 = 'md5';
+
     protected $fillable = [
         'user_id',
         'full_test_id',
@@ -127,12 +130,20 @@ class MockTest extends Model
             // IMPORTANT: sort DETERMINISTICALLY by (mockTestId, questionId) so that show(), submit(),
             // and result() always pick the same questions for the same test instance.
             // Using shuffle() was bugged — each call returned different questions → grading mismatch.
+            //
+            // crc32 là hàm tuyến tính: đổi mockId chỉ đảo vài bit nên thứ tự gần như cố định —
+            // Reading Part 5 (3 câu) bốc trúng một câu ~50% số lượt, Part 2-3 chỉ ra vài cặp quen.
+            // Bài mới đánh dấu `pick = md5` dùng md5 (xáo đều); bài cũ giữ crc32 để trang
+            // kết quả không đổi sang câu khác với câu học viên đã làm.
             $limit = config("aptis.exam_part_counts.{$this->skill}.{$section['part']}");
             if ($virtSet && $limit && $virtSet->questions->count() > $limit) {
                 $mockId = $this->id;
+                $hash = ($section['pick'] ?? null) === self::PICK_MD5
+                    ? fn ($q) => md5($mockId . '_' . $q->id)
+                    : fn ($q) => crc32($mockId . '_' . $q->id);
                 $virtSet->setRelation('questions',
                     $virtSet->questions
-                        ->sortBy(fn($q) => crc32($mockId . '_' . $q->id))
+                        ->sortBy($hash)
                         ->take($limit)
                         ->values()
                 );

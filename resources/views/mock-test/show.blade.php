@@ -713,6 +713,13 @@ function mockTestExam() {
             this.part2Slots = [...this.part2Slots];
             this.part2Pool = [...this.part2Pool];
         },
+        // Partial reading-part2 dùng chung với trang luyện tập gọi hàm này để vẽ câu
+        // mở đầu cố định. Thiếu nó thì x-if lỗi → bài thi không hiện câu cố định.
+        // Câu rỗng (null, khoảng trắng, <p></p> từ trình soạn thảo) không tính là câu cố định.
+        p2HasFixedStart() {
+            const s = this.currentQuestion?.metadata?.sentences?.[0] || '';
+            return s.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length > 0;
+        },
         submitPart2() {
             const qId = this.currentQuestion.id;
             this.answers = { ...this.answers, [qId]: [...this.part2Slots] };

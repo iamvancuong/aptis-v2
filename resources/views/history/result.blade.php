@@ -305,11 +305,14 @@
                                             $sentences = $q->metadata['sentences'] ?? [];
                                             $userOrder = is_array($userAns) ? $userAns : [];
                                         @endphp
+                                        {{-- Đánh số như màn làm bài: câu cố định là 0, câu sắp xếp từ 1. Đề không có câu cố định thì bỏ dòng này. --}}
+                                        @if(trim(html_entity_decode(strip_tags($sentences[0] ?? ''))) !== '')
                                         <div class="flex items-start gap-4 p-2 bg-gray-50 rounded border border-gray-100 text-sm">
-                                            <span class="font-bold text-gray-400 w-4 shrink-0">1</span>
-                                            <span class="text-gray-600 truncate">{{ $sentences[0] ?? '' }}</span>
+                                            <span class="font-bold text-gray-400 w-4 shrink-0">0</span>
+                                            <span class="text-gray-600 truncate">{{ $sentences[0] }}</span>
                                             <span class="ml-auto text-[11px] text-green-600 font-bold uppercase">Cố định</span>
                                         </div>
+                                        @endif
                                         @foreach($userOrder as $idx => $slot)
                                             @php
                                                 $slotIdx = $idx + 1;
@@ -318,7 +321,7 @@
                                                 $isSlotCorrect = ($providedSentence === $expectedSentence);
                                             @endphp
                                             <div class="flex items-start gap-4 p-2 rounded border text-sm {{ $isSlotCorrect ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100' }}">
-                                                <span class="font-bold {{ $isSlotCorrect ? 'text-green-600' : 'text-red-500' }} w-4 shrink-0">{{ $slotIdx + 1 }}</span>
+                                                <span class="font-bold {{ $isSlotCorrect ? 'text-green-600' : 'text-red-500' }} w-4 shrink-0">{{ $slotIdx }}</span>
                                                 <div class="flex-1 min-w-0">
                                                     <p class="{{ $isSlotCorrect ? 'text-green-800' : 'text-red-800' }}">{{ $providedSentence }}</p>
                                                     @if(!$isSlotCorrect)
