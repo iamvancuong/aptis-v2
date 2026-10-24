@@ -8,8 +8,16 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// ⚠️ BÀI HỌC 24/10/2026 — KHOÁ withoutOverlapping() PHẢI CÓ HẠN NGẮN.
+// Mặc định khoá sống 24 giờ. Tiến trình chết giữa chừng (hosting kill / MySQL
+// khởi động lại ~05:51) thì không kịp gỡ khoá → scheduler tưởng lệnh vẫn chạy và
+// bỏ qua suốt một ngày: 347 job chấm AI tồn + đơn đã trả tiền không kích hoạt.
+// Các lệnh chạy dày dưới đây đều xong trong 1–2 phút, nên cho khoá hết hạn sau
+// vài phút là tự hồi phục. Lỡ hai worker chạy chồng cũng vô hại (hàng đợi tự
+// khoá từng job; reconcile/fulfill idempotent). Gỡ khoá tay: schedule:clear-cache.
+
 // Lưới an toàn: đối soát đơn pending với PayOS (phòng khi webhook không tới).
-Schedule::command('payos:reconcile')->everyTwoMinutes()->withoutOverlapping();
+Schedule::command('payos:reconcile')->everyTwoMinutes()->withoutOverlapping(5);
 
 // Rút hàng đợi job (chấm Writing/Speaking AI tự động dispatch khi nộp mock/practice).
 // QUEUE_CONNECTION=database mà không có worker chạy nền thì job nằm chết trong bảng
@@ -34,7 +42,7 @@ Schedule::command('payos:reconcile')->everyTwoMinutes()->withoutOverlapping();
 // bao giờ bị kẹt sau bài Nói.
 Schedule::command('queue:work --queue=default --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
-    ->withoutOverlapping();
+    ->withoutOverlapping(5);
 
 // Worker cho bài Nói. `--queue=speaking,default` (theo thứ tự ưu tiên): ưu tiên
 // hàng Nói, hết việc thì phụ rút hàng mặc định — nhờ vậy đống job Nói CŨ còn
@@ -46,12 +54,12 @@ Schedule::command('queue:work --queue=default --stop-when-empty --max-time=50 --
 foreach (range(1, (int) config('queue.speaking_workers')) as $i) {
     Schedule::command(
         "queue:work --queue=speaking,default --stop-when-empty --max-time=50 --tries=3 --name=speaking{$i}"
-    )->everyMinute()->withoutOverlapping();
+    )->everyMinute()->withoutOverlapping(5);
 }
 
 // Nhắc học viên trước giờ lớp online 60 phút. Mỗi buổi chỉ gửi một lần
 // (cột `class_sessions.reminder_sent_at`) nên chạy dày cũng không spam.
-Schedule::command('classes:remind')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('classes:remind')->everyFiveMinutes()->withoutOverlapping(10);
 
 // Sinh buổi học của các lịch lặp hằng tuần, luôn giữ sẵn 4 tuần phía trước.
 // Chạy hằng ngày chứ không hằng tuần: cron lỡ một nhịp (server bảo trì, hosting
